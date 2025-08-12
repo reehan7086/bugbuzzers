@@ -270,7 +270,372 @@ const BugBuzzers = () => {
     );
   }
 
-  return <div>Other views will be added here</div>;
+  // Login Page
+  if (currentView === 'login') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Bug className="w-8 h-8 text-purple-600" />
+              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+            <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-sm p-8">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              Sign In
+            </button>
+
+            <div className="mt-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginForm({ email: 'john@example.com', password: 'password123' });
+                  setTimeout(() => {
+                    const foundUser = users.find(u => u.email === 'john@example.com' && u.password === 'password123');
+                    if (foundUser) {
+                      setUser(foundUser);
+                      setCurrentView('dashboard');
+                    }
+                  }, 100);
+                }}
+                className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-sm"
+              >
+                Quick Login as User (John)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginForm({ email: 'admin@bugbuzzers.com', password: 'admin123' });
+                  setTimeout(() => {
+                    const foundUser = users.find(u => u.email === 'admin@bugbuzzers.com' && u.password === 'admin123');
+                    if (foundUser) {
+                      setUser(foundUser);
+                      setCurrentView('admin');
+                    }
+                  }, 100);
+                }}
+                className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+              >
+                Quick Login as Admin
+              </button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('signup')}
+                  className="text-purple-600 font-medium hover:text-purple-700"
+                >
+                  Sign up now
+                </button>
+              </p>
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600 mb-2"><strong>Demo Credentials:</strong></p>
+              <p className="text-xs text-gray-500">User: john@example.com / password123</p>
+              <p className="text-xs text-gray-500">Admin: admin@bugbuzzers.com / admin123</p>
+            </div>
+          </form>
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setCurrentView('landing')}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              ← Back to home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Signup Page
+  if (currentView === 'signup') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Bug className="w-8 h-8 text-purple-600" />
+              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
+            <p className="text-gray-600 mt-2">Create your account and start earning rewards for reporting bugs</p>
+          </div>
+
+          <form onSubmit={handleSignup} className="bg-white rounded-lg shadow-sm p-8">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <input
+                type="text"
+                value={signupForm.name}
+                onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={signupForm.email}
+                onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={signupForm.password}
+                onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+              <input
+                type="password"
+                value={signupForm.confirmPassword}
+                onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              Create Account
+            </button>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('login')}
+                  className="text-purple-600 font-medium hover:text-purple-700"
+                >
+                  Sign in
+                </button>
+              </p>
+            </div>
+          </form>
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setCurrentView('landing')}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              ← Back to home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // User Dashboard
+  if (currentView === 'dashboard' && user && !user.isAdmin) {
+    const userBugs = getUserBugs();
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bug className="w-8 h-8 text-purple-600" />
+                <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-lg">
+                  <Trophy className="w-5 h-5 text-purple-600" />
+                  <span className="font-medium text-purple-900">{user.points} pts</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-900">{user.name}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="text-gray-600 hover:text-red-600 transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-6xl mx-auto p-6">
+          <div className="mb-6">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setCurrentView('report-bug')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                Report Bug
+              </button>
+              <button
+                onClick={() => setCurrentView('leaderboard')}
+                className="px-4 py-2 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
+              >
+                Leaderboard
+              </button>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Bug className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{userBugs.length}</p>
+                  <p className="text-sm text-gray-600">Total Reports</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{userBugs.filter(b => b.status === 'Verified').length}</p>
+                  <p className="text-sm text-gray-600">Verified</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{userBugs.filter(b => b.status === 'In Review').length}</p>
+                  <p className="text-sm text-gray-600">Under Review</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Trophy className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{user.points}</p>
+                  <p className="text-sm text-gray-600">Total Points</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Bug Reports</h2>
+            {userBugs.length === 0 ? (
+              <div className="text-center py-8">
+                <Bug className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No bug reports yet</p>
+                <button
+                  onClick={() => setCurrentView('report-bug')}
+                  className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Report Your First Bug
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {userBugs.map((bug) => (
+                  <div key={bug.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{bug.title}</h3>
+                        <p className="text-sm text-gray-600">ID: {bug.id} • {bug.appName}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bug.status)}`}>
+                          {bug.status}
+                        </span>
+                        {bug.points > 0 && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                            +{bug.points} pts
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div><strong>Severity:</strong> {bug.severity}</div>
+                      <div><strong>Device:</strong> {bug.device}</div>
+                      <div><strong>Submitted:</strong> {bug.submittedAt.toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <div>Loading...</div>;
 };
 
 export default BugBuzzers;
