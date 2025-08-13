@@ -16,6 +16,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Database connection - Fixed version
+// Database connection - Ultimate SSL bypass
 let pool;
 try {
   const databaseUrl = process.env.DATABASE_URL;
@@ -26,16 +27,22 @@ try {
 
   console.log('Database URL format check:', databaseUrl.substring(0, 20) + '...');
 
-// Create pool with SSL completely disabled
-pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: false, // Force disable SSL
-  max: 5,
-  connectionTimeoutMillis: 30000,
-  idleTimeoutMillis: 30000,
-});
+  // Parse the URL manually and create non-SSL connection
+  const url = new URL(databaseUrl);
+  
+  pool = new Pool({
+    host: url.hostname,
+    port: parseInt(url.port) || 5432,
+    database: url.pathname.slice(1), // Remove leading /
+    user: url.username,
+    password: url.password,
+    ssl: false, // Absolutely no SSL
+    max: 5,
+    connectionTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+  });
 
-  console.log('✅ Database pool created successfully');
+  console.log('✅ Database pool created with manual config (SSL bypassed)');
 } catch (error) {
   console.error('❌ Database pool creation failed:', error.message);
   
