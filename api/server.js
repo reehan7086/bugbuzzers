@@ -15,24 +15,27 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Database connection using individual parameters (bypasses sslmode=require)
+// Database connection using corrected connection string
 let pool;
 try {
-  console.log('Creating database connection with individual parameters...');
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
 
+  console.log('Database URL check:', databaseUrl.substring(0, 30) + '...');
+
+  // Simple connection using the corrected DATABASE_URL
   pool = new Pool({
-    host: process.env.DB_HOST || 'bugbuzzers-db-do-user-18160435-0.d.db.ondigitalocean.com',
-    port: process.env.DB_PORT || 25060,
-    database: process.env.DB_NAME || 'defaultdb',
-    user: process.env.DB_USER || 'doadmin',
-    password: process.env.DB_PASSWORD,
+    connectionString: databaseUrl,
     ssl: false, // Explicitly disable SSL
     max: 5,
     connectionTimeoutMillis: 30000,
     idleTimeoutMillis: 30000,
   });
 
-  console.log('✅ Database pool created with individual parameters (SSL disabled)');
+  console.log('✅ Database pool created successfully (using corrected DATABASE_URL)');
 } catch (error) {
   console.error('❌ Database pool creation failed:', error.message);
   
