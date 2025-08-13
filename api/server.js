@@ -16,10 +16,27 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+let pool;
+try {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+      ca: false,
+      sslmode: 'require'
+    },
+    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    max: 20
+  });
+} catch (error) {
+  console.error('Database pool creation failed:', error);
+  // Fallback for development
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/bugbuzzers',
+    ssl: false
+  });
+};
 
 // Initialize database tables
 async function initDB() {
