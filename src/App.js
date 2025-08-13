@@ -22,28 +22,40 @@ const BugBuzzers = () => {
   const [bugs, setBugs] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
 
-  // Check for existing token on app load
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const mockUser = {
-          id: payload.id,
-          email: payload.email,
-          name: payload.email.includes('admin') ? 'Admin User' : 'John Doe',
-          points: payload.isAdmin ? 0 : 1250,
-          isAdmin: payload.isAdmin
-        };
-        setUser(mockUser);
-        setCurrentView(mockUser.isAdmin ? 'admin' : 'dashboard');
-      } catch (error) {
-        localStorage.removeItem('token');
-        setCurrentView('landing');
-      }
-    }
-  }, []);
+// Check for existing token on app load and fetch real user data
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    // Validate token and fetch real user data
+    fetchUserProfile(token);
+  }
+}, []);
 
+// Add this new function
+const fetchUserProfile = async (token) => {
+  try {
+    // Verify token is still valid and get real user data
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const userData = await response.json();
+      setUser(userData);
+      setCurrentView(userData.isAdmin ? 'admin' : 'dashboard');
+    } else {
+      // Token is invalid, remove it
+      localStorage.removeItem('token');
+      setCurrentView('landing');
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    localStorage.removeItem('token');
+    setCurrentView('landing');
+  }
+};
   const getEstimatedReviewTime = (severity) => {
     const times = { high: 6, medium: 4, low: 2 };
     return times[severity] || 2;
