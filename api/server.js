@@ -26,16 +26,14 @@ try {
 
   console.log('Database URL format check:', databaseUrl.substring(0, 20) + '...');
 
-  // Create pool with working SSL configuration
-  pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false
-    } : false,
-    max: 5,
-    connectionTimeoutMillis: 30000,
-    idleTimeoutMillis: 30000,
-  });
+// Create pool with SSL completely disabled
+pool = new Pool({
+  connectionString: databaseUrl,
+  ssl: false, // Force disable SSL
+  max: 5,
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 30000,
+});
 
   console.log('✅ Database pool created successfully');
 } catch (error) {
