@@ -15,10 +15,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Database connection with aggressive SSL handling
-const { Pool } = require('pg');
-
-// Parse DATABASE_URL manually to handle SSL properly
+// Database connection - Fixed version
 let pool;
 try {
   const databaseUrl = process.env.DATABASE_URL;
@@ -29,12 +26,11 @@ try {
 
   console.log('Database URL format check:', databaseUrl.substring(0, 20) + '...');
 
-  // Create pool with explicit SSL configuration
+  // Create pool with working SSL configuration
   pool = new Pool({
     connectionString: databaseUrl,
     ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false,
-      require: true
+      rejectUnauthorized: false
     } : false,
     max: 5,
     connectionTimeoutMillis: 30000,
@@ -52,7 +48,7 @@ try {
   };
 }
 
-// Test connection with retry logic
+// Test database connection
 async function testDatabaseConnection() {
   let retries = 3;
   while (retries > 0) {
@@ -75,27 +71,17 @@ async function testDatabaseConnection() {
   return false;
 }
 
-// Test connection on startup
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('Database connection test failed:', err);
-    console.error('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    console.error('Environment:', process.env.NODE_ENV);
-  } else {
-    console.log('✅ Database connection successful');
-    release();
-  }
-});
-
-// Initialize database tables
 // Initialize database tables
 async function initDB() {
   try {
     console.log('🔄 Initializing database...');
     
     // Test connection first
-    await pool.query('SELECT NOW()');
-    console.log('✅ Database connection verified');
+    const connectionOk = await testDatabaseConnection();
+    if (!connectionOk) {
+      console.log('⚠️ Skipping database initialization due to connection issues');
+      return;
+    }
     
     // Users table
     await pool.query(`
