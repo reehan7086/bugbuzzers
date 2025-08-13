@@ -15,13 +15,17 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Database connection with better error handling
+// Database connection with aggressive SSL handling
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? {
+  ssl: {
     rejectUnauthorized: false,
-    sslmode: 'require'
-  } : false,
+    require: true,
+    ca: null,
+    key: null,
+    cert: null,
+    checkServerIdentity: () => undefined
+  },
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
   max: 10
