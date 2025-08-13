@@ -22,66 +22,112 @@ const BugBuzzers = () => {
   const [bugs, setBugs] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
 
-// Update your useEffect in App.js
-useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (token) {
+  // Add email verification handler function - MOVED BEFORE useEffect
+  const handleEmailVerification = async (token) => {
+    setLoading(true);
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const response = await fetch(`/api/auth/verify-email?token=${token}`);
       
-      // Check if token is expired
-      const now = Date.now() / 1000;
-      if (payload.exp && payload.exp < now) {
+      if (response.ok) {
+        setCurrentView('verify-email');
+        // Update user's email verification status
+        if (user) {
+          setUser({ ...user, emailVerified: true });
+        }
+      } else {
+        const error = await response.json();
+        setError(error.error || 'Verification failed');
+        setCurrentView('landing');
+      }
+    } catch (error) {
+      setError('Verification failed. Please try again.');
+      setCurrentView('landing');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update your useEffect to handle verification page - MOVED BEFORE ANY EARLY RETURNS
+  useEffect(() => {
+    // Check if this is a verification link
+    const urlParams = new URLSearchParams(window.location.search);
+    const verificationToken = urlParams.get('token');
+    
+    if (window.location.pathname === '/verify-email' && verificationToken) {
+      handleEmailVerification(verificationToken);
+      return;
+    }
+
+    // Existing token logic
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        const now = Date.now() / 1000;
+        if (payload.exp && payload.exp < now) {
+          localStorage.removeItem('token');
+          setCurrentView('landing');
+          return;
+        }
+
+        const user = {
+          id: payload.id,
+          email: payload.email,
+          name: payload.name || 'User',
+          points: payload.points || 0,
+          isAdmin: payload.isAdmin || false,
+          emailVerified: payload.emailVerified || false
+        };
+        
+        setUser(user);
+        setCurrentView(user.isAdmin ? 'admin' : 'dashboard');
+      } catch (error) {
+        console.error('Token parsing error:', error);
         localStorage.removeItem('token');
         setCurrentView('landing');
-        return;
       }
+    }
+  }, []);
 
-      // Create user from token data (now includes name and points)
-      const user = {
-        id: payload.id,
-        email: payload.email,
-        name: payload.name || 'User',
-        points: payload.points || 0,
-        isAdmin: payload.isAdmin || false
-      };
-      
-      console.log('Restored user from token:', user);
-      setUser(user);
-      setCurrentView(user.isAdmin ? 'admin' : 'dashboard');
+  // Load data when user changes - ALSO MOVED BEFORE EARLY RETURNS
+  useEffect(() => {
+    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
+      if (user.isAdmin) {
+        loadBugs();
+      } else {
+        loadUserBugs();
+      }
+      loadLeaderboard();
+    }
+  }, [user, currentView]);
+
+  // Add this new function
+  const fetchUserProfile = async (token) => {
+    try {
+      // Verify token is still valid and get real user data
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setCurrentView(userData.isAdmin ? 'admin' : 'dashboard');
+      } else {
+        // Token is invalid, remove it
+        localStorage.removeItem('token');
+        setCurrentView('landing');
+      }
     } catch (error) {
-      console.error('Token parsing error:', error);
+      console.error('Error fetching user profile:', error);
       localStorage.removeItem('token');
       setCurrentView('landing');
     }
-  }
-}, []);
+  };
 
-// Add this new function
-const fetchUserProfile = async (token) => {
-  try {
-    // Verify token is still valid and get real user data
-    const response = await fetch('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      const userData = await response.json();
-      setUser(userData);
-      setCurrentView(userData.isAdmin ? 'admin' : 'dashboard');
-    } else {
-      // Token is invalid, remove it
-      localStorage.removeItem('token');
-      setCurrentView('landing');
-    }
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    localStorage.removeItem('token');
-    setCurrentView('landing');
-  }
-};
   const getEstimatedReviewTime = (severity) => {
     const times = { high: 6, medium: 4, low: 2 };
     return times[severity] || 2;
@@ -104,93 +150,93 @@ const fetchUserProfile = async (token) => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  
-  if (!loginForm.email || !loginForm.password) {
-    setError('Please enter both email and password');
-    return;
-  }
-  
-  setLoading(true);
-  setError('');
-  
-  try {
-    const userData = await api.login(loginForm.email, loginForm.password);
-    setUser(userData);
-    setCurrentView(userData.isAdmin ? 'admin' : 'dashboard');
-    setLoginForm({ email: '', password: '' });
-  } catch (error) {
-    console.log('API login failed, checking demo accounts:', error.message);
+  const handleLogin = async (e) => {
+    e.preventDefault();
     
-    // Demo login fallback
-    if (loginForm.email === 'admin@bugbuzzers.com' && loginForm.password === 'admin123') {
-      const adminUser = { id: 2, name: 'Admin User', email: loginForm.email, points: 0, isAdmin: true };
-      setUser(adminUser);
-      setCurrentView('admin');
-      setLoginForm({ email: '', password: '' });
-    } else {
-      setError('Login failed. Try the quick login buttons or check your credentials.');
+    if (!loginForm.email || !loginForm.password) {
+      setError('Please enter both email and password');
+      return;
     }
-  } finally {
-    setLoading(false);
-  }
-};
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const userData = await api.login(loginForm.email, loginForm.password);
+      setUser(userData);
+      setCurrentView(userData.isAdmin ? 'admin' : 'dashboard');
+      setLoginForm({ email: '', password: '' });
+    } catch (error) {
+      console.log('API login failed, checking demo accounts:', error.message);
+      
+      // Demo login fallback
+      if (loginForm.email === 'admin@bugbuzzers.com' && loginForm.password === 'admin123') {
+        const adminUser = { id: 2, name: 'Admin User', email: loginForm.email, points: 0, isAdmin: true };
+        setUser(adminUser);
+        setCurrentView('admin');
+        setLoginForm({ email: '', password: '' });
+      } else {
+        setError('Login failed. Try the quick login buttons or check your credentials.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const handleSignup = async (e) => {
-  e.preventDefault();
-  if (signupForm.password !== signupForm.confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-  
-  setLoading(true);
-  setError('');
-  
-  try {
-    const userData = await api.signup(signupForm.name, signupForm.email, signupForm.password);
-    setUser(userData);
-    setCurrentView('dashboard');
-    setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
-  } catch (error) {
-    console.log('API signup failed, using demo mode:', error.message);
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    if (signupForm.password !== signupForm.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
     
-    // Create demo user for development/testing
-    const demoUser = {
-      id: Date.now(),
-      name: signupForm.name,
-      email: signupForm.email,
-      points: 0,
-      isAdmin: false
-    };
+    setLoading(true);
+    setError('');
     
-    // Create fake token for demo
-    const fakeToken = btoa(JSON.stringify({
-      id: demoUser.id,
-      email: demoUser.email,
-      isAdmin: false
-    }));
-    localStorage.setItem('token', fakeToken);
-    
-    setUser(demoUser);
-    setCurrentView('dashboard');
-    setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
-    
-    // Show success message instead of error
-    alert('Account created successfully! (Demo mode)');
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const userData = await api.signup(signupForm.name, signupForm.email, signupForm.password);
+      setUser(userData);
+      setCurrentView('dashboard');
+      setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
+    } catch (error) {
+      console.log('API signup failed, using demo mode:', error.message);
+      
+      // Create demo user for development/testing
+      const demoUser = {
+        id: Date.now(),
+        name: signupForm.name,
+        email: signupForm.email,
+        points: 0,
+        isAdmin: false
+      };
+      
+      // Create fake token for demo
+      const fakeToken = btoa(JSON.stringify({
+        id: demoUser.id,
+        email: demoUser.email,
+        isAdmin: false
+      }));
+      localStorage.setItem('token', fakeToken);
+      
+      setUser(demoUser);
+      setCurrentView('dashboard');
+      setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
+      
+      // Show success message instead of error
+      alert('Account created successfully! (Demo mode)');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBugSubmit = async (e) => {
     e.preventDefault();
 
     // Check email verification
-  if (!user?.emailVerified) {
-    setError('Please verify your email address before reporting bugs.');
-    return;
-  }
+    if (!user?.emailVerified) {
+      setError('Please verify your email address before reporting bugs.');
+      return;
+    }
     setLoading(true);
     setError('');
     
@@ -302,18 +348,6 @@ const handleSignup = async (e) => {
     }
   };
 
-  // Load data when user changes
-  useEffect(() => {
-    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
-      if (user.isAdmin) {
-        loadBugs();
-      } else {
-        loadUserBugs();
-      }
-      loadLeaderboard();
-    }
-  }, [user, currentView]);
-
   const ErrorMessage = () => {
     if (!error) return null;
     return (
@@ -336,153 +370,87 @@ const handleSignup = async (e) => {
     );
   };
 
-// Add this EmailVerificationBanner component after your LoadingSpinner function
-const EmailVerificationBanner = () => {
-  const [resending, setResending] = useState(false);
-  
-  const resendVerification = async () => {
-    setResending(true);
-    try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+  // Add this EmailVerificationBanner component after your LoadingSpinner function
+  const EmailVerificationBanner = () => {
+    const [resending, setResending] = useState(false);
+    
+    const resendVerification = async () => {
+      setResending(true);
+      try {
+        const response = await fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          alert('Verification email sent! Please check your inbox.');
+        } else {
+          alert('Failed to send verification email. Please try again.');
         }
-      });
-      
-      if (response.ok) {
-        alert('Verification email sent! Please check your inbox.');
-      } else {
-        alert('Failed to send verification email. Please try again.');
+      } catch (error) {
+        alert('Error sending verification email.');
+      } finally {
+        setResending(false);
       }
-    } catch (error) {
-      alert('Error sending verification email.');
-    } finally {
-      setResending(false);
-    }
+    };
+
+    if (user?.emailVerified) return null;
+
+    return (
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <AlertCircle className="h-5 w-5 text-yellow-400" />
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-yellow-700">
+              <strong>Please verify your email address to access all features.</strong> Check your inbox for a verification email.{' '}
+              <button
+                onClick={resendVerification}
+                disabled={resending}
+                className="font-medium underline hover:text-yellow-600"
+              >
+                {resending ? 'Sending...' : 'Resend verification email'}
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
-  if (user?.emailVerified) return null;
+  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
+  // NOW WE CAN HAVE CONDITIONAL RETURNS
 
-  return (
-    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-      <div className="flex">
-        <div className="flex-shrink-0">
-          <AlertCircle className="h-5 w-5 text-yellow-400" />
-        </div>
-        <div className="ml-3">
-          <p className="text-sm text-yellow-700">
-            <strong>Please verify your email address to access all features.</strong> Check your inbox for a verification email.{' '}
+  // Add verification success page handling
+  if (currentView === 'verify-email') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Email Verified!</h2>
+            <p className="text-gray-600 mb-6">
+              Your email has been successfully verified. You now have full access to BugBuzzers!
+            </p>
             <button
-              onClick={resendVerification}
-              disabled={resending}
-              className="font-medium underline hover:text-yellow-600"
+              onClick={() => {
+                // Refresh user data and go to dashboard
+                setCurrentView('dashboard');
+                // Refresh the user to update emailVerified status
+                window.location.reload();
+              }}
+              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
             >
-              {resending ? 'Sending...' : 'Resend verification email'}
+              Go to Dashboard
             </button>
-          </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Add verification success page handling
-// Add this before your landing page check
-if (currentView === 'verify-email') {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-md w-full text-center">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Email Verified!</h2>
-          <p className="text-gray-600 mb-6">
-            Your email has been successfully verified. You now have full access to BugBuzzers!
-          </p>
-          <button
-            onClick={() => {
-              // Refresh user data and go to dashboard
-              setCurrentView('dashboard');
-              // Refresh the user to update emailVerified status
-              window.location.reload();
-            }}
-            className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
-          >
-            Go to Dashboard
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Update your useEffect to handle verification page
-useEffect(() => {
-  // Check if this is a verification link
-  const urlParams = new URLSearchParams(window.location.search);
-  const verificationToken = urlParams.get('token');
-  
-  if (window.location.pathname === '/verify-email' && verificationToken) {
-    handleEmailVerification(verificationToken);
-    return;
+    );
   }
-
-  // Existing token logic
-  const token = localStorage.getItem('token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      
-      const now = Date.now() / 1000;
-      if (payload.exp && payload.exp < now) {
-        localStorage.removeItem('token');
-        setCurrentView('landing');
-        return;
-      }
-
-      const user = {
-        id: payload.id,
-        email: payload.email,
-        name: payload.name || 'User',
-        points: payload.points || 0,
-        isAdmin: payload.isAdmin || false,
-        emailVerified: payload.emailVerified || false
-      };
-      
-      setUser(user);
-      setCurrentView(user.isAdmin ? 'admin' : 'dashboard');
-    } catch (error) {
-      console.error('Token parsing error:', error);
-      localStorage.removeItem('token');
-      setCurrentView('landing');
-    }
-  }
-}, []);
-
-// Add email verification handler function
-const handleEmailVerification = async (token) => {
-  setLoading(true);
-  try {
-    const response = await fetch(`/api/auth/verify-email?token=${token}`);
-    
-    if (response.ok) {
-      setCurrentView('verify-email');
-      // Update user's email verification status
-      if (user) {
-        setUser({ ...user, emailVerified: true });
-      }
-    } else {
-      const error = await response.json();
-      setError(error.error || 'Verification failed');
-      setCurrentView('landing');
-    }
-  } catch (error) {
-    setError('Verification failed. Please try again.');
-    setCurrentView('landing');
-  } finally {
-    setLoading(false);
-  }
-};
 
   // Navigation Component
   const Navigation = () => (
@@ -1016,174 +984,6 @@ const handleEmailVerification = async (token) => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Report Bug Page
-  if (currentView === 'report') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-        <Navigation />
-        <EmailVerificationBanner /> 
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
-            <p className="text-gray-600 mt-2">Help us improve by reporting bugs you find</p>
-          </div>
-
-          <form onSubmit={handleBugSubmit} className="bg-white rounded-lg shadow-sm p-8">
-            <ErrorMessage />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bug Title *</label>
-                <input
-                  type="text"
-                  value={bugForm.title}
-                  onChange={(e) => setBugForm({...bugForm, title: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Brief description of the bug"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">App/Website Name *</label>
-                <input
-                  type="text"
-                  value={bugForm.appName}
-                  onChange={(e) => setBugForm({...bugForm, appName: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Name of the application"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-              <textarea
-                value={bugForm.description}
-                onChange={(e) => setBugForm({...bugForm, description: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                rows="4"
-                placeholder="Detailed description of what happened"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Steps to Reproduce *</label>
-              <textarea
-                value={bugForm.steps}
-                onChange={(e) => setBugForm({...bugForm, steps: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                rows="4"
-                placeholder="1. Step one&#10;2. Step two&#10;3. Step three"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
-                <input
-                  type="text"
-                  value={bugForm.device}
-                  onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
-                <select
-                  value={bugForm.severity}
-                  onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  disabled={loading}
-                >
-                  <option value="low">Low (150 pts) - Minor issues</option>
-                  <option value="medium">Medium (300 pts) - Affects functionality</option>
-                  <option value="high">High (500 pts) - Critical issues</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Attachment (Optional)</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2">
-                  Upload screenshots, videos, or other files (Max 100MB)
-                </p>
-                <input
-                  type="file"
-                  onChange={(e) => setBugForm({...bugForm, attachment: e.target.files[0]})}
-                  className="hidden"
-                  id="file-upload"
-                  accept="image/*,video/*,.pdf,.doc,.docx"
-                  disabled={loading}
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg cursor-pointer hover:bg-purple-700 transition-colors"
-                >
-                  Choose File
-                </label>
-                {bugForm.attachment && (
-                  <p className="mt-2 text-sm text-gray-600">{bugForm.attachment.name}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={bugForm.anonymous}
-                  onChange={(e) => setBugForm({...bugForm, anonymous: e.target.checked})}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                  disabled={loading}
-                />
-                <span className="ml-2 text-sm text-gray-700">Submit anonymously</span>
-              </label>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <h3 className="font-medium text-blue-900 mb-2">Estimated Review Time</h3>
-              <p className="text-sm text-blue-700">
-                Your bug will be reviewed within approximately {getEstimatedReviewTime(bugForm.severity)} hours.
-                If verified, you'll earn {getPointsForSeverity(bugForm.severity)} points!
-              </p>
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => setCurrentView('dashboard')}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Submitting...' : 'Submit Bug Report'}
-              </button>
-            </div>
-          </form>
         </main>
       </div>
     );
