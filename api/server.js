@@ -15,32 +15,40 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Database connection
-let pool;
-try {
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-      ca: false,
-      sslmode: 'require'
-    },
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000,
-    max: 20
-  });
-} catch (error) {
-  console.error('Database pool creation failed:', error);
-  // Fallback for development
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/bugbuzzers',
-    ssl: false
-  });
-};
+// Database connection with better error handling
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false,
+    sslmode: 'require'
+  } : false,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 10
+});
 
+// Test connection on startup
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('Database connection test failed:', err);
+    console.error('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.error('Environment:', process.env.NODE_ENV);
+  } else {
+    console.log('✅ Database connection successful');
+    release();
+  }
+});
+
+// Initialize database tables
 // Initialize database tables
 async function initDB() {
   try {
+    console.log('🔄 Initializing database...');
+    
+    // Test connection first
+    await pool.query('SELECT NOW()');
+    console.log('✅ Database connection verified');
+    
     // Users table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -53,6 +61,7 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('✅ Users table ready');
 
     // Bugs table
     await pool.query(`
@@ -73,6 +82,7 @@ async function initDB() {
         review_time INTEGER NOT NULL
       )
     `);
+    console.log('✅ Bugs table ready');
 
     // Create default admin user
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@bugbuzzers.com']);
@@ -82,11 +92,18 @@ async function initDB() {
         'INSERT INTO users (name, email, password, is_admin) VALUES ($1, $2, $3, $4)',
         ['Admin User', 'admin@bugbuzzers.com', hashedPassword, true]
       );
+      console.log('✅ Admin user created');
     }
 
-    console.log('Database initialized successfully');
+    console.log('🎉 Database initialized successfully');
   } catch (error) {
-    console.error('Database initialization error:', error);
+    console.error('❌ Database initialization error:', error);
+    console.error('Full error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint
+    });
   }
 }
 
