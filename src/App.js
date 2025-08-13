@@ -22,12 +22,38 @@ const BugBuzzers = () => {
   const [bugs, setBugs] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
 
-// Check for existing token on app load and fetch real user data
+// Simple token-based approach (no API call needed)
 useEffect(() => {
   const token = localStorage.getItem('token');
   if (token) {
-    // Validate token and fetch real user data
-    fetchUserProfile(token);
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      // Check if token is expired
+      const now = Date.now() / 1000;
+      if (payload.exp && payload.exp < now) {
+        localStorage.removeItem('token');
+        setCurrentView('landing');
+        return;
+      }
+
+      // Create user from token data
+      const user = {
+        id: payload.id,
+        email: payload.email,
+        name: payload.name || (payload.email.includes('admin') ? 'Admin User' : 'User'),
+        points: payload.points || (payload.isAdmin ? 0 : 1250),
+        isAdmin: payload.isAdmin || false
+      };
+      
+      console.log('Restored user from token:', user);
+      setUser(user);
+      setCurrentView(user.isAdmin ? 'admin' : 'dashboard');
+    } catch (error) {
+      console.error('Token parsing error:', error);
+      localStorage.removeItem('token');
+      setCurrentView('landing');
+    }
   }
 }, []);
 
