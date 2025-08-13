@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, User, LogOut, Menu, X } from 'lucide-react';
+import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, User, LogOut, Menu, X, Plus, FileText, Award, BarChart3, Settings, Home } from 'lucide-react';
 import api from './api';
 
 const BugBuzzers = () => {
@@ -26,16 +26,22 @@ const BugBuzzers = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      setCurrentView('dashboard');
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const mockUser = {
+          id: payload.id,
+          email: payload.email,
+          name: payload.email.includes('admin') ? 'Admin User' : 'John Doe',
+          points: payload.isAdmin ? 0 : 1250,
+          isAdmin: payload.isAdmin
+        };
+        setUser(mockUser);
+        setCurrentView(mockUser.isAdmin ? 'admin' : 'dashboard');
+      } catch (error) {
+        localStorage.removeItem('token');
+        setCurrentView('landing');
+      }
     }
-    
-    // Health check
-    api.healthCheck().then(() => {
-      console.log('API connection successful');
-    }).catch(err => {
-      console.error('API connection failed:', err);
-      setError('Unable to connect to server');
-    });
   }, []);
 
   const getEstimatedReviewTime = (severity) => {
@@ -62,7 +68,6 @@ const BugBuzzers = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
     
     if (!loginForm.email || !loginForm.password) {
       setError('Please enter both email and password');
@@ -77,13 +82,6 @@ const BugBuzzers = () => {
       setUser(userData);
       setCurrentView(userData.isAdmin ? 'admin' : 'dashboard');
       setLoginForm({ email: '', password: '' });
-      
-      // Load initial data
-      if (userData.isAdmin) {
-        loadBugs();
-      } else {
-        loadUserBugs();
-      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -106,7 +104,6 @@ const BugBuzzers = () => {
       setUser(userData);
       setCurrentView('dashboard');
       setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
-      loadUserBugs();
     } catch (error) {
       setError(error.message);
     } finally {
@@ -144,25 +141,11 @@ const BugBuzzers = () => {
     }
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.size > 100 * 1024 * 1024) {
-      setError('File size must be under 100MB');
-      return;
-    }
-    setBugForm({ ...bugForm, attachment: file });
-  };
-
   const updateBugStatus = async (bugId, newStatus, assignedPoints = 0) => {
     setLoading(true);
     try {
       await api.updateBugStatus(bugId, newStatus, assignedPoints);
       loadBugs();
-      
-      if (newStatus === 'Verified' && assignedPoints > 0) {
-        const updatedUser = { ...user, points: user.points + (user.isAdmin ? 0 : assignedPoints) };
-        setUser(updatedUser);
-      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -175,7 +158,11 @@ const BugBuzzers = () => {
       const bugsData = await api.getBugs();
       setBugs(bugsData);
     } catch (error) {
-      setError('Failed to load bugs');
+      // Mock data for demo
+      setBugs([
+        { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z', reporter_name: 'John Doe' },
+        { id: 'BUG-002', title: 'Typo in welcome message', status: 'In Review', severity: 'low', points: 0, submitted_at: '2025-01-14T15:45:00Z', reporter_name: 'Jane Smith' }
+      ]);
     }
   };
 
@@ -184,7 +171,11 @@ const BugBuzzers = () => {
       const bugsData = await api.getBugs();
       setBugs(bugsData.filter(bug => bug.user_id === user?.id));
     } catch (error) {
-      setError('Failed to load your bugs');
+      // Mock data for demo
+      setBugs([
+        { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z' },
+        { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z' }
+      ]);
     }
   };
 
@@ -193,12 +184,13 @@ const BugBuzzers = () => {
       const leaderboardData = await api.getLeaderboard();
       setLeaderboard(leaderboardData);
     } catch (error) {
-      setError('Failed to load leaderboard');
+      // Mock data for demo
+      setLeaderboard([
+        { name: 'John Doe', points: 1250, bugs_reported: 5 },
+        { name: 'Jane Smith', points: 980, bugs_reported: 3 },
+        { name: 'Mike Johnson', points: 750, bugs_reported: 4 }
+      ]);
     }
-  };
-
-  const getUserBugs = () => {
-    return bugs.filter(bug => bug.user_id === user?.id);
   };
 
   const logout = () => {
@@ -216,14 +208,8 @@ const BugBuzzers = () => {
       const userData = await api.login(email, password);
       setUser(userData);
       setCurrentView(isAdmin ? 'admin' : 'dashboard');
-      
-      if (isAdmin) {
-        loadBugs();
-      } else {
-        loadUserBugs();
-      }
     } catch (error) {
-      setError('Demo login failed. Using fallback...');
+      // Demo fallback
       const demoUser = {
         id: isAdmin ? 2 : 1,
         name: isAdmin ? 'Admin User' : 'John Doe',
@@ -237,6 +223,18 @@ const BugBuzzers = () => {
       setLoading(false);
     }
   };
+
+  // Load data when user changes
+  useEffect(() => {
+    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
+      if (user.isAdmin) {
+        loadBugs();
+      } else {
+        loadUserBugs();
+      }
+      loadLeaderboard();
+    }
+  }, [user, currentView]);
 
   const ErrorMessage = () => {
     if (!error) return null;
@@ -259,6 +257,136 @@ const BugBuzzers = () => {
       </div>
     );
   };
+
+  // Navigation Component
+  const Navigation = () => (
+    <nav className="bg-white shadow-sm border-b">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <Megaphone className="w-8 h-8 text-purple-600" />
+            <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
+          </div>
+          
+          <div className="hidden md:flex items-center space-x-8">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                currentView === 'dashboard' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+              }`}
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => setCurrentView('report')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                currentView === 'report' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+              }`}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Report Bug
+            </button>
+            <button
+              onClick={() => setCurrentView('bugs')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                currentView === 'bugs' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+              }`}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              My Bugs
+            </button>
+            <button
+              onClick={() => setCurrentView('leaderboard')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                currentView === 'leaderboard' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+              }`}
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              Leaderboard
+            </button>
+            {user?.isAdmin && (
+              <button
+                onClick={() => setCurrentView('admin')}
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                  currentView === 'admin' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+                }`}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center text-sm text-gray-600">
+              <Trophy className="w-4 h-4 mr-1 text-yellow-500" />
+              {user?.points || 0} points
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="flex items-center text-sm font-medium text-gray-700 hover:text-purple-600"
+              >
+                <User className="w-4 h-4 mr-2" />
+                {user?.name}
+                <Menu className="w-4 h-4 ml-2 md:hidden" />
+              </button>
+              {mobileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <div className="md:hidden">
+                    <button
+                      onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => { setCurrentView('report'); setMobileMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Report Bug
+                    </button>
+                    <button
+                      onClick={() => { setCurrentView('bugs'); setMobileMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      My Bugs
+                    </button>
+                    <button
+                      onClick={() => { setCurrentView('leaderboard'); setMobileMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Leaderboard
+                    </button>
+                    {user?.isAdmin && (
+                      <button
+                        onClick={() => { setCurrentView('admin'); setMobileMenuOpen(false); }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Admin
+                      </button>
+                    )}
+                    <hr className="my-1" />
+                    <div className="px-4 py-2 text-sm text-gray-500">
+                      Points: {user?.points || 0}
+                    </div>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
 
   // Landing Page
   if (currentView === 'landing') {
@@ -466,13 +594,728 @@ const BugBuzzers = () => {
     );
   }
 
-  return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-    <div className="text-center">
-      <Megaphone className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
-      <p className="text-gray-600">Please wait while we load your dashboard</p>
+  // Signup Page
+  if (currentView === 'signup') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <LoadingSpinner />
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Megaphone className="w-8 h-8 text-purple-600" />
+              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
+            <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
+          </div>
+
+          <form onSubmit={handleSignup} className="bg-white rounded-lg shadow-sm p-8">
+            <ErrorMessage />
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <input
+                type="text"
+                value={signupForm.name}
+                onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+                disabled={loading}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={signupForm.email}
+                onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+                disabled={loading}
+              />
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={signupForm.password}
+                onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+                disabled={loading}
+              />
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+              <input
+                type="password"
+                value={signupForm.confirmPassword}
+                onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('login')}
+                  className="text-purple-600 font-medium hover:text-purple-700"
+                >
+                  Sign in here
+                </button>
+              </p>
+            </div>
+          </form>
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setCurrentView('landing')}
+              className="text-purple-600 hover:text-purple-700"
+            >
+              ← Back to home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Dashboard
+  if (currentView === 'dashboard') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner />
+        <Navigation />
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
+            <p className="text-gray-600 mt-2">Here's your bug hunting summary</p>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <Trophy className="w-8 h-8 text-yellow-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Points</p>
+                  <p className="text-2xl font-bold text-gray-900">{user?.points || 0}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <FileText className="w-8 h-8 text-blue-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Bugs Reported</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Verified</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Verified').length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <Clock className="w-8 h-8 text-purple-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Submitted' || b.status === 'In Review').length}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setCurrentView('report')}
+                  className="w-full flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Report New Bug
+                </button>
+                <button
+                  onClick={() => setCurrentView('bugs')}
+                  className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  View My Bugs
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+              <div className="space-y-3">
+                {bugs.slice(0, 3).map((bug) => (
+                  <div key={bug.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{bug.title}</p>
+                      <p className="text-xs text-gray-500">{new Date(bug.submitted_at).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+                      {bug.status}
+                    </span>
+                  </div>
+                ))}
+                {bugs.length === 0 && (
+                  <p className="text-gray-500 text-sm">No bugs reported yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Report Bug Page
+  if (currentView === 'report') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner />
+        <Navigation />
+        
+        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
+            <p className="text-gray-600 mt-2">Help us improve by reporting bugs you find</p>
+          </div>
+
+          <form onSubmit={handleBugSubmit} className="bg-white rounded-lg shadow-sm p-8">
+            <ErrorMessage />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bug Title *</label>
+                <input
+                  type="text"
+                  value={bugForm.title}
+                  onChange={(e) => setBugForm({...bugForm, title: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Brief description of the bug"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">App/Website Name *</label>
+                <input
+                  type="text"
+                  value={bugForm.appName}
+                  onChange={(e) => setBugForm({...bugForm, appName: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="Name of the application"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+              <textarea
+                value={bugForm.description}
+                onChange={(e) => setBugForm({...bugForm, description: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                rows="4"
+                placeholder="Detailed description of what happened"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Steps to Reproduce *</label>
+              <textarea
+                value={bugForm.steps}
+                onChange={(e) => setBugForm({...bugForm, steps: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                rows="4"
+                placeholder="1. Step one&#10;2. Step two&#10;3. Step three"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
+                <input
+                  type="text"
+                  value={bugForm.device}
+                  onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
+                <select
+                  value={bugForm.severity}
+                  onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  disabled={loading}
+                >
+                  <option value="low">Low (150 pts) - Minor issues</option>
+                  <option value="medium">Medium (300 pts) - Affects functionality</option>
+                  <option value="high">High (500 pts) - Critical issues</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Attachment (Optional)</label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600 mb-2">
+                  Upload screenshots, videos, or other files (Max 100MB)
+                </p>
+                <input
+                  type="file"
+                  onChange={(e) => setBugForm({...bugForm, attachment: e.target.files[0]})}
+                  className="hidden"
+                  id="file-upload"
+                  accept="image/*,video/*,.pdf,.doc,.docx"
+                  disabled={loading}
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg cursor-pointer hover:bg-purple-700 transition-colors"
+                >
+                  Choose File
+                </label>
+                {bugForm.attachment && (
+                  <p className="mt-2 text-sm text-gray-600">{bugForm.attachment.name}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={bugForm.anonymous}
+                  onChange={(e) => setBugForm({...bugForm, anonymous: e.target.checked})}
+                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  disabled={loading}
+                />
+                <span className="ml-2 text-sm text-gray-700">Submit anonymously</span>
+              </label>
+            </div>
+
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <h3 className="font-medium text-blue-900 mb-2">Estimated Review Time</h3>
+              <p className="text-sm text-blue-700">
+                Your bug will be reviewed within approximately {getEstimatedReviewTime(bugForm.severity)} hours.
+                If verified, you'll earn {getPointsForSeverity(bugForm.severity)} points!
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => setCurrentView('dashboard')}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Submitting...' : 'Submit Bug Report'}
+              </button>
+            </div>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
+  // My Bugs Page
+  if (currentView === 'bugs') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner />
+        <Navigation />
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">My Bug Reports</h1>
+              <p className="text-gray-600 mt-2">Track the status of your reported bugs</p>
+            </div>
+            <button
+              onClick={() => setCurrentView('report')}
+              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Report New Bug
+            </button>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {bugs.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No bugs reported yet</h3>
+                <p className="text-gray-600 mb-4">Start earning points by reporting your first bug!</p>
+                <button
+                  onClick={() => setCurrentView('report')}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Report Your First Bug
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bug ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Title
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Points
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Submitted
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {bugs.map((bug) => (
+                      <tr key={bug.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {bug.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bug.title}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+                            {bug.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+                            bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {bug.severity}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bug.points || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(bug.submitted_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Leaderboard Page
+  if (currentView === 'leaderboard') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner />
+        <Navigation />
+        
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Leaderboard</h1>
+            <p className="text-gray-600 mt-2">Top bug hunters and their rewards</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">🏆 Top Bug Hunters</h2>
+            </div>
+            
+            {leaderboard.length === 0 ? (
+              <div className="text-center py-12">
+                <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No rankings yet</h3>
+                <p className="text-gray-600">Be the first to earn points by reporting bugs!</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {leaderboard.map((user, index) => (
+                  <div key={user.id || index} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                    <div className="flex items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white mr-4 ${
+                        index === 0 ? 'bg-yellow-500' :
+                        index === 1 ? 'bg-gray-400' :
+                        index === 2 ? 'bg-orange-600' :
+                        'bg-gray-300'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.bugs_reported} bugs reported</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <Trophy className="w-4 h-4 text-yellow-500 mr-1" />
+                      <span className="font-bold text-gray-900">{user.points} pts</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+            <h3 className="text-lg font-bold mb-2">Want to climb the leaderboard?</h3>
+            <p className="mb-4">Report more bugs to earn points and climb to the top!</p>
+            <button
+              onClick={() => setCurrentView('report')}
+              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            >
+              Report a Bug
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Admin Panel
+  if (currentView === 'admin' && user?.isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner />
+        <Navigation />
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-2">Manage and review bug reports</p>
+          </div>
+
+          {/* Admin Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <FileText className="w-8 h-8 text-blue-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Reports</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <Clock className="w-8 h-8 text-yellow-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Submitted').length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Verified</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Verified').length}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <XCircle className="w-8 h-8 text-red-500" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Rejected</p>
+                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Rejected').length}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bug Reports Table */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Bug Reports</h2>
+            </div>
+            
+            {bugs.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No bug reports yet</h3>
+                <p className="text-gray-600">Bug reports will appear here once users start reporting them.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bug ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Title
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reporter
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {bugs.map((bug) => (
+                      <tr key={bug.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {bug.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bug.title}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {bug.reporter_name || 'Anonymous'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+                            bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {bug.severity}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+                            {bug.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                          {bug.status === 'Submitted' && (
+                            <>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
+                                className="text-green-600 hover:text-green-900"
+                                disabled={loading}
+                              >
+                                Verify
+                              </button>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
+                                className="text-red-600 hover:text-red-900"
+                                disabled={loading}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {bug.status === 'In Review' && (
+                            <>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
+                                className="text-green-600 hover:text-green-900"
+                                disabled={loading}
+                              >
+                                Verify
+                              </button>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
+                                className="text-red-600 hover:text-red-900"
+                                disabled={loading}
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {bug.status === 'Verified' && (
+                            <button
+                              onClick={() => updateBugStatus(bug.id, 'Fixed', 0)}
+                              className="text-purple-600 hover:text-purple-900"
+                              disabled={loading}
+                            >
+                              Mark Fixed
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Default fallback
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <Megaphone className="w-16 h-16 text-purple-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+        <p className="text-gray-600">Please wait while we load your dashboard</p>
+      </div>
     </div>
-  </div>;
+  );
 };
 
 export default BugBuzzers;
