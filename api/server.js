@@ -50,22 +50,46 @@ try {
   };
 }
 
-// Email configuration
+// Email configuration - REPLACE the existing email section with this
 let emailTransporter;
 try {
-  emailTransporter = nodemailer.createTransporter({
+  // Verify required environment variables
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    throw new Error('EMAIL_USER and EMAIL_PASSWORD environment variables are required');
+  }
+
+  emailTransporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: process.env.EMAIL_USER || 'your-email@gmail.com',
-      pass: process.env.EMAIL_PASSWORD || 'your-app-password'
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    },
+    // Add these options for better reliability
+    pool: true,
+    maxConnections: 1,
+    rateDelta: 20000,
+    rateLimit: 5
+  });
+
+  // Test the connection
+  emailTransporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ Email transporter verification failed:', error.message);
+    } else {
+      console.log('✅ Email transporter configured and verified');
     }
   });
-  console.log('✅ Email transporter configured');
+
 } catch (error) {
   console.error('❌ Email transporter setup failed:', error.message);
   // Create dummy transporter for development
   emailTransporter = {
-    sendMail: () => Promise.resolve({ messageId: 'dev-mode' })
+    sendMail: (options) => {
+      console.log('📧 DUMMY EMAIL (would send to):', options.to);
+      console.log('📧 DUMMY EMAIL (subject):', options.subject);
+      return Promise.resolve({ messageId: 'dev-mode-fallback' });
+    },
+    verify: () => Promise.resolve(true)
   };
 }
 
