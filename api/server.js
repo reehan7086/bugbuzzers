@@ -1,3 +1,5 @@
+// Force disable SSL verification globally
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const path = require('path');
 const express = require('express');
 const { Pool } = require('pg');
