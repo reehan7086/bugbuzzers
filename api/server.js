@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -258,7 +259,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve React app for all other routes
-app.use(express.static('build'));
+app.use(express.static(path.join(__dirname, '../build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
