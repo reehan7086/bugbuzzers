@@ -14,34 +14,54 @@ class BugBuzzersAPI {
     }
   }
 
-  async request(endpoint, options = {}) {
-    const url = `${API_BASE_URL}/api${endpoint}`;
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
+async request(endpoint, options = {}) {
+  const url = `${API_BASE_URL}/api${endpoint}`;
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
 
-    if (this.token) {
-      config.headers.Authorization = `Bearer ${this.token}`;
-    }
-
-    try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Request failed');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
+  if (this.token) {
+    config.headers.Authorization = `Bearer ${this.token}`;
   }
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      let errorMessage = 'Request failed';
+      
+      try {
+        // Try to parse as JSON first
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || 'Request failed';
+      } catch (jsonError) {
+        // If JSON parsing fails, get text response
+        try {
+          errorMessage = await response.text() || `HTTP ${response.status}`;
+        } catch (textError) {
+          errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+        }
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // Try to parse response as JSON
+    try {
+      return await response.json();
+    } catch (jsonError) {
+      // If response is not JSON, return the text
+      return await response.text();
+    }
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
 
   // Auth methods
   async login(email, password) {
