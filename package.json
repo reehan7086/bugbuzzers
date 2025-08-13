@@ -18,14 +18,13 @@
     "helmet": "^7.0.0",
     "path": "^0.12.7"
   },
-  "scripts": {
-    "start": "node api/server.js",
-    "dev": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "postbuild": "cp -r build/* . 2>/dev/null || xcopy build\\* . /E /I /Y 2>nul || true"
-  },
+"scripts": {
+  "start": "node api/server.js",
+  "dev": "react-scripts start", 
+  "build": "react-scripts build && node -e \"const fs = require('fs'); const path = require('path'); if (fs.existsSync('build')) { console.log('Build folder exists, ready for deployment'); }\"",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
