@@ -7,6 +7,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -48,6 +50,84 @@ try {
   };
 }
 
+// Email configuration
+let emailTransporter;
+try {
+  emailTransporter = nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER || 'your-email@gmail.com',
+      pass: process.env.EMAIL_PASSWORD || 'your-app-password'
+    }
+  });
+  console.log('✅ Email transporter configured');
+} catch (error) {
+  console.error('❌ Email transporter setup failed:', error.message);
+  // Create dummy transporter for development
+  emailTransporter = {
+    sendMail: () => Promise.resolve({ messageId: 'dev-mode' })
+  };
+}
+
+// Email helper function
+async function sendVerificationEmail(email, name, token) {
+  const verificationUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/verify-email?token=${token}`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
+    to: email,
+    subject: 'Verify your BugBuzzers account',
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
+          <p style="color: white; margin: 10px 0 0 0;">Welcome to the Bug Bounty Platform</p>
+        </div>
+        
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Hi ${name}!</h2>
+          <p style="color: #666; line-height: 1.6;">
+            Thanks for joining BugBuzzers! To complete your registration and start earning rewards 
+            for reporting bugs, please verify your email address.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
+                      border-radius: 5px; display: inline-block; font-weight: bold;">
+              Verify Email Address
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}">${verificationUrl}</a>
+          </p>
+          
+          <p style="color: #666; font-size: 14px;">
+            This link will expire in 24 hours. If you didn't create an account with BugBuzzers, 
+            you can safely ignore this email.
+          </p>
+        </div>
+        
+        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
+          <p>Happy Bug Hunting! 🕵️‍♀️</p>
+          <p style="margin: 5px 0 0 0;">The BugBuzzers Team</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    const result = await emailTransporter.sendMail(mailOptions);
+    console.log('✅ Verification email sent:', result.messageId);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to send verification email:', error);
+    return false;
+  }
+}
+
 // Test database connection
 async function testDatabaseConnection() {
   let retries = 3;
@@ -83,7 +163,7 @@ async function initDB() {
       return;
     }
     
-    // Users table
+    // Users table with email verification
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -92,10 +172,23 @@ async function initDB() {
         password VARCHAR(255) NOT NULL,
         points INTEGER DEFAULT 0,
         is_admin BOOLEAN DEFAULT FALSE,
+        email_verified BOOLEAN DEFAULT FALSE,
+        verification_token VARCHAR(255),
+        verification_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
     console.log('✅ Users table ready');
+
+    // Add columns to existing table if they don't exist
+    try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP');
+      console.log('✅ Email verification columns added');
+    } catch (error) {
+      console.log('ℹ️ Email verification columns already exist');
+    }
 
     // Bugs table
     await pool.query(`
@@ -118,15 +211,18 @@ async function initDB() {
     `);
     console.log('✅ Bugs table ready');
 
-    // Create default admin user
+    // Create default admin user (auto-verified)
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@bugbuzzers.com']);
     if (adminExists.rows.length === 0) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
       await pool.query(
-        'INSERT INTO users (name, email, password, is_admin) VALUES ($1, $2, $3, $4)',
-        ['Admin User', 'admin@bugbuzzers.com', hashedPassword, true]
+        'INSERT INTO users (name, email, password, is_admin, email_verified) VALUES ($1, $2, $3, $4, $5)',
+        ['Admin User', 'admin@bugbuzzers.com', hashedPassword, true, true]
       );
       console.log('✅ Admin user created');
+    } else {
+      // Update existing admin to be verified
+      await pool.query('UPDATE users SET email_verified = TRUE WHERE email = $1', ['admin@bugbuzzers.com']);
     }
 
     console.log('🎉 Database initialized successfully');
@@ -182,7 +278,8 @@ app.post('/api/auth/login', async (req, res) => {
         email: user.email, 
         name: user.name,
         points: user.points,
-        isAdmin: user.is_admin 
+        isAdmin: user.is_admin,
+        emailVerified: user.email_verified
       },
       process.env.JWT_SECRET || 'bugbuzzers-secret-key',
       { expiresIn: '24h' }
@@ -195,7 +292,8 @@ app.post('/api/auth/login', async (req, res) => {
         name: user.name,
         email: user.email,
         points: user.points,
-        isAdmin: user.is_admin
+        isAdmin: user.is_admin,
+        emailVerified: user.email_verified
       }
     });
   } catch (error) {
@@ -217,20 +315,32 @@ app.post('/api/auth/signup', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    // Create user (unverified)
     const result = await pool.query(
-      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, points, is_admin',
-      [name, email, hashedPassword]
+      `INSERT INTO users (name, email, password, email_verified, verification_token, verification_expires) 
+       VALUES ($1, $2, $3, $4, $5, $6) 
+       RETURNING id, name, email, points, is_admin, email_verified`,
+      [name, email, hashedPassword, false, verificationToken, verificationExpires]
     );
 
     const user = result.rows[0];
+    
+    // Send verification email
+    const emailSent = await sendVerificationEmail(email, name, verificationToken);
+    
+    // Create token (but mark as unverified)
     const token = jwt.sign(
       { 
         id: user.id, 
         email: user.email, 
         name: user.name,
         points: user.points,
-        isAdmin: user.is_admin 
+        isAdmin: user.is_admin,
+        emailVerified: user.email_verified
       },
       process.env.JWT_SECRET || 'bugbuzzers-secret-key',
       { expiresIn: '24h' }
@@ -243,8 +353,12 @@ app.post('/api/auth/signup', async (req, res) => {
         name: user.name,
         email: user.email,
         points: user.points,
-        isAdmin: user.is_admin
-      }
+        isAdmin: user.is_admin,
+        emailVerified: user.email_verified
+      },
+      message: emailSent 
+        ? 'Account created! Please check your email to verify your account.' 
+        : 'Account created! Email verification unavailable, contact support.'
     });
   } catch (error) {
     console.error('Signup error:', error);
@@ -256,7 +370,7 @@ app.post('/api/auth/signup', async (req, res) => {
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, name, email, points, is_admin FROM users WHERE id = $1',
+      'SELECT id, name, email, points, is_admin, email_verified FROM users WHERE id = $1',
       [req.user.id]
     );
     
@@ -270,10 +384,87 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       name: user.name,
       email: user.email,
       points: user.points,
-      isAdmin: user.is_admin
+      isAdmin: user.is_admin,
+      emailVerified: user.email_verified
     });
   } catch (error) {
     console.error('Get user profile error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Email verification endpoint
+app.get('/api/auth/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).json({ error: 'Verification token is required' });
+    }
+
+    // Find user with this verification token
+    const result = await pool.query(
+      'SELECT * FROM users WHERE verification_token = $1 AND verification_expires > NOW()',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired verification token' });
+    }
+
+    const user = result.rows[0];
+
+    // Verify the email
+    await pool.query(
+      'UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1',
+      [user.id]
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Email verified successfully! You can now access all features.' 
+    });
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Resend verification email
+app.post('/api/auth/resend-verification', authenticateToken, async (req, res) => {
+  try {
+    const user = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    
+    if (user.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userData = user.rows[0];
+
+    if (userData.email_verified) {
+      return res.status(400).json({ error: 'Email is already verified' });
+    }
+
+    // Generate new verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update verification token
+    await pool.query(
+      'UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3',
+      [verificationToken, verificationExpires, userData.id]
+    );
+
+    // Send verification email
+    const emailSent = await sendVerificationEmail(userData.email, userData.name, verificationToken);
+
+    if (emailSent) {
+      res.json({ success: true, message: 'Verification email sent! Please check your inbox.' });
+    } else {
+      res.status(500).json({ error: 'Failed to send verification email' });
+    }
+  } catch (error) {
+    console.error('Resend verification error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
