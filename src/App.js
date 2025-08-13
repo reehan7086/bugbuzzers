@@ -330,6 +330,154 @@ const handleSignup = async (e) => {
     );
   };
 
+// Add this EmailVerificationBanner component after your LoadingSpinner function
+const EmailVerificationBanner = () => {
+  const [resending, setResending] = useState(false);
+  
+  const resendVerification = async () => {
+    setResending(true);
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        alert('Verification email sent! Please check your inbox.');
+      } else {
+        alert('Failed to send verification email. Please try again.');
+      }
+    } catch (error) {
+      alert('Error sending verification email.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (user?.emailVerified) return null;
+
+  return (
+    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <AlertCircle className="h-5 w-5 text-yellow-400" />
+        </div>
+        <div className="ml-3">
+          <p className="text-sm text-yellow-700">
+            <strong>Please verify your email address to access all features.</strong> Check your inbox for a verification email.{' '}
+            <button
+              onClick={resendVerification}
+              disabled={resending}
+              className="font-medium underline hover:text-yellow-600"
+            >
+              {resending ? 'Sending...' : 'Resend verification email'}
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add verification success page handling
+// Add this before your landing page check
+if (currentView === 'verify-email') {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center">
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Email Verified!</h2>
+          <p className="text-gray-600 mb-6">
+            Your email has been successfully verified. You now have full access to BugBuzzers!
+          </p>
+          <button
+            onClick={() => {
+              // Refresh user data and go to dashboard
+              setCurrentView('dashboard');
+              // Refresh the user to update emailVerified status
+              window.location.reload();
+            }}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Update your useEffect to handle verification page
+useEffect(() => {
+  // Check if this is a verification link
+  const urlParams = new URLSearchParams(window.location.search);
+  const verificationToken = urlParams.get('token');
+  
+  if (window.location.pathname === '/verify-email' && verificationToken) {
+    handleEmailVerification(verificationToken);
+    return;
+  }
+
+  // Existing token logic
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      const now = Date.now() / 1000;
+      if (payload.exp && payload.exp < now) {
+        localStorage.removeItem('token');
+        setCurrentView('landing');
+        return;
+      }
+
+      const user = {
+        id: payload.id,
+        email: payload.email,
+        name: payload.name || 'User',
+        points: payload.points || 0,
+        isAdmin: payload.isAdmin || false,
+        emailVerified: payload.emailVerified || false
+      };
+      
+      setUser(user);
+      setCurrentView(user.isAdmin ? 'admin' : 'dashboard');
+    } catch (error) {
+      console.error('Token parsing error:', error);
+      localStorage.removeItem('token');
+      setCurrentView('landing');
+    }
+  }
+}, []);
+
+// Add email verification handler function
+const handleEmailVerification = async (token) => {
+  setLoading(true);
+  try {
+    const response = await fetch(`/api/auth/verify-email?token=${token}`);
+    
+    if (response.ok) {
+      setCurrentView('verify-email');
+      // Update user's email verification status
+      if (user) {
+        setUser({ ...user, emailVerified: true });
+      }
+    } else {
+      const error = await response.json();
+      setError(error.error || 'Verification failed');
+      setCurrentView('landing');
+    }
+  } catch (error) {
+    setError('Verification failed. Please try again.');
+    setCurrentView('landing');
+  } finally {
+    setLoading(false);
+  }
+};
+
   // Navigation Component
   const Navigation = () => (
     <nav className="bg-white shadow-sm border-b">
