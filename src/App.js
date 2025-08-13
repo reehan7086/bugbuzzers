@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bug, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, User, LogOut, Menu, X } from 'lucide-react';
+import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, User, LogOut, Menu, X } from 'lucide-react';
 import api from './api';
 
 const BugBuzzers = () => {
@@ -270,7 +270,7 @@ const BugBuzzers = () => {
           <header className="p-6">
             <div className="max-w-6xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Bug className="w-8 h-8 text-white" />
+                <Megaphone className="w-8 h-8 text-white" />
                 <span className="text-2xl font-bold text-white">BugBuzzers</span>
               </div>
               <div className="hidden md:flex gap-4">
@@ -339,17 +339,17 @@ const BugBuzzers = () => {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl">
-                <Bug className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+              <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                <Megaphone className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-white mb-2">Report Bugs</h3>
                 <p className="text-white/80">Found a bug? Report it with screenshots or videos and detailed steps.</p>
               </div>
-              <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl">
+              <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <Shield className="w-12 h-12 text-green-400 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-white mb-2">Get Verified</h3>
                 <p className="text-white/80">Our team verifies your reports within hours based on severity level.</p>
               </div>
-              <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl">
+              <div className="text-center p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
                 <Trophy className="w-12 h-12 text-orange-400 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-white mb-2">Earn Rewards</h3>
                 <p className="text-white/80">Get points for verified bugs: High=500pts, Medium=300pts, Low=150pts.</p>
@@ -369,7 +369,7 @@ const BugBuzzers = () => {
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Bug className="w-8 h-8 text-purple-600" />
+              <Megaphone className="w-8 h-8 text-purple-600" />
               <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
             </div>
             <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
