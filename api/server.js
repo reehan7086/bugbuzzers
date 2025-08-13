@@ -15,7 +15,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Database connection using corrected connection string
+// Database connection - Manual URL parsing to bypass SSL
 let pool;
 try {
   const databaseUrl = process.env.DATABASE_URL;
@@ -24,22 +24,34 @@ try {
     throw new Error('DATABASE_URL environment variable is not set');
   }
 
-  console.log('Database URL check:', databaseUrl.substring(0, 30) + '...');
+  console.log('Original URL:', databaseUrl.substring(0, 30) + '...');
 
-  // Simple connection using the corrected DATABASE_URL
+  // Parse URL manually to avoid any SSL settings
+  const url = new URL(databaseUrl.split('?')[0]); // Remove query parameters
+  
+  console.log('Parsed components:', {
+    host: url.hostname,
+    port: url.port,
+    database: url.pathname.slice(1),
+    user: url.username
+  });
+
   pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: false, // Explicitly disable SSL
+    host: url.hostname,
+    port: parseInt(url.port) || 5432,
+    database: url.pathname.slice(1), // Remove leading /
+    user: url.username,
+    password: url.password,
+    ssl: false, // Absolutely no SSL
     max: 5,
     connectionTimeoutMillis: 30000,
     idleTimeoutMillis: 30000,
   });
 
-  console.log('✅ Database pool created successfully (using corrected DATABASE_URL)');
+  console.log('✅ Database pool created with manual parsing (SSL disabled)');
 } catch (error) {
   console.error('❌ Database pool creation failed:', error.message);
   
-  // Create a dummy pool to prevent crashes
   pool = {
     query: () => Promise.reject(new Error('Database not available')),
     connect: () => Promise.reject(new Error('Database not available'))
