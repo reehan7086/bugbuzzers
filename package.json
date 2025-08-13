@@ -1,73 +1,47 @@
 {
-
   "name": "bugbuzzers",
-
   "version": "1.0.0",
-
   "private": true,
-
   "homepage": ".",
-
   "dependencies": {
-
     "react": "^18.2.0",
-
     "react-dom": "^18.2.0",
-
     "react-scripts": "5.0.1",
-
     "lucide-react": "^0.263.1",
-
-    "web-vitals": "^2.1.4"
-
+    "web-vitals": "^2.1.4",
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.0.0",
+    "path": "^0.12.7"
   },
-
   "scripts": {
-
-    "start": "react-scripts start",
-
+    "start": "node api/server.js",
+    "dev": "react-scripts start",
     "build": "react-scripts build",
-
     "test": "react-scripts test",
-
-    "eject": "react-scripts eject"
-
+    "eject": "react-scripts eject",
+    "postbuild": "cp -r build/* . 2>/dev/null || xcopy build\\* . /E /I /Y 2>nul || true"
   },
-
   "eslintConfig": {
-
     "extends": [
-
       "react-app",
-
       "react-app/jest"
-
     ]
-
   },
-
   "browserslist": {
-
     "production": [
-
       ">0.2%",
-
-     "not dead",
-
+      "not dead",
       "not op_mini all"
-
     ],
-
     "development": [
-
       "last 1 chrome version",
-
       "last 1 firefox version",
-
       "last 1 safari version"
-
     ]
-
   }
-
 }
