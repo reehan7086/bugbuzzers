@@ -157,7 +157,9 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Routes
+// ===================== API ROUTES =====================
+
+// Auth Routes
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -175,7 +177,13 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, isAdmin: user.is_admin },
+      { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name,
+        points: user.points,
+        isAdmin: user.is_admin 
+      },
       process.env.JWT_SECRET || 'bugbuzzers-secret-key',
       { expiresIn: '24h' }
     );
@@ -217,7 +225,13 @@ app.post('/api/auth/signup', async (req, res) => {
 
     const user = result.rows[0];
     const token = jwt.sign(
-      { id: user.id, email: user.email, isAdmin: user.is_admin },
+      { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name,
+        points: user.points,
+        isAdmin: user.is_admin 
+      },
       process.env.JWT_SECRET || 'bugbuzzers-secret-key',
       { expiresIn: '24h' }
     );
@@ -238,6 +252,33 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
+// Get current user profile
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, email, points, is_admin FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      points: user.points,
+      isAdmin: user.is_admin
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Bug Routes
 app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -304,6 +345,7 @@ app.put('/api/bugs/:id/status', authenticateToken, async (req, res) => {
   }
 });
 
+// Other Routes
 app.get('/api/leaderboard', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
@@ -326,43 +368,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// ===================== STATIC FILES (MUST BE LAST) =====================
+
 // Serve React app for all other routes
 app.use(express.static(path.join(__dirname, '../build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
+// ===================== START SERVER =====================
+
 // Initialize database and start server
 initDB().then(() => {
   app.listen(port, () => {
     console.log(`BugBuzzers API running on port ${port}`);
   });
-});
-
-// Get current user profile
-app.get('/api/auth/me', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, name, email, points, is_admin FROM users WHERE id = $1',
-      [req.user.id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = result.rows[0];
-    res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      points: user.points,
-      isAdmin: user.is_admin
-    });
-  } catch (error) {
-    console.error('Get user profile error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
 });
 
 module.exports = app;
