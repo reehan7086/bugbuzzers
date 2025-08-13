@@ -22,7 +22,7 @@ const BugBuzzers = () => {
   const [bugs, setBugs] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
 
-// Simple token-based approach (no API call needed)
+// Update your useEffect in App.js
 useEffect(() => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -37,12 +37,12 @@ useEffect(() => {
         return;
       }
 
-      // Create user from token data
+      // Create user from token data (now includes name and points)
       const user = {
         id: payload.id,
         email: payload.email,
-        name: payload.name || (payload.email.includes('admin') ? 'Admin User' : 'User'),
-        points: payload.points || (payload.isAdmin ? 0 : 1250),
+        name: payload.name || 'User',
+        points: payload.points || 0,
         isAdmin: payload.isAdmin || false
       };
       
