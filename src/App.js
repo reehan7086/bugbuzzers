@@ -23,29 +23,36 @@ const BugBuzzers = () => {
   const [leaderboard, setLeaderboard] = useState([]);
 
   // Add email verification handler function - MOVED BEFORE useEffect
-  const handleEmailVerification = async (token) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/auth/verify-email?token=${token}`);
+// REPLACE your existing handleEmailVerification function with this:
+const handleEmailVerification = async (token) => {
+  setLoading(true);
+  try {
+    const response = await fetch(`/api/auth/verify-email?token=${token}`);
+    
+    if (response.ok) {
+      const result = await response.json();
       
-      if (response.ok) {
-        setCurrentView('verify-email');
-        // Update user's email verification status
-        if (user) {
-          setUser({ ...user, emailVerified: true });
-        }
-      } else {
-        const error = await response.json();
-        setError(error.error || 'Verification failed');
-        setCurrentView('landing');
+      // Update user's email verification status immediately
+      if (user) {
+        const updatedUser = { ...user, emailVerified: true };
+        setUser(updatedUser);
+        console.log('✅ User email verification status updated in state');
       }
-    } catch (error) {
-      setError('Verification failed. Please try again.');
+      
+      setCurrentView('verify-email');
+      
+    } else {
+      const error = await response.json();
+      setError(error.error || 'Verification failed');
       setCurrentView('landing');
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    setError('Verification failed. Please try again.');
+    setCurrentView('landing');
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Update your useEffect to handle verification page - MOVED BEFORE ANY EARLY RETURNS
   useEffect(() => {
@@ -436,12 +443,13 @@ const BugBuzzers = () => {
               Your email has been successfully verified. You now have full access to BugBuzzers!
             </p>
             <button
-              onClick={() => {
-                // Refresh user data and go to dashboard
-                setCurrentView('dashboard');
-                // Refresh the user to update emailVerified status
-                window.location.reload();
-              }}
+onClick={() => {
+  // Make sure user state is updated
+  if (user && !user.emailVerified) {
+    setUser({ ...user, emailVerified: true });
+  }
+  setCurrentView('dashboard');
+}}
               className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
             >
               Go to Dashboard
