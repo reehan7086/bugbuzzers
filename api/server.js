@@ -575,5 +575,106 @@ initDB().then(() => {
     console.log(`BugBuzzers API running on port ${port}`);
   });
 });
+// Add this test endpoint to your server.js for debugging
+app.get('/api/test-email', async (req, res) => {
+  try {
+    console.log('Testing email configuration...');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER);
+    console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
+    
+    const testEmail = {
+      from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
+      to: 'test@example.com', // Replace with your email
+      subject: 'BugBuzzers Email Test',
+      html: `
+        <h2>Email Test</h2>
+        <p>If you receive this, email is working!</p>
+        <p>Time: ${new Date().toISOString()}</p>
+      `
+    };
 
+    const result = await emailTransporter.sendMail(testEmail);
+    console.log('✅ Test email sent:', result.messageId);
+    res.json({ success: true, messageId: result.messageId });
+  } catch (error) {
+    console.error('❌ Test email failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Also update the sendVerificationEmail function to add more logging
+async function sendVerificationEmail(email, name, token) {
+  console.log('📧 Attempting to send verification email to:', email);
+  console.log('📧 Using EMAIL_USER:', process.env.EMAIL_USER);
+  console.log('📧 EMAIL_PASSWORD configured:', !!process.env.EMAIL_PASSWORD);
+  
+  const verificationUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/verify-email?token=${token}`;
+  console.log('📧 Verification URL:', verificationUrl);
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
+    to: email,
+    subject: 'Verify your BugBuzzers account',
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
+          <p style="color: white; margin: 10px 0 0 0;">Welcome to the Bug Bounty Platform</p>
+        </div>
+        
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Hi ${name}!</h2>
+          <p style="color: #666; line-height: 1.6;">
+            Thanks for joining BugBuzzers! To complete your registration and start earning rewards 
+            for reporting bugs, please verify your email address.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
+                      border-radius: 5px; display: inline-block; font-weight: bold;">
+              Verify Email Address
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}">${verificationUrl}</a>
+          </p>
+          
+          <p style="color: #666; font-size: 14px;">
+            This link will expire in 24 hours. If you didn't create an account with BugBuzzers, 
+            you can safely ignore this email.
+          </p>
+        </div>
+        
+        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
+          <p>Happy Bug Hunting! 🕵️‍♀️</p>
+          <p style="margin: 5px 0 0 0;">The BugBuzzers Team</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    console.log('📧 Sending email with options:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+    
+    const result = await emailTransporter.sendMail(mailOptions);
+    console.log('✅ Verification email sent successfully:', result.messageId);
+    console.log('📧 Full result:', result);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to send verification email:', error);
+    console.error('📧 Error details:', {
+      message: error.message,
+      code: error.code,
+      command: error.command
+    });
+    return false;
+  }
+}
 module.exports = app;
