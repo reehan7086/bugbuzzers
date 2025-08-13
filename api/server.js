@@ -16,20 +16,64 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // Database connection with aggressive SSL handling
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-    require: true,
-    ca: null,
-    key: null,
-    cert: null,
-    checkServerIdentity: () => undefined
-  },
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-  max: 10
-});
+const { Pool } = require('pg');
+
+// Parse DATABASE_URL manually to handle SSL properly
+let pool;
+try {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
+  console.log('Database URL format check:', databaseUrl.substring(0, 20) + '...');
+
+  // Create pool with explicit SSL configuration
+  pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: process.env.NODE_ENV === 'production' ? {
+      rejectUnauthorized: false,
+      require: true
+    } : false,
+    max: 5,
+    connectionTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+  });
+
+  console.log('✅ Database pool created successfully');
+} catch (error) {
+  console.error('❌ Database pool creation failed:', error.message);
+  
+  // Create a dummy pool to prevent crashes
+  pool = {
+    query: () => Promise.reject(new Error('Database not available')),
+    connect: () => Promise.reject(new Error('Database not available'))
+  };
+}
+
+// Test connection with retry logic
+async function testDatabaseConnection() {
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      const client = await pool.connect();
+      await client.query('SELECT NOW()');
+      client.release();
+      console.log('✅ Database connection test successful');
+      return true;
+    } catch (error) {
+      retries--;
+      console.log(`❌ Database connection attempt failed (${3-retries}/3):`, error.code || error.message);
+      if (retries > 0) {
+        console.log('⏳ Retrying in 2 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+  }
+  console.log('❌ All database connection attempts failed');
+  return false;
+}
 
 // Test connection on startup
 pool.connect((err, client, release) => {
