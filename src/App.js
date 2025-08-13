@@ -185,6 +185,12 @@ const handleSignup = async (e) => {
 
   const handleBugSubmit = async (e) => {
     e.preventDefault();
+
+    // Check email verification
+  if (!user?.emailVerified) {
+    setError('Please verify your email address before reporting bugs.');
+    return;
+  }
     setLoading(true);
     setError('');
     
@@ -921,7 +927,7 @@ const handleEmailVerification = async (token) => {
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
         <Navigation />
-        
+        <EmailVerificationBanner />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
@@ -1021,7 +1027,7 @@ const handleEmailVerification = async (token) => {
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
         <Navigation />
-        
+        <EmailVerificationBanner /> 
         <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
@@ -1189,7 +1195,7 @@ const handleEmailVerification = async (token) => {
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
         <Navigation />
-        
+        <EmailVerificationBanner /> 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -1290,7 +1296,7 @@ const handleEmailVerification = async (token) => {
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
         <Navigation />
-        
+        <EmailVerificationBanner />  
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Leaderboard</h1>
@@ -1357,7 +1363,7 @@ const handleEmailVerification = async (token) => {
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
         <Navigation />
-        
+        <EmailVerificationBanner /> 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
