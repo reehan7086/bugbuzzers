@@ -15,13 +15,36 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: false, // This should override any default SSL behavior
-  max: 5,
-  connectionTimeoutMillis: 30000,
-  idleTimeoutMillis: 30000,
-});
+// Database connection - Fixed version
+let pool;
+try {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
+  console.log('Database URL check:', databaseUrl.substring(0, 30) + '...');
+
+  // Create pool with SSL disabled
+  pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: false, // Force disable SSL
+    max: 5,
+    connectionTimeoutMillis: 30000,
+    idleTimeoutMillis: 30000,
+  });
+
+  console.log('✅ Database pool created successfully (SSL disabled)');
+} catch (error) {
+  console.error('❌ Database pool creation failed:', error.message);
+  
+  // Create a dummy pool to prevent crashes
+  pool = {
+    query: () => Promise.reject(new Error('Database not available')),
+    connect: () => Promise.reject(new Error('Database not available'))
+  };
+}
 
 // Test database connection
 async function testDatabaseConnection() {
