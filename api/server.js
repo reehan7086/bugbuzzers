@@ -701,4 +701,170 @@ async function sendVerificationEmail(email, name, token) {
     return false;
   }
 }
+
+// ADD THESE ROUTES TO YOUR api/server.js file
+
+// Password reset request endpoint
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    // Check if user exists
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    
+    if (result.rows.length === 0) {
+      // Don't reveal if email exists or not for security
+      return res.json({ 
+        success: true, 
+        message: 'If an account with that email exists, we\'ve sent a password reset link.' 
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Generate password reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // Store reset token in database
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3',
+      [resetToken, resetExpires, user.id]
+    );
+
+    // Send password reset email
+    const emailSent = await sendPasswordResetEmail(email, user.name, resetToken);
+
+    if (emailSent) {
+      res.json({ 
+        success: true, 
+        message: 'Password reset email sent! Please check your inbox.' 
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to send password reset email' });
+    }
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Password reset verification and update endpoint
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    // Find user with valid reset token
+    const result = await pool.query(
+      'SELECT * FROM users WHERE reset_token = $1 AND reset_expires > NOW()',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    const user = result.rows[0];
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear reset token
+    await pool.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ 
+      success: true, 
+      message: 'Password reset successfully! You can now log in with your new password.' 
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ADD THIS FUNCTION to your server.js (after the sendVerificationEmail function)
+async function sendPasswordResetEmail(email, name, token) {
+  const resetUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/reset-password?token=${token}`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
+    to: email,
+    subject: 'Reset your BugBuzzers password',
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
+          <p style="color: white; margin: 10px 0 0 0;">Password Reset Request</p>
+        </div>
+        
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Hi ${name}!</h2>
+          <p style="color: #666; line-height: 1.6;">
+            We received a request to reset your password for your BugBuzzers account. 
+            If you didn't make this request, you can safely ignore this email.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
+                      border-radius: 5px; display: inline-block; font-weight: bold;">
+              Reset Your Password
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${resetUrl}">${resetUrl}</a>
+          </p>
+          
+          <p style="color: #666; font-size: 14px;">
+            This link will expire in 1 hour for security reasons.
+          </p>
+        </div>
+        
+        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
+          <p>Stay secure! 🔒</p>
+          <p style="margin: 5px 0 0 0;">The BugBuzzers Team</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    const result = await emailTransporter.sendMail(mailOptions);
+    console.log('✅ Password reset email sent:', result.messageId);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to send password reset email:', error);
+    return false;
+  }
+}
+
+// UPDATE your database initialization function to add reset token columns
+// Add this to your initDB function in server.js, after the email verification columns:
+
+try {
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)');
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
+  console.log('✅ Password reset columns added');
+} catch (error) {
+  console.log('ℹ️ Password reset columns already exist');
+}
 module.exports = app;
