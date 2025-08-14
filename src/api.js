@@ -149,4 +149,20 @@ class BugBuzzersAPI {
   }
 }
 
+// Forgot password
+async forgotPassword(email) {
+  return await this.request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+// Reset password
+async resetPassword(token, password) {
+  return await this.request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  });
+}
+
 export default new BugBuzzersAPI();
