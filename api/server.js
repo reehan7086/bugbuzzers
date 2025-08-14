@@ -867,4 +867,32 @@ try {
 } catch (error) {
   console.log('ℹ️ Password reset columns already exist');
 }
+
+// ADD THESE METHODS TO YOUR src/api.js file
+
+// Add these methods to your BugBuzzersAPI class:
+
+// Forgot password method
+async forgotPassword(email) {
+  return await this.request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+// Reset password method
+async resetPassword(token, newPassword) {
+  return await this.request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
+// Verify reset token method (optional - to check if token is valid)
+async verifyResetToken(token) {
+  return await this.request(`/auth/verify-reset-token?token=${token}`, {
+    method: 'GET',
+  });
+}
+
 module.exports = app;
