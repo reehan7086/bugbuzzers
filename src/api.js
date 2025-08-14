@@ -14,54 +14,54 @@ class BugBuzzersAPI {
     }
   }
 
-async request(endpoint, options = {}) {
-  const url = `${API_BASE_URL}/api${endpoint}`;
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  };
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE_URL}/api${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
 
-  if (this.token) {
-    config.headers.Authorization = `Bearer ${this.token}`;
-  }
-
-  try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      let errorMessage = 'Request failed';
-      
-      try {
-        // Try to parse as JSON first
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || 'Request failed';
-      } catch (jsonError) {
-        // If JSON parsing fails, get text response
-        try {
-          errorMessage = await response.text() || `HTTP ${response.status}`;
-        } catch (textError) {
-          errorMessage = `HTTP ${response.status} - ${response.statusText}`;
-        }
-      }
-      
-      throw new Error(errorMessage);
+    if (this.token) {
+      config.headers.Authorization = `Bearer ${this.token}`;
     }
 
-    // Try to parse response as JSON
     try {
-      return await response.json();
-    } catch (jsonError) {
-      // If response is not JSON, return the text
-      return await response.text();
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        let errorMessage = 'Request failed';
+        
+        try {
+          // Try to parse as JSON first
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || 'Request failed';
+        } catch (jsonError) {
+          // If JSON parsing fails, get text response
+          try {
+            errorMessage = await response.text() || `HTTP ${response.status}`;
+          } catch (textError) {
+            errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      // Try to parse response as JSON
+      try {
+        return await response.json();
+      } catch (jsonError) {
+        // If response is not JSON, return the text
+        return await response.text();
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
   }
-}
 
   // Auth methods
   async login(email, password) {
@@ -79,11 +79,44 @@ async request(endpoint, options = {}) {
       body: JSON.stringify({ name, email, password }),
     });
     this.setToken(data.token);
-    return data.user;
+    return { user: data.user, message: data.message };
   }
 
   logout() {
     this.setToken(null);
+  }
+
+  // Email verification methods
+  async resendVerification() {
+    return await this.request('/auth/resend-verification', {
+      method: 'POST',
+    });
+  }
+
+  async verifyEmail(token) {
+    return await this.request(`/auth/verify-email?token=${token}`, {
+      method: 'GET',
+    });
+  }
+
+  // Password reset methods
+  async forgotPassword(email) {
+    return await this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token, newPassword) {
+    return await this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  // Get current user profile
+  async getCurrentUser() {
+    return await this.request('/auth/me');
   }
 
   // Bug methods
