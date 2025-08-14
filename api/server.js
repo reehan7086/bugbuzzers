@@ -50,7 +50,7 @@ try {
   };
 }
 
-// Email configuration - REPLACE the existing email section with this
+// Email configuration
 let emailTransporter;
 try {
   // Verify required environment variables
@@ -58,7 +58,7 @@ try {
     throw new Error('EMAIL_USER and EMAIL_PASSWORD environment variables are required');
   }
 
-  emailTransporter = nodemailer.createTransport({
+  emailTransporter = nodemailer.createTransporter({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -93,7 +93,7 @@ try {
   };
 }
 
-// Email helper function
+// Email helper function for verification
 async function sendVerificationEmail(email, name, token) {
   const verificationUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/verify-email?token=${token}`;
   
@@ -152,6 +152,64 @@ async function sendVerificationEmail(email, name, token) {
   }
 }
 
+// Email helper function for password reset
+async function sendPasswordResetEmail(email, name, token) {
+  const resetUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/reset-password?token=${token}`;
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
+    to: email,
+    subject: 'Reset your BugBuzzers password',
+    html: `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
+          <p style="color: white; margin: 10px 0 0 0;">Password Reset Request</p>
+        </div>
+        
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Hi ${name}!</h2>
+          <p style="color: #666; line-height: 1.6;">
+            We received a request to reset your password for your BugBuzzers account. 
+            If you didn't make this request, you can safely ignore this email.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
+                      border-radius: 5px; display: inline-block; font-weight: bold;">
+              Reset Your Password
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${resetUrl}">${resetUrl}</a>
+          </p>
+          
+          <p style="color: #666; font-size: 14px;">
+            This link will expire in 15 minutes for security reasons.
+          </p>
+        </div>
+        
+        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
+          <p>Stay secure! 🔒</p>
+          <p style="margin: 5px 0 0 0;">The BugBuzzers Team</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    const result = await emailTransporter.sendMail(mailOptions);
+    console.log('✅ Password reset email sent:', result.messageId);
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to send password reset email:', error);
+    return false;
+  }
+}
+
 // Test database connection
 async function testDatabaseConnection() {
   let retries = 3;
@@ -199,6 +257,8 @@ async function initDB() {
         email_verified BOOLEAN DEFAULT FALSE,
         verification_token VARCHAR(255),
         verification_expires TIMESTAMP,
+        reset_token VARCHAR(255),
+        reset_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -209,18 +269,13 @@ async function initDB() {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP');
-      console.log('✅ Email verification columns added');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
+      console.log('✅ Email verification and password reset columns added');
     } catch (error) {
-      console.log('ℹ️ Email verification columns already exist');
+      console.log('ℹ️ User table columns already exist');
     }
-// Add reset token columns to users table
-try {
-  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)');
-  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
-  console.log('✅ Password reset columns added');
-} catch (error) {
-  console.log('ℹ️ Password reset columns already exist');
-}
+
     // Bugs table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bugs (
@@ -530,54 +585,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     );
 
     // Send reset email
-    const resetUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-    
-    const mailOptions = {
-      from: `"BugBuzzers" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Reset your BugBuzzers password',
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-            <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
-            <p style="color: white; margin: 10px 0 0 0;">Password Reset Request</p>
-          </div>
-          
-          <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #333;">Reset Your Password</h2>
-            <p style="color: #666; line-height: 1.6;">
-              We received a request to reset your password. Click the button below to create a new password:
-            </p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" 
-                 style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
-                        border-radius: 5px; display: inline-block; font-weight: bold;">
-                Reset Password
-              </a>
-            </div>
-            
-            <p style="color: #666; font-size: 14px;">
-              If the button doesn't work, copy and paste this link into your browser:<br>
-              <a href="${resetUrl}">${resetUrl}</a>
-            </p>
-            
-            <p style="color: #666; font-size: 14px;">
-              This link will expire in 15 minutes. If you didn't request this reset, please ignore this email.
-            </p>
-          </div>
-          
-          <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
-            <p>The BugBuzzers Team</p>
-          </div>
-        </div>
-      `
-    };
+    const emailSent = await sendPasswordResetEmail(user.email, user.name, resetToken);
 
-    const emailSent = await emailTransporter.sendMail(mailOptions);
-    console.log('✅ Password reset email sent:', emailSent.messageId);
-
-    res.json({ success: true, message: 'If your email is registered, you will receive a password reset link.' });
+    if (emailSent) {
+      res.json({ success: true, message: 'If your email is registered, you will receive a password reset link.' });
+    } else {
+      res.status(500).json({ error: 'Failed to send password reset email' });
+    }
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -715,23 +729,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// ===================== STATIC FILES (MUST BE LAST) =====================
-
-// Serve React app for all other routes
-app.use(express.static(path.join(__dirname, '../build')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
-
-// ===================== START SERVER =====================
-
-// Initialize database and start server
-initDB().then(() => {
-  app.listen(port, () => {
-    console.log(`BugBuzzers API running on port ${port}`);
-  });
-});
-// Add this test endpoint to your server.js for debugging
+// Test email endpoint for debugging
 app.get('/api/test-email', async (req, res) => {
   try {
     console.log('Testing email configuration...');
@@ -758,273 +756,21 @@ app.get('/api/test-email', async (req, res) => {
   }
 });
 
-// Also update the sendVerificationEmail function to add more logging
-async function sendVerificationEmail(email, name, token) {
-  console.log('📧 Attempting to send verification email to:', email);
-  console.log('📧 Using EMAIL_USER:', process.env.EMAIL_USER);
-  console.log('📧 EMAIL_PASSWORD configured:', !!process.env.EMAIL_PASSWORD);
-  
-  const verificationUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/verify-email?token=${token}`;
-  console.log('📧 Verification URL:', verificationUrl);
-  
-  const mailOptions = {
-    from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
-    to: email,
-    subject: 'Verify your BugBuzzers account',
-    html: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
-          <p style="color: white; margin: 10px 0 0 0;">Welcome to the Bug Bounty Platform</p>
-        </div>
-        
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #333;">Hi ${name}!</h2>
-          <p style="color: #666; line-height: 1.6;">
-            Thanks for joining BugBuzzers! To complete your registration and start earning rewards 
-            for reporting bugs, please verify your email address.
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
-                      border-radius: 5px; display: inline-block; font-weight: bold;">
-              Verify Email Address
-            </a>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${verificationUrl}">${verificationUrl}</a>
-          </p>
-          
-          <p style="color: #666; font-size: 14px;">
-            This link will expire in 24 hours. If you didn't create an account with BugBuzzers, 
-            you can safely ignore this email.
-          </p>
-        </div>
-        
-        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
-          <p>Happy Bug Hunting! 🕵️‍♀️</p>
-          <p style="margin: 5px 0 0 0;">The BugBuzzers Team</p>
-        </div>
-      </div>
-    `
-  };
+// ===================== STATIC FILES (MUST BE LAST) =====================
 
-  try {
-    console.log('📧 Sending email with options:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject
-    });
-    
-    const result = await emailTransporter.sendMail(mailOptions);
-    console.log('✅ Verification email sent successfully:', result.messageId);
-    console.log('📧 Full result:', result);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send verification email:', error);
-    console.error('📧 Error details:', {
-      message: error.message,
-      code: error.code,
-      command: error.command
-    });
-    return false;
-  }
-}
-
-// ADD THESE ROUTES TO YOUR api/server.js file
-
-// Password reset request endpoint
-app.post('/api/auth/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-
-    // Check if user exists
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    
-    if (result.rows.length === 0) {
-      // Don't reveal if email exists or not for security
-      return res.json({ 
-        success: true, 
-        message: 'If an account with that email exists, we\'ve sent a password reset link.' 
-      });
-    }
-
-    const user = result.rows[0];
-
-    // Generate password reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    // Store reset token in database
-    await pool.query(
-      'UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3',
-      [resetToken, resetExpires, user.id]
-    );
-
-    // Send password reset email
-    const emailSent = await sendPasswordResetEmail(email, user.name, resetToken);
-
-    if (emailSent) {
-      res.json({ 
-        success: true, 
-        message: 'Password reset email sent! Please check your inbox.' 
-      });
-    } else {
-      res.status(500).json({ error: 'Failed to send password reset email' });
-    }
-
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
+// Serve React app for all other routes
+app.use(express.static(path.join(__dirname, '../build')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
 });
 
-// Password reset verification and update endpoint
-app.post('/api/auth/reset-password', async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-    
-    if (!token || !newPassword) {
-      return res.status(400).json({ error: 'Token and new password are required' });
-    }
+// ===================== START SERVER =====================
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
-    }
-
-    // Find user with valid reset token
-    const result = await pool.query(
-      'SELECT * FROM users WHERE reset_token = $1 AND reset_expires > NOW()',
-      [token]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid or expired reset token' });
-    }
-
-    const user = result.rows[0];
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password and clear reset token
-    await pool.query(
-      'UPDATE users SET password = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2',
-      [hashedPassword, user.id]
-    );
-
-    res.json({ 
-      success: true, 
-      message: 'Password reset successfully! You can now log in with your new password.' 
-    });
-
-  } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
+// Initialize database and start server
+initDB().then(() => {
+  app.listen(port, () => {
+    console.log(`🚀 BugBuzzers API running on port ${port}`);
+  });
 });
-
-// ADD THIS FUNCTION to your server.js (after the sendVerificationEmail function)
-async function sendPasswordResetEmail(email, name, token) {
-  const resetUrl = `${process.env.BASE_URL || 'https://app.bugbuzzers.com'}/reset-password?token=${token}`;
-  
-  const mailOptions = {
-    from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
-    to: email,
-    subject: 'Reset your BugBuzzers password',
-    html: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0;">🐛 BugBuzzers</h1>
-          <p style="color: white; margin: 10px 0 0 0;">Password Reset Request</p>
-        </div>
-        
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #333;">Hi ${name}!</h2>
-          <p style="color: #666; line-height: 1.6;">
-            We received a request to reset your password for your BugBuzzers account. 
-            If you didn't make this request, you can safely ignore this email.
-          </p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; 
-                      border-radius: 5px; display: inline-block; font-weight: bold;">
-              Reset Your Password
-            </a>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${resetUrl}">${resetUrl}</a>
-          </p>
-          
-          <p style="color: #666; font-size: 14px;">
-            This link will expire in 1 hour for security reasons.
-          </p>
-        </div>
-        
-        <div style="background: #333; color: white; padding: 20px; text-align: center; font-size: 14px;">
-          <p>Stay secure! 🔒</p>
-          <p style="margin: 5px 0 0 0;">The BugBuzzers Team</p>
-        </div>
-      </div>
-    `
-  };
-
-  try {
-    const result = await emailTransporter.sendMail(mailOptions);
-    console.log('✅ Password reset email sent:', result.messageId);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to send password reset email:', error);
-    return false;
-  }
-}
-
-// UPDATE your database initialization function to add reset token columns
-// Add this to your initDB function in server.js, after the email verification columns:
-
-try {
-  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)');
-  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
-  console.log('✅ Password reset columns added');
-} catch (error) {
-  console.log('ℹ️ Password reset columns already exist');
-}
-
-// ADD THESE METHODS TO YOUR src/api.js file
-
-// Add these methods to your BugBuzzersAPI class:
-
-// Forgot password method
-async forgotPassword(email) {
-  return await this.request('/auth/forgot-password', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  });
-}
-
-// Reset password method
-async resetPassword(token, newPassword) {
-  return await this.request('/auth/reset-password', {
-    method: 'POST',
-    body: JSON.stringify({ token, newPassword }),
-  });
-}
-
-// Verify reset token method (optional - to check if token is valid)
-async verifyResetToken(token) {
-  return await this.request(`/auth/verify-reset-token?token=${token}`, {
-    method: 'GET',
-  });
-}
 
 module.exports = app;
