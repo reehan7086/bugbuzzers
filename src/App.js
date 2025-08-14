@@ -377,56 +377,72 @@ const handleEmailVerification = async (token) => {
     );
   };
 
-  // Add this EmailVerificationBanner component after your LoadingSpinner function
-  const EmailVerificationBanner = () => {
-    const [resending, setResending] = useState(false);
-    
-    const resendVerification = async () => {
-      setResending(true);
-      try {
-        const response = await fetch('/api/auth/resend-verification', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        
-        if (response.ok) {
-          alert('Verification email sent! Please check your inbox.');
-        } else {
-          alert('Failed to send verification email. Please try again.');
+const EmailVerificationBanner = () => {
+  const [resending, setResending] = useState(false);
+  
+  const resendVerification = async () => {
+    setResending(true);
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      } catch (error) {
-        alert('Error sending verification email.');
-      } finally {
-        setResending(false);
+      });
+      
+      if (response.ok) {
+        alert('Verification email sent! Please check your inbox.');
+      } else {
+        alert('Failed to send verification email. Please try again.');
       }
-    };
+    } catch (error) {
+      alert('Error sending verification email.');
+    } finally {
+      setResending(false);
+    }
+  };
 
-    if (user?.emailVerified) return null;
+  const manuallyMarkVerified = () => {
+    localStorage.setItem('emailVerifiedOverride', 'true');
+    if (user) {
+      setUser({ ...user, emailVerified: true });
+    }
+    alert('Email verification status updated!');
+  };
 
-    return (
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <AlertCircle className="h-5 w-5 text-yellow-400" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-yellow-700">
-              <strong>Please verify your email address to access all features.</strong> Check your inbox for a verification email.{' '}
-              <button
-                onClick={resendVerification}
-                disabled={resending}
-                className="font-medium underline hover:text-yellow-600"
-              >
-                {resending ? 'Sending...' : 'Resend verification email'}
-              </button>
-            </p>
-          </div>
+  // UPDATED CHECK HERE
+  const isVerified = user?.emailVerified || localStorage.getItem('emailVerifiedOverride') === 'true';
+  if (isVerified || !user) return null;
+
+  return (
+    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+      <div className="flex">
+        <div className="flex-shrink-0">
+          <AlertCircle className="h-5 w-5 text-yellow-400" />
+        </div>
+        <div className="ml-3">
+          <p className="text-sm text-yellow-700">
+            <strong>Please verify your email address to access all features.</strong> Check your inbox for a verification email.{' '}
+            <button
+              onClick={resendVerification}
+              disabled={resending}
+              className="font-medium underline hover:text-yellow-600"
+            >
+              {resending ? 'Sending...' : 'Resend verification email'}
+            </button>
+            {' · '}
+            <button
+              onClick={manuallyMarkVerified}
+              className="font-medium underline hover:text-yellow-600"
+            >
+              Already verified? Click here
+            </button>
+          </p>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
   // NOW WE CAN HAVE CONDITIONAL RETURNS
@@ -442,18 +458,18 @@ const handleEmailVerification = async (token) => {
             <p className="text-gray-600 mb-6">
               Your email has been successfully verified. You now have full access to BugBuzzers!
             </p>
-            <button
-onClick={() => {
-  // Make sure user state is updated
-  if (user && !user.emailVerified) {
-    setUser({ ...user, emailVerified: true });
-  }
-  setCurrentView('dashboard');
-}}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
-            >
-              Go to Dashboard
-            </button>
+<button
+  onClick={() => {
+    localStorage.setItem('emailVerifiedOverride', 'true');
+    if (user && !user.emailVerified) {
+      setUser({ ...user, emailVerified: true });
+    }
+    setCurrentView('dashboard');
+  }}
+  className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
+>
+  Go to Dashboard
+</button>
           </div>
         </div>
       </div>
