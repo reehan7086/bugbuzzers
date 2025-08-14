@@ -66,6 +66,21 @@ const handleEmailVerification = async (token) => {
 useEffect(() => {
   console.log('🔍 useEffect triggered - checking for stored token');
   
+  // Handle reset password page
+  if (window.location.pathname === '/reset-password') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = urlParams.get('token');
+    
+    if (resetToken) {
+      setCurrentView('reset-password');
+      return;
+    } else {
+      setError('Invalid reset link');
+      setCurrentView('landing');
+      return;
+    }
+  }
+  
   // Check if this is a verification link
   const urlParams = new URLSearchParams(window.location.search);
   const verificationToken = urlParams.get('token');
@@ -300,6 +315,95 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
+  // 2. Add forgot password handler
+const handleForgotPassword = async (e) => {
+  e.preventDefault();
+  
+  if (!forgotPasswordForm.email) {
+    setError('Please enter your email address');
+    return;
+  }
+  
+  setLoading(true);
+  setError('');
+  
+  try {
+    const response = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: forgotPasswordForm.email })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      alert(data.message);
+      setCurrentView('login');
+      setForgotPasswordForm({ email: '' });
+    } else {
+      setError(data.error || 'Failed to send reset email');
+    }
+  } catch (error) {
+    setError('Failed to send reset email. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// 3. Add reset password handler
+const handleResetPassword = async (e) => {
+  e.preventDefault();
+  
+if (resetPasswordForm.password !== resetPasswordForm.confirmPassword) {
+  setError('Passwords do not match');
+  return;
+}
+
+if (resetPasswordForm.password.length < 6) {
+  setError('Password must be at least 6 characters long');
+  return;
+}
+  setLoading(true);
+  setError('');
+  
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!token) {
+      setError('Invalid reset link');
+      return;
+    }
+    
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+body: JSON.stringify({ 
+  token: token,
+  password: resetPasswordForm.password 
+})
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      alert(data.message);
+      setCurrentView('login');
+      setResetPasswordForm({ password: '', confirmPassword: '' });
+    } else {
+      setError(data.error || 'Failed to reset password');
+    }
+  } catch (error) {
+    setError('Failed to reset password. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const updateBugStatus = async (bugId, newStatus, assignedPoints = 0) => {
     setLoading(true);
@@ -820,7 +924,8 @@ const EmailVerificationBanner = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-            </div>
+           
+</div>
 
             <button
               type="submit"
@@ -829,6 +934,16 @@ const EmailVerificationBanner = () => {
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
+
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setCurrentView('forgot-password')}
+                className="text-purple-600 hover:text-purple-700 text-sm"
+              >
+                Forgot your password?
+              </button>
+            </div>
 
             <div className="mt-4 space-y-2">
               <button
@@ -1564,108 +1679,6 @@ if (currentView === 'report') {
     );
   }
 
-  // Default fallback
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <Megaphone className="w-16 h-16 text-purple-600 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
-        <p className="text-gray-600">Please wait while we load your dashboard</p>
-      </div>
-    </div>
-  );
-};
-
-// 2. Add forgot password handler
-const handleForgotPassword = async (e) => {
-  e.preventDefault();
-  
-  if (!forgotPasswordForm.email) {
-    setError('Please enter your email address');
-    return;
-  }
-  
-  setLoading(true);
-  setError('');
-  
-  try {
-    const response = await fetch('/api/auth/forgot-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email: forgotPasswordForm.email })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      alert(data.message);
-      setCurrentView('login');
-      setForgotPasswordForm({ email: '' });
-    } else {
-      setError(data.error || 'Failed to send reset email');
-    }
-  } catch (error) {
-    setError('Failed to send reset email. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-// 3. Add reset password handler
-const handleResetPassword = async (e) => {
-  e.preventDefault();
-  
-  if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
-    setError('Passwords do not match');
-    return;
-  }
-  
-  if (resetPasswordForm.newPassword.length < 6) {
-    setError('Password must be at least 6 characters long');
-    return;
-  }
-  
-  setLoading(true);
-  setError('');
-  
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    
-    if (!token) {
-      setError('Invalid reset link');
-      return;
-    }
-    
-    const response = await fetch('/api/auth/reset-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 
-        token: token,
-        newPassword: resetPasswordForm.newPassword 
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      alert(data.message);
-      setCurrentView('login');
-      setResetPasswordForm({ newPassword: '', confirmPassword: '' });
-    } else {
-      setError(data.error || 'Failed to reset password');
-    }
-  } catch (error) {
-    setError('Failed to reset password. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-
 // 5. Add Forgot Password Page (add this after your login page)
 if (currentView === 'forgot-password') {
   return (
@@ -1742,7 +1755,7 @@ if (currentView === 'forgot-password') {
   );
 }
 
-// 6. Add Reset Password Page (add this after forgot password page)
+// Reset Password Page
 if (currentView === 'reset-password') {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -1764,8 +1777,8 @@ if (currentView === 'reset-password') {
             <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
             <input
               type="password"
-              value={resetPasswordForm.newPassword}
-              onChange={(e) => setResetPasswordForm({...resetPasswordForm, newPassword: e.target.value})}
+              value={resetPasswordForm.password}
+              onChange={(e) => setResetPasswordForm({...resetPasswordForm, password: e.target.value})}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               placeholder="Enter new password (min 6 characters)"
               required
@@ -1821,17 +1834,16 @@ if (currentView === 'reset-password') {
     </div>
   );
 }
+  // Default fallback
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <Megaphone className="w-16 h-16 text-purple-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
+        <p className="text-gray-600">Please wait while we load your dashboard</p>
+      </div>
+    </div>
+  );
+};
 
-// 7. Update your Login Page to include "Forgot Password" link
-// In your login form, add this after the Sign In button:
-
-<div className="mt-4 text-center">
-  <button
-    type="button"
-    onClick={() => setCurrentView('forgot-password')}
-    className="text-purple-600 hover:text-purple-700 text-sm"
-  >
-    Forgot your password?
-  </button>
-</div>
 export default BugBuzzers;
