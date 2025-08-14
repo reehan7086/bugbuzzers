@@ -1575,4 +1575,289 @@ if (currentView === 'report') {
   );
 };
 
+// ADD THESE TO YOUR src/App.js file
+
+// 1. Add new state for password reset
+const [forgotPasswordForm, setForgotPasswordForm] = useState({ email: '' });
+const [resetPasswordForm, setResetPasswordForm] = useState({ 
+  newPassword: '', 
+  confirmPassword: '' 
+});
+
+// 2. Add forgot password handler
+const handleForgotPassword = async (e) => {
+  e.preventDefault();
+  
+  if (!forgotPasswordForm.email) {
+    setError('Please enter your email address');
+    return;
+  }
+  
+  setLoading(true);
+  setError('');
+  
+  try {
+    const response = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: forgotPasswordForm.email })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      alert(data.message);
+      setCurrentView('login');
+      setForgotPasswordForm({ email: '' });
+    } else {
+      setError(data.error || 'Failed to send reset email');
+    }
+  } catch (error) {
+    setError('Failed to send reset email. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// 3. Add reset password handler
+const handleResetPassword = async (e) => {
+  e.preventDefault();
+  
+  if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
+    setError('Passwords do not match');
+    return;
+  }
+  
+  if (resetPasswordForm.newPassword.length < 6) {
+    setError('Password must be at least 6 characters long');
+    return;
+  }
+  
+  setLoading(true);
+  setError('');
+  
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (!token) {
+      setError('Invalid reset link');
+      return;
+    }
+    
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        token: token,
+        newPassword: resetPasswordForm.newPassword 
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      alert(data.message);
+      setCurrentView('login');
+      setResetPasswordForm({ newPassword: '', confirmPassword: '' });
+    } else {
+      setError(data.error || 'Failed to reset password');
+    }
+  } catch (error) {
+    setError('Failed to reset password. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// 4. Update your main useEffect to handle reset password URLs
+// Add this to your existing useEffect (after the email verification check):
+
+// Check if this is a password reset link
+if (window.location.pathname === '/reset-password') {
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('token');
+  
+  if (resetToken) {
+    setCurrentView('reset-password');
+    return;
+  } else {
+    setError('Invalid reset link');
+    setCurrentView('landing');
+    return;
+  }
+}
+
+// 5. Add Forgot Password Page (add this after your login page)
+if (currentView === 'forgot-password') {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <LoadingSpinner />
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Megaphone className="w-8 h-8 text-purple-600" />
+            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">Forgot Password</h2>
+          <p className="text-gray-600 mt-2">Enter your email to receive a password reset link</p>
+        </div>
+
+        <form onSubmit={handleForgotPassword} className="bg-white rounded-lg shadow-sm p-8">
+          <ErrorMessage />
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <input
+              type="email"
+              value={forgotPasswordForm.email}
+              onChange={(e) => setForgotPasswordForm({email: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="Enter your email address"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Sending Reset Link...' : 'Send Reset Link'}
+          </button>
+
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-gray-600">
+              Remember your password?{' '}
+              <button
+                type="button"
+                onClick={() => setCurrentView('login')}
+                className="text-purple-600 font-medium hover:text-purple-700"
+              >
+                Sign in here
+              </button>
+            </p>
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => setCurrentView('signup')}
+                className="text-purple-600 font-medium hover:text-purple-700"
+              >
+                Sign up now
+              </button>
+            </p>
+          </div>
+        </form>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setCurrentView('landing')}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            ← Back to home
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 6. Add Reset Password Page (add this after forgot password page)
+if (currentView === 'reset-password') {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <LoadingSpinner />
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Megaphone className="w-8 h-8 text-purple-600" />
+            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
+          <p className="text-gray-600 mt-2">Enter your new password</p>
+        </div>
+
+        <form onSubmit={handleResetPassword} className="bg-white rounded-lg shadow-sm p-8">
+          <ErrorMessage />
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+            <input
+              type="password"
+              value={resetPasswordForm.newPassword}
+              onChange={(e) => setResetPasswordForm({...resetPasswordForm, newPassword: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="Enter new password (min 6 characters)"
+              required
+              minLength="6"
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+            <input
+              type="password"
+              value={resetPasswordForm.confirmPassword}
+              onChange={(e) => setResetPasswordForm({...resetPasswordForm, confirmPassword: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              placeholder="Confirm your new password"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Resetting Password...' : 'Reset Password'}
+          </button>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              Remember your password?{' '}
+              <button
+                type="button"
+                onClick={() => setCurrentView('login')}
+                className="text-purple-600 font-medium hover:text-purple-700"
+              >
+                Sign in here
+              </button>
+            </p>
+          </div>
+        </form>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setCurrentView('landing')}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            ← Back to home
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 7. Update your Login Page to include "Forgot Password" link
+// In your login form, add this after the Sign In button:
+
+<div className="mt-4 text-center">
+  <button
+    type="button"
+    onClick={() => setCurrentView('forgot-password')}
+    className="text-purple-600 hover:text-purple-700 text-sm"
+  >
+    Forgot your password?
+  </button>
+</div>
 export default BugBuzzers;
