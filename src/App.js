@@ -9,7 +9,8 @@ const BugBuzzers = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const [forgotPasswordForm, setForgotPasswordForm] = useState({ email: '' });
+  const [resetPasswordForm, setResetPasswordForm] = useState({ password: '', confirmPassword: '' });
   // Forms state
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -1575,15 +1576,6 @@ if (currentView === 'report') {
   );
 };
 
-// ADD THESE TO YOUR src/App.js file
-
-// 1. Add new state for password reset
-const [forgotPasswordForm, setForgotPasswordForm] = useState({ email: '' });
-const [resetPasswordForm, setResetPasswordForm] = useState({ 
-  newPassword: '', 
-  confirmPassword: '' 
-});
-
 // 2. Add forgot password handler
 const handleForgotPassword = async (e) => {
   e.preventDefault();
@@ -1673,24 +1665,6 @@ const handleResetPassword = async (e) => {
     setLoading(false);
   }
 };
-
-// 4. Update your main useEffect to handle reset password URLs
-// Add this to your existing useEffect (after the email verification check):
-
-// Check if this is a password reset link
-if (window.location.pathname === '/reset-password') {
-  const urlParams = new URLSearchParams(window.location.search);
-  const resetToken = urlParams.get('token');
-  
-  if (resetToken) {
-    setCurrentView('reset-password');
-    return;
-  } else {
-    setError('Invalid reset link');
-    setCurrentView('landing');
-    return;
-  }
-}
 
 // 5. Add Forgot Password Page (add this after your login page)
 if (currentView === 'forgot-password') {
