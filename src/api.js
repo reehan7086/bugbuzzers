@@ -82,6 +82,21 @@ class BugBuzzersAPI {
     return { user: data.user, message: data.message };
   }
 
+  // Password reset methods
+  async forgotPassword(email) {
+    return await this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token, password) {
+    return await this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
   logout() {
     this.setToken(null);
   }
@@ -96,21 +111,6 @@ class BugBuzzersAPI {
   async verifyEmail(token) {
     return await this.request(`/auth/verify-email?token=${token}`, {
       method: 'GET',
-    });
-  }
-
-  // Password reset methods
-  async forgotPassword(email) {
-    return await this.request('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  }
-
-  async resetPassword(token, newPassword) {
-    return await this.request('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
     });
   }
 
@@ -147,22 +147,6 @@ class BugBuzzersAPI {
   async healthCheck() {
     return await this.request('/health');
   }
-}
-
-// Forgot password
-async forgotPassword(email) {
-  return await this.request('/auth/forgot-password', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  });
-}
-
-// Reset password
-async resetPassword(token, password) {
-  return await this.request('/auth/reset-password', {
-    method: 'POST',
-    body: JSON.stringify({ token, password }),
-  });
 }
 
 export default new BugBuzzersAPI();
