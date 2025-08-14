@@ -379,6 +379,7 @@ const handleEmailVerification = async (token) => {
 
 const EmailVerificationBanner = () => {
   const [resending, setResending] = useState(false);
+  const [checking, setChecking] = useState(false);
   
   const resendVerification = async () => {
     setResending(true);
@@ -402,17 +403,42 @@ const EmailVerificationBanner = () => {
     }
   };
 
-  const manuallyMarkVerified = () => {
-    localStorage.setItem('emailVerifiedOverride', 'true');
-    if (user) {
-      setUser({ ...user, emailVerified: true });
+  // SECURE: Check with server instead of allowing manual override
+  const checkVerificationStatus = async () => {
+    setChecking(true);
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('🔍 Fresh user data from server:', userData);
+        
+        if (userData.emailVerified) {
+          // Update user state with fresh data from server
+          setUser(userData);
+          alert('Email verification confirmed! You now have full access.');
+        } else {
+          alert('Email is not yet verified. Please check your email and click the verification link.');
+        }
+      } else {
+        alert('Failed to check verification status. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error checking verification status:', error);
+      alert('Error checking verification status.');
+    } finally {
+      setChecking(false);
     }
-    alert('Email verification status updated!');
   };
 
-  // UPDATED CHECK HERE
-  const isVerified = user?.emailVerified || localStorage.getItem('emailVerifiedOverride') === 'true';
-  if (isVerified || !user) return null;
+  // SECURE: Only check emailVerified from user state (no localStorage bypass)
+  if (user?.emailVerified || !user) {
+    return null;
+  }
 
   return (
     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
@@ -432,10 +458,11 @@ const EmailVerificationBanner = () => {
             </button>
             {' · '}
             <button
-              onClick={manuallyMarkVerified}
+              onClick={checkVerificationStatus}
+              disabled={checking}
               className="font-medium underline hover:text-yellow-600"
             >
-              Already verified? Click here
+              {checking ? 'Checking...' : 'Already verified? Refresh status'}
             </button>
           </p>
         </div>
