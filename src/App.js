@@ -875,121 +875,123 @@ const EmailVerificationBanner = () => {
     );
   }
 
-  // Login Page
-  if (currentView === 'login') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <LoadingSpinner />
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Megaphone className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
-            <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
+// Login Page
+if (currentView === 'login') {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <LoadingSpinner />
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Megaphone className="w-8 h-8 text-purple-600" />
+            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
           </div>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+          <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
+        </div>
 
-          <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-sm p-8">
-            <ErrorMessage />
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+        <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-sm p-8">
+          <ErrorMessage />
+          
+          {/* EMAIL FIELD - ADDED */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={loginForm.email}
+              onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          {/* PASSWORD FIELD WITH FORGOT PASSWORD LINK */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <div className="relative">
               <input
-                type="email"
-                value={loginForm.email}
-                onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                type={showPassword ? 'text' : 'password'}
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 pr-10"
                 required
                 disabled={loading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
             
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 pr-10"
-                  required
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-           
-</div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Signing In...' : 'Sign In'}
-            </button>
-
-            <div className="mt-4 text-center">
+            {/* Forgot Password Link */}
+            <div className="mt-2 text-right">
               <button
                 type="button"
                 onClick={() => setCurrentView('forgot-password')}
-                className="text-purple-600 hover:text-purple-700 text-sm"
+                className="text-sm text-purple-600 hover:text-purple-700"
               >
                 Forgot your password?
               </button>
             </div>
+          </div>
 
-            <div className="mt-4 space-y-2">
-              <button
-                type="button"
-                onClick={() => quickLogin('john@example.com', 'password123', false)}
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
-              >
-                Quick Login as User (John)
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('admin@bugbuzzers.com', 'admin123', true)}
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
-              >
-                Quick Login as Admin
-              </button>
-            </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
 
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => setCurrentView('signup')}
-                  className="text-purple-600 font-medium hover:text-purple-700"
-                >
-                  Sign up now
-                </button>
-              </p>
-            </div>
-          </form>
-
-          <div className="mt-4 text-center">
+          <div className="mt-4 space-y-2">
             <button
-              onClick={() => setCurrentView('landing')}
-              className="text-purple-600 hover:text-purple-700"
+              type="button"
+              onClick={() => quickLogin('john@example.com', 'password123', false)}
+              disabled={loading}
+              className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
             >
-              ← Back to home
+              Quick Login as User (John)
+            </button>
+            <button
+              type="button"
+              onClick={() => quickLogin('admin@bugbuzzers.com', 'admin123', true)}
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
+            >
+              Quick Login as Admin
             </button>
           </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => setCurrentView('signup')}
+                className="text-purple-600 font-medium hover:text-purple-700"
+              >
+                Sign up now
+              </button>
+            </p>
+          </div>
+        </form>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setCurrentView('landing')}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            ← Back to home
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // Signup Page
   if (currentView === 'signup') {
