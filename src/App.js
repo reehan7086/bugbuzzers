@@ -62,27 +62,69 @@ const handleEmailVerification = async (token) => {
     setLoading(false);
   }
 };
-
-  // Update your useEffect to handle verification page - MOVED BEFORE ANY EARLY RETURNS
-setUser(userFromToken);
-setCurrentView(userFromToken.isAdmin ? 'admin' : 'dashboard');
-
-// ✅ NEW: Fetch fresh data from server
-setTimeout(async () => {
-  try {
-    const response = await fetch('/api/auth/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    if (response.ok) {
-      const freshUserData = await response.json();
-      setUser(freshUserData); // This updates emailVerified status
-    }
-  } catch (error) {
-    console.log('Could not fetch fresh user data:', error);
+useEffect(() => {
+  console.log('🔍 useEffect triggered - checking for stored token');
+  
+  // Check if this is a verification link
+  const urlParams = new URLSearchParams(window.location.search);
+  const verificationToken = urlParams.get('token');
+  
+  if (window.location.pathname === '/verify-email' && verificationToken) {
+    console.log('🔍 Found verification token in URL, handling verification');
+    handleEmailVerification(verificationToken);
+    return;
   }
-}, 100);
 
+  // Existing token logic
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      const now = Date.now() / 1000;
+      if (payload.exp && payload.exp < now) {
+        localStorage.removeItem('token');
+        setCurrentView('landing');
+        return;
+      }
+
+      // Create user from token
+      const userFromToken = {
+        id: payload.id,
+        email: payload.email,
+        name: payload.name || 'User',
+        points: payload.points || 0,
+        isAdmin: payload.isAdmin || false,
+        emailVerified: payload.emailVerified || false
+      };
+      
+      setUser(userFromToken);
+      setCurrentView(userFromToken.isAdmin ? 'admin' : 'dashboard');
+      
+      // CRITICAL FIX: Fetch fresh user data from server
+      setTimeout(async () => {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const freshUserData = await response.json();
+            console.log('🔍 Fresh user data loaded:', freshUserData);
+            setUser(freshUserData);
+          }
+        } catch (error) {
+          console.log('Could not fetch fresh user data:', error);
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Token parsing error:', error);
+      localStorage.removeItem('token');
+      setCurrentView('landing');
+    }
+  }
+}, []);
   // Load data when user changes - ALSO MOVED BEFORE EARLY RETURNS
   useEffect(() => {
     if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
@@ -484,10 +526,7 @@ const EmailVerificationBanner = () => {
             </p>
 <button
   onClick={() => {
-    localStorage.setItem('emailVerifiedOverride', 'true');
-    if (user && !user.emailVerified) {
-      setUser({ ...user, emailVerified: true });
-    }
+    // Just navigate - user state should already be updated
     setCurrentView('dashboard');
   }}
   className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
@@ -936,6 +975,150 @@ const EmailVerificationBanner = () => {
       </div>
     );
   }
+
+// Report Bug Page
+if (currentView === 'report') {
+  console.log('🔍 Report page - Loading state:', loading);
+  console.log('🔍 Report page - User verified:', user?.emailVerified);
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <Navigation />
+      <EmailVerificationBanner /> 
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
+          <p className="text-gray-600 mt-2">Help us improve by reporting bugs you find</p>
+        </div>
+
+        <form onSubmit={handleBugSubmit} className="bg-white rounded-lg shadow-sm p-8">
+          <ErrorMessage />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bug Title *</label>
+              <input
+                type="text"
+                value={bugForm.title}
+                onChange={(e) => setBugForm({...bugForm, title: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Brief description of the bug"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">App/Website Name *</label>
+              <input
+                type="text"
+                value={bugForm.appName}
+                onChange={(e) => setBugForm({...bugForm, appName: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Name of the application"
+                required
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+            <textarea
+              value={bugForm.description}
+              onChange={(e) => setBugForm({...bugForm, description: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              rows="4"
+              placeholder="Detailed description of what happened"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Steps to Reproduce *</label>
+            <textarea
+              value={bugForm.steps}
+              onChange={(e) => setBugForm({...bugForm, steps: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              rows="4"
+              placeholder="1. Step one&#10;2. Step two&#10;3. Step three"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
+              <input
+                type="text"
+                value={bugForm.device}
+                onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
+              <select
+                value={bugForm.severity}
+                onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                disabled={loading}
+              >
+                <option value="low">Low (150 pts) - Minor issues</option>
+                <option value="medium">Medium (300 pts) - Affects functionality</option>
+                <option value="high">High (500 pts) - Critical issues</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={bugForm.anonymous}
+                onChange={(e) => setBugForm({...bugForm, anonymous: e.target.checked})}
+                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                disabled={loading}
+              />
+              <span className="ml-2 text-sm text-gray-700">Submit anonymously</span>
+            </label>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-blue-900 mb-2">Estimated Review Time</h3>
+            <p className="text-sm text-blue-700">
+              Your bug will be reviewed within approximately {getEstimatedReviewTime(bugForm.severity)} hours.
+              If verified, you'll earn {getPointsForSeverity(bugForm.severity)} points!
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => setCurrentView('dashboard')}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Submitting...' : 'Submit Bug Report'}
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+}
 
   // Dashboard
   if (currentView === 'dashboard') {
