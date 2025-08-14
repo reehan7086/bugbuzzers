@@ -23,20 +23,29 @@ const BugBuzzers = () => {
   const [leaderboard, setLeaderboard] = useState([]);
 
   // Add email verification handler function - MOVED BEFORE useEffect
-// REPLACE your existing handleEmailVerification function with this:
 const handleEmailVerification = async (token) => {
+  console.log('🔍 Starting email verification for token:', token?.substring(0, 10) + '...');
+  
   setLoading(true);
   try {
     const response = await fetch(`/api/auth/verify-email?token=${token}`);
     
     if (response.ok) {
       const result = await response.json();
+      console.log('✅ Email verification successful:', result);
       
-      // Update user's email verification status immediately
-      if (user) {
-        const updatedUser = { ...user, emailVerified: true };
-        setUser(updatedUser);
-        console.log('✅ User email verification status updated in state');
+      // Get fresh user data after verification
+      const currentToken = localStorage.getItem('token');
+      if (currentToken) {
+        const userResponse = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${currentToken}` }
+        });
+        
+        if (userResponse.ok) {
+          const freshUserData = await userResponse.json();
+          console.log('🔍 Updated user data after verification:', freshUserData);
+          setUser(freshUserData);
+        }
       }
       
       setCurrentView('verify-email');
@@ -55,47 +64,24 @@ const handleEmailVerification = async (token) => {
 };
 
   // Update your useEffect to handle verification page - MOVED BEFORE ANY EARLY RETURNS
-  useEffect(() => {
-    // Check if this is a verification link
-    const urlParams = new URLSearchParams(window.location.search);
-    const verificationToken = urlParams.get('token');
+setUser(userFromToken);
+setCurrentView(userFromToken.isAdmin ? 'admin' : 'dashboard');
+
+// ✅ NEW: Fetch fresh data from server
+setTimeout(async () => {
+  try {
+    const response = await fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
     
-    if (window.location.pathname === '/verify-email' && verificationToken) {
-      handleEmailVerification(verificationToken);
-      return;
+    if (response.ok) {
+      const freshUserData = await response.json();
+      setUser(freshUserData); // This updates emailVerified status
     }
-
-    // Existing token logic
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        const now = Date.now() / 1000;
-        if (payload.exp && payload.exp < now) {
-          localStorage.removeItem('token');
-          setCurrentView('landing');
-          return;
-        }
-
-        const user = {
-          id: payload.id,
-          email: payload.email,
-          name: payload.name || 'User',
-          points: payload.points || 0,
-          isAdmin: payload.isAdmin || false,
-          emailVerified: payload.emailVerified || false
-        };
-        
-        setUser(user);
-        setCurrentView(user.isAdmin ? 'admin' : 'dashboard');
-      } catch (error) {
-        console.error('Token parsing error:', error);
-        localStorage.removeItem('token');
-        setCurrentView('landing');
-      }
-    }
-  }, []);
+  } catch (error) {
+    console.log('Could not fetch fresh user data:', error);
+  }
+}, 100);
 
   // Load data when user changes - ALSO MOVED BEFORE EARLY RETURNS
   useEffect(() => {
@@ -384,48 +370,59 @@ const EmailVerificationBanner = () => {
   const resendVerification = async () => {
     setResending(true);
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in again to resend verification email.');
+        return;
+      }
+
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
       if (response.ok) {
-        alert('Verification email sent! Please check your inbox.');
+        alert('Verification email sent! Please check your inbox (including spam folder).');
       } else {
-        alert('Failed to send verification email. Please try again.');
+        const error = await response.json();
+        alert(`Failed to send verification email: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      alert('Error sending verification email.');
+      console.error('Resend verification error:', error);
+      alert('Error sending verification email. Please try again.');
     } finally {
       setResending(false);
     }
   };
 
-  // SECURE: Check with server instead of allowing manual override
   const checkVerificationStatus = async () => {
     setChecking(true);
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in again.');
+        return;
+      }
+
       const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       
       if (response.ok) {
         const userData = await response.json();
-        console.log('🔍 Fresh user data from server:', userData);
+        console.log('🔍 Verification status check:', userData);
         
         if (userData.emailVerified) {
-          // Update user state with fresh data from server
           setUser(userData);
-          alert('Email verification confirmed! You now have full access.');
+          alert('✅ Email verification confirmed! You now have full access.');
         } else {
-          alert('Email is not yet verified. Please check your email and click the verification link.');
+          alert('❌ Email is not yet verified. Please check your email and click the verification link.');
         }
       } else {
-        alert('Failed to check verification status. Please try again.');
+        alert('Failed to check verification status. Please try logging in again.');
       }
     } catch (error) {
       console.error('Error checking verification status:', error);
@@ -435,8 +432,8 @@ const EmailVerificationBanner = () => {
     }
   };
 
-  // SECURE: Only check emailVerified from user state (no localStorage bypass)
-  if (user?.emailVerified || !user) {
+  // Only show banner if user exists and email is not verified
+  if (!user || user.emailVerified) {
     return null;
   }
 
@@ -452,7 +449,7 @@ const EmailVerificationBanner = () => {
             <button
               onClick={resendVerification}
               disabled={resending}
-              className="font-medium underline hover:text-yellow-600"
+              className="font-medium underline hover:text-yellow-600 disabled:opacity-50"
             >
               {resending ? 'Sending...' : 'Resend verification email'}
             </button>
@@ -460,7 +457,7 @@ const EmailVerificationBanner = () => {
             <button
               onClick={checkVerificationStatus}
               disabled={checking}
-              className="font-medium underline hover:text-yellow-600"
+              className="font-medium underline hover:text-yellow-600 disabled:opacity-50"
             >
               {checking ? 'Checking...' : 'Already verified? Refresh status'}
             </button>
