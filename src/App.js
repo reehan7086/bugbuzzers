@@ -1102,7 +1102,7 @@ if (currentView === 'report') {
   return (
     <div className="min-h-screen bg-gray-50">
       <LoadingSpinner />
-      <Navigation />
+      <SocialNavigation />
       <EmailVerificationBanner /> 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -1243,7 +1243,7 @@ if (currentView === 'report') {
     return (
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
-        <Navigation />
+        <SocialNavigation />
         <EmailVerificationBanner />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -1343,7 +1343,7 @@ if (currentView === 'report') {
     return (
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
-        <Navigation />
+        <SocialNavigation />
         <EmailVerificationBanner /> 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
@@ -1444,7 +1444,7 @@ if (currentView === 'report') {
     return (
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
-        <Navigation />
+        <SocialNavigation />
         <EmailVerificationBanner />  
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -1511,7 +1511,7 @@ if (currentView === 'report') {
     return (
       <div className="min-h-screen bg-gray-50">
         <LoadingSpinner />
-        <Navigation />
+        <SocialNavigation />
         <EmailVerificationBanner /> 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
@@ -1847,5 +1847,600 @@ if (currentView === 'reset-password') {
     </div>
   );
 };
+
+// Social Integration Updates for App.js
+// Add these modifications to your existing App.js component
+
+// 1. ADD THESE NEW STATE VARIABLES (add after your existing state variables)
+const [socialFeed, setSocialFeed] = useState([]);
+const [feedFilter, setFeedFilter] = useState('trending');
+const [feedLoading, setFeedLoading] = useState(false);
+const [notifications, setNotifications] = useState([]);
+const [unreadCount, setUnreadCount] = useState(0);
+
+// 2. ADD SOCIAL FEED VIEW HANDLER (add after your existing useEffect hooks)
+useEffect(() => {
+  // Default to social feed for logged-in users
+  if (user && currentView === 'dashboard') {
+    setCurrentView('social-feed');
+  }
+}, [user]);
+
+// 3. ADD THE SOCIAL FEED PAGE VIEW (add this before your default fallback return)
+// Social Feed Page (NEW MAIN VIEW)
+if (currentView === 'social-feed') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner />
+      
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Social Stats Bar */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">15.4K</div>
+              <div className="text-xs text-gray-500">Total Supports</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">2.8K</div>
+              <div className="text-xs text-gray-500">Active Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">23</div>
+              <div className="text-xs text-gray-500">Trending Bugs</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">$48.6K</div>
+              <div className="text-xs text-gray-500">Rewards Paid</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bug Stories */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Trending Bug Categories</h3>
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {/* Add New Story */}
+            <div className="flex-shrink-0 text-center">
+              <button 
+                onClick={() => setCurrentView('report')}
+                className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-105 transition-transform"
+              >
+                <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-purple-600" />
+                </div>
+              </button>
+              <p className="text-xs mt-1 text-gray-600">Report Bug</p>
+            </div>
+            
+            {/* Trending Categories */}
+            {[
+              { name: 'Instagram', icon: '📸', gradient: 'from-purple-500 to-pink-500' },
+              { name: 'TikTok', icon: '🎵', gradient: 'from-black to-red-500' },
+              { name: 'WhatsApp', icon: '💬', gradient: 'from-green-500 to-green-600' },
+              { name: 'Uber', icon: '🚗', gradient: 'from-black to-gray-600' },
+              { name: 'Netflix', icon: '🎬', gradient: 'from-red-600 to-red-700' }
+            ].map((category, index) => (
+              <div key={index} className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform">
+                <div className={`w-16 h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5`}>
+                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                    <span className="text-2xl">{category.icon}</span>
+                  </div>
+                </div>
+                <p className="text-xs mt-1 text-gray-600">{category.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Feed Filter Tabs */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-6">
+          <div className="flex space-x-1 overflow-x-auto">
+            {[
+              { key: 'trending', label: '🔥 Trending', icon: '📈' },
+              { key: 'recent', label: '🕐 Recent', icon: '⏰' },
+              { key: 'following', label: '👥 Following', icon: '❤️' },
+              { key: 'most_supported', label: '🙋‍♀️ Most Supported', icon: '🏆' }
+            ].map((filter) => (
+              <button
+                key={filter.key}
+                onClick={() => setFeedFilter(filter.key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  feedFilter === filter.key
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span>{filter.icon}</span>
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        {/* Social Bug Feed */}
+        <div className="space-y-0">
+          {/* Sample Instagram-style Bug Post */}
+          <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden border border-gray-200">
+            {/* User Header */}
+            <div className="flex items-center p-4 border-b border-gray-100">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                S
+              </div>
+              <div className="ml-3 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-gray-900">Sarah Johnson</span>
+                  <span className="text-purple-600 text-sm">@sarahj_dev</span>
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                    Bug Master
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 flex items-center gap-2">
+                  <span>Instagram</span>
+                  <span>•</span>
+                  <span>2h ago</span>
+                  <span>•</span>
+                  <span>San Francisco, CA</span>
+                </div>
+              </div>
+              <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
+                Follow
+              </button>
+            </div>
+
+            {/* Bug Content */}
+            <div className="px-4 pb-3">
+              <h3 className="font-bold text-lg mb-2 text-gray-900">Instagram crashes when uploading stories</h3>
+              <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
+              <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
+              
+              {/* Hashtags */}
+              <div className="flex gap-2 flex-wrap mb-3">
+                {['#InstagramBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
+                  <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              {/* Badges */}
+              <div className="flex gap-2 mb-3">
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  HIGH
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  functional
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
+                  🔥 Trending #1
+                </span>
+              </div>
+            </div>
+
+            {/* Media */}
+            <div className="relative">
+              <div className="w-full h-80 bg-gray-100 flex items-center justify-center text-gray-400">
+                <span className="text-lg">📸 Bug Screenshot</span>
+              </div>
+            </div>
+
+            {/* Action Bar */}
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-6">
+                  {/* Support Button */}
+                  <button className="flex items-center gap-2 transition-all active:scale-95">
+                    <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
+                    <span className="text-sm font-medium text-purple-600">I got this too!</span>
+                  </button>
+
+                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span className="text-xl">💬</span>
+                    <span className="text-sm text-gray-600">Comment</span>
+                  </button>
+
+                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span className="text-xl">📤</span>
+                    <span className="text-sm text-gray-600">Share</span>
+                  </button>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-lg font-bold text-green-600">$1,850</div>
+                  <div className="text-xs text-gray-500">Potential Reward</div>
+                </div>
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="space-y-1">
+                <div className="text-sm text-gray-600">
+                  <span className="font-bold">1,247</span> people also got this bug
+                  <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
+                </div>
+                
+                <div className="text-sm text-gray-500">
+                  <button className="hover:text-gray-700">View all 89 comments</button>
+                </div>
+
+                {/* Recent Supporters */}
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500">Supported by:</span>
+                  <div className="flex -space-x-2">
+                    {['J', 'M', 'A'].map((initial, index) => (
+                      <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                        {initial}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-500">and 1,244 others</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Second Sample Post */}
+          <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden border border-gray-200">
+            <div className="flex items-center p-4 border-b border-gray-100">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                A
+              </div>
+              <div className="ml-3 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-gray-900">Alex Chen</span>
+                  <span className="text-purple-600 text-sm">@alexc_creates</span>
+                  <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                    Bug Hunter
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500">TikTok • 5h ago • New York, NY</div>
+              </div>
+              <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
+                Follow
+              </button>
+            </div>
+
+            <div className="px-4 pb-3">
+              <h3 className="font-bold text-lg mb-2 text-gray-900">TikTok video upload stuck at 99%</h3>
+              <p className="text-gray-700 mb-2">Why does this always happen when I have the perfect video? 😭</p>
+              <p className="text-gray-600 text-sm mb-3">Videos get stuck at 99% during upload and never complete. Super frustrating!</p>
+              
+              <div className="flex gap-2 flex-wrap mb-3">
+                {['#TikTokBug', '#Upload', '#Stuck', '#Android'].map((tag, index) => (
+                  <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex gap-2 mb-3">
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  MEDIUM
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  performance
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  🔥 Trending #2
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-6">
+                  <button className="flex items-center gap-2 transition-all active:scale-95">
+                    <span className="text-2xl text-gray-400 hover:text-purple-500">🙋‍♀️</span>
+                    <span className="text-sm font-medium text-gray-600">I got this too</span>
+                  </button>
+                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600">
+                    <span className="text-xl">💬</span>
+                    <span className="text-sm">Comment</span>
+                  </button>
+                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600">
+                    <span className="text-xl">📤</span>
+                    <span className="text-sm">Share</span>
+                  </button>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-green-600">$856</div>
+                  <div className="text-xs text-gray-500">Potential Reward</div>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-600">
+                <span className="font-bold">856</span> people also got this bug
+                <span className="ml-2 text-orange-500 font-medium">🔥 Trending #2</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Call to Action for More Bugs */}
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">🚀</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
+            <p className="text-gray-600 mb-4">Found a bug? Share it with the community and earn rewards!</p>
+            <button
+              onClick={() => setCurrentView('report')}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+            >
+              🐛 Report Your First Bug
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// 4. UPDATE YOUR NAVIGATION COMPONENT (replace the existing Navigation component)
+const SocialNavigation = () => (
+  <nav className="bg-white shadow-sm border-b">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center h-16">
+        <div className="flex items-center">
+          <Megaphone className="w-8 h-8 text-purple-600" />
+          <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
+          <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-medium">
+            SOCIAL
+          </span>
+        </div>
+        
+        <div className="hidden md:flex items-center space-x-8">
+          <button
+            onClick={() => setCurrentView('social-feed')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Feed
+          </button>
+          <button
+            onClick={() => setCurrentView('trending')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'trending' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <span className="w-4 h-4 mr-2">🔥</span>
+            Trending
+          </button>
+          <button
+            onClick={() => setCurrentView('report')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'report' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Report Bug
+          </button>
+          <button
+            onClick={() => setCurrentView('leaderboard')}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'leaderboard' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <Trophy className="w-4 h-4 mr-2" />
+            Leaderboard
+          </button>
+          {user?.isAdmin && (
+            <button
+              onClick={() => setCurrentView('admin')}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                currentView === 'admin' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+              }`}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Admin
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-4">
+          {/* Notifications */}
+          <div className="relative">
+            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+              <AlertCircle className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
+          
+          {/* User Points */}
+          <div className="hidden md:flex items-center text-sm text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">
+            <Trophy className="w-4 h-4 mr-1 text-yellow-500" />
+            {user?.points || 0} pts
+          </div>
+          
+          {/* User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex items-center text-sm font-medium text-gray-700 hover:text-purple-600"
+            >
+              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+              {user?.name}
+              <Menu className="w-4 h-4 ml-2 md:hidden" />
+            </button>
+            
+            {/* Mobile/Desktop Menu */}
+            {mobileMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                <div className="md:hidden">
+                  <button
+                    onClick={() => { setCurrentView('social-feed'); setMobileMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    🏠 Feed
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('trending'); setMobileMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    🔥 Trending
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('report'); setMobileMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    ➕ Report Bug
+                  </button>
+                  <button
+                    onClick={() => { setCurrentView('leaderboard'); setMobileMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    🏆 Leaderboard
+                  </button>
+                  {user?.isAdmin && (
+                    <button
+                      onClick={() => { setCurrentView('admin'); setMobileMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      ⚙️ Admin
+                    </button>
+                  )}
+                  <hr className="my-1" />
+                  <div className="px-4 py-2 text-sm text-gray-500">
+                    Points: {user?.points || 0}
+                  </div>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+);
+
+// 5. ADD TRENDING PAGE (add this before your default fallback)
+if (currentView === 'trending') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner />
+      
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            🔥 Trending Bugs
+            <span className="text-lg bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-medium">
+              LIVE
+            </span>
+          </h1>
+          <p className="text-gray-600 mt-2">Most supported bugs trending right now</p>
+        </div>
+
+        {/* Trending Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">1,247</div>
+                <div className="text-red-100">Supports in last hour</div>
+              </div>
+              <div className="text-4xl">🔥</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">23</div>
+                <div className="text-purple-100">Bugs trending today</div>
+              </div>
+              <div className="text-4xl">📈</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">$48.6K</div>
+                <div className="text-green-100">Total rewards today</div>
+              </div>
+              <div className="text-4xl">💰</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trending List */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">🏆 Top Trending Bugs</h2>
+          </div>
+          
+          <div className="divide-y divide-gray-200">
+            {[
+              { rank: 1, title: 'Instagram crashes when uploading stories', app: 'Instagram', supports: 1247, reward: 1850, trend: '+127%' },
+              { rank: 2, title: 'TikTok video upload stuck at 99%', app: 'TikTok', supports: 856, reward: 856, trend: '+89%' },
+              { rank: 3, title: 'WhatsApp messages not sending', app: 'WhatsApp', supports: 634, reward: 634, trend: '+67%' },
+              { rank: 4, title: 'Uber app crashes on payment', app: 'Uber', supports: 523, reward: 1569, trend: '+45%' },
+              { rank: 5, title: 'Netflix video quality issues', app: 'Netflix', supports: 456, reward: 456, trend: '+34%' }
+            ].map((bug) => (
+              <div key={bug.rank} className="px-6 py-4 hover:bg-gray-50 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                      bug.rank === 1 ? 'bg-yellow-500' :
+                      bug.rank === 2 ? 'bg-gray-400' :
+                      bug.rank === 3 ? 'bg-orange-600' :
+                      'bg-purple-500'
+                    }`}>
+                      {bug.rank}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{bug.title}</h3>
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span>{bug.app}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          🙋‍♀️ {bug.supports.toLocaleString()} supports
+                        </span>
+                        <span>•</span>
+                        <span className="text-green-600 font-medium">{bug.trend}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-green-600">${bug.reward.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Potential</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <div className="mt-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-8 text-white text-center">
+          <h3 className="text-2xl font-bold mb-2">🚀 Want to Go Viral?</h3>
+          <p className="mb-6 text-purple-100">Report bugs that thousands of people experience and earn massive rewards!</p>
+          <button
+            onClick={() => setCurrentView('report')}
+            className="bg-white text-purple-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all transform hover:scale-105"
+          >
+            Report a Trending Bug
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// 6. REPLACE ALL INSTANCES OF <SocialNavigation /> WITH <SocialNavigation /> IN YOUR EXISTING VIEWS
+// This ensures the new social navigation is used throughout the app
 
 export default BugBuzzers;
