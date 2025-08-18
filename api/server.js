@@ -543,52 +543,50 @@ async function initDB() {
     console.log('✅ Performance indexes created');
 
     // Create triggers for automatic updates
-    await pool.query(`
-      // Function to update bug supports count
-      CREATE OR REPLACE FUNCTION update_bug_supports_count()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        IF TG_OP = 'INSERT' THEN
-          UPDATE bugs SET supports_count = supports_count + 1 WHERE id = NEW.bug_id;
-          UPDATE users SET total_supports_received = total_supports_received + 1 
-          WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
-        ELSIF TG_OP = 'DELETE' THEN
-          UPDATE bugs SET supports_count = supports_count - 1 WHERE id = OLD.bug_id;
-          UPDATE users SET total_supports_received = total_supports_received - 1 
-          WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
-        END IF;
-        RETURN COALESCE(NEW, OLD);
-      END;
-      $$ LANGUAGE plpgsql;
+ CREATE OR REPLACE FUNCTION update_bug_supports_count()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    IF TG_OP = 'INSERT' THEN
+      UPDATE bugs SET supports_count = supports_count + 1 WHERE id = NEW.bug_id;
+      UPDATE users SET total_supports_received = total_supports_received + 1 
+      WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
+    ELSIF TG_OP = 'DELETE' THEN
+      UPDATE bugs SET supports_count = supports_count - 1 WHERE id = OLD.bug_id;
+      UPDATE users SET total_supports_received = total_supports_received - 1 
+      WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+  END;
+  $$ LANGUAGE plpgsql;
 
      // Trigger for bug supports
-      DROP TRIGGER IF EXISTS bug_supports_count_trigger ON bug_supports;
-      CREATE TRIGGER bug_supports_count_trigger
-        AFTER INSERT OR DELETE ON bug_supports
-        FOR EACH ROW EXECUTE FUNCTION update_bug_supports_count();
+  DROP TRIGGER IF EXISTS bug_supports_count_trigger ON bug_supports;
+  CREATE TRIGGER bug_supports_count_trigger
+    AFTER INSERT OR DELETE ON bug_supports
+    FOR EACH ROW EXECUTE FUNCTION update_bug_supports_count();
     `);
 
     await pool.query(`
       // Function to update user followers count
-      CREATE OR REPLACE FUNCTION update_followers_count()
-      RETURNS TRIGGER AS $$
-      BEGIN
-        IF TG_OP = 'INSERT' THEN
-          UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
-          UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
-        ELSIF TG_OP = 'DELETE' THEN
-          UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
-          UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
-        END IF;
-        RETURN COALESCE(NEW, OLD);
-      END;
-      $$ LANGUAGE plpgsql;
+  CREATE OR REPLACE FUNCTION update_followers_count()
+  RETURNS TRIGGER AS $$
+  BEGIN
+    IF TG_OP = 'INSERT' THEN
+      UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
+      UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+    ELSIF TG_OP = 'DELETE' THEN
+      UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
+      UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+    END IF;
+    RETURN COALESCE(NEW, OLD);
+  END;
+  $$ LANGUAGE plpgsql;
 
       // Trigger for user follows
-      DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
-      CREATE TRIGGER user_follows_count_trigger
-        AFTER INSERT OR DELETE ON user_follows
-        FOR EACH ROW EXECUTE FUNCTION update_followers_count();
+  DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
+  CREATE TRIGGER user_follows_count_trigger
+    AFTER INSERT OR DELETE ON user_follows
+    FOR EACH ROW EXECUTE FUNCTION update_followers_count();
     `);
     console.log('✅ Database triggers created');
 
