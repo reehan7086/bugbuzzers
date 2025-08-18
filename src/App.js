@@ -1925,7 +1925,92 @@ const BugBuzzers = () => {
       </div>
     );
   }
+// Landing Page
+if (currentView === 'landing') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Megaphone className="w-8 h-8 text-purple-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentView('login')}
+                className="text-gray-700 hover:text-purple-600 font-medium"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setCurrentView('signup')}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
+      {/* Hero Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Turn Bug Reports Into 
+            <span className="text-purple-600"> Social Rewards</span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Join the community of bug hunters earning real money by reporting issues in your favorite apps and websites.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => setCurrentView('signup')}
+              className="px-8 py-4 bg-purple-600 text-white rounded-lg text-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              Start Hunting Bugs 🐛
+            </button>
+            <button
+              onClick={() => setCurrentView('login')}
+              className="px-8 py-4 border border-gray-300 text-gray-700 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trophy className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Earn Rewards</h3>
+            <p className="text-gray-600">Get paid for every verified bug you report. Top hunters earn thousands!</p>
+          </div>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Make Apps Better</h3>
+            <p className="text-gray-600">Help improve the apps and websites millions of people use every day.</p>
+          </div>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Star className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Join Community</h3>
+            <p className="text-gray-600">Connect with fellow bug hunters and share your discoveries.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
   // Default fallback
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
