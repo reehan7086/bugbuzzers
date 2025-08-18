@@ -1,3 +1,5 @@
+// Enhanced API Client - Replace your existing src/api.js with this version
+
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
 
 class BugBuzzersAPI {
@@ -35,11 +37,9 @@ class BugBuzzersAPI {
         let errorMessage = 'Request failed';
         
         try {
-          // Try to parse as JSON first
           const errorData = await response.json();
           errorMessage = errorData.error || errorData.message || 'Request failed';
         } catch (jsonError) {
-          // If JSON parsing fails, get text response
           try {
             errorMessage = await response.text() || `HTTP ${response.status}`;
           } catch (textError) {
@@ -50,11 +50,9 @@ class BugBuzzersAPI {
         throw new Error(errorMessage);
       }
 
-      // Try to parse response as JSON
       try {
         return await response.json();
       } catch (jsonError) {
-        // If response is not JSON, return the text
         return await response.text();
       }
     } catch (error) {
@@ -63,7 +61,7 @@ class BugBuzzersAPI {
     }
   }
 
-  // Auth methods
+  // ===================== EXISTING AUTH METHODS =====================
   async login(email, password) {
     const data = await this.request('/auth/login', {
       method: 'POST',
@@ -82,7 +80,6 @@ class BugBuzzersAPI {
     return { user: data.user, message: data.message };
   }
 
-  // Password reset methods
   async forgotPassword(email) {
     return await this.request('/auth/forgot-password', {
       method: 'POST',
@@ -101,7 +98,6 @@ class BugBuzzersAPI {
     this.setToken(null);
   }
 
-  // Email verification methods
   async resendVerification() {
     return await this.request('/auth/resend-verification', {
       method: 'POST',
@@ -114,18 +110,25 @@ class BugBuzzersAPI {
     });
   }
 
-  // Get current user profile
   async getCurrentUser() {
     return await this.request('/auth/me');
   }
 
-  // Bug methods
+  // ===================== ENHANCED BUG METHODS WITH SOCIAL FEATURES =====================
   async getBugs() {
     return await this.request('/bugs');
   }
 
   async createBug(bugData) {
     return await this.request('/bugs', {
+      method: 'POST',
+      body: JSON.stringify(bugData),
+    });
+  }
+
+  // NEW: Create social bug with enhanced features
+  async createSocialBug(bugData) {
+    return await this.request('/bugs/social', {
       method: 'POST',
       body: JSON.stringify(bugData),
     });
@@ -138,14 +141,197 @@ class BugBuzzersAPI {
     });
   }
 
-  // Leaderboard
+  // ===================== NEW SOCIAL API METHODS =====================
+
+  // Social Feed Methods
+  async getSocialFeed(filter = 'trending', category = null, limit = 20, offset = 0) {
+    const params = new URLSearchParams({
+      filter,
+      limit: limit.toString(),
+      offset: offset.toString()
+    });
+    
+    if (category) {
+      params.append('category', category);
+    }
+
+    return await this.request(`/feed?${params}`);
+  }
+
+  async getTrendingBugs(category = null, timeframe = 'today') {
+    const params = new URLSearchParams({ timeframe });
+    if (category) {
+      params.append('category', category);
+    }
+    
+    return await this.request(`/trending?${params}`);
+  }
+
+  // Bug Support Methods (Main Social Feature!)
+  async supportBug(bugId, supportData = {}) {
+    return await this.request(`/bugs/${bugId}/support`, {
+      method: 'POST',
+      body: JSON.stringify({
+        supportType: supportData.supportType || 'experienced',
+        deviceInfo: supportData.deviceInfo || '',
+        additionalContext: supportData.additionalContext || ''
+      }),
+    });
+  }
+
+  async removeBugSupport(bugId) {
+    return await this.request(`/bugs/${bugId}/support`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getBugSupporters(bugId, limit = 50, offset = 0) {
+    return await this.request(`/bugs/${bugId}/supporters?limit=${limit}&offset=${offset}`);
+  }
+
+  // Comment Methods
+  async addComment(bugId, comment, parentId = null) {
+    return await this.request(`/bugs/${bugId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ comment, parentId }),
+    });
+  }
+
+  async getBugComments(bugId, limit = 50, offset = 0) {
+    return await this.request(`/bugs/${bugId}/comments?limit=${limit}&offset=${offset}`);
+  }
+
+  // Share Methods
+  async shareBug(bugId, platform = 'copy_link') {
+    return await this.request(`/bugs/${bugId}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ platform }),
+    });
+  }
+
+  // User Social Methods
+  async followUser(userId) {
+    return await this.request(`/users/${userId}/follow`, {
+      method: 'POST',
+    });
+  }
+
+  async unfollowUser(userId) {
+    return await this.request(`/users/${userId}/follow`, {
+      method: 'POST', // Same endpoint, will toggle
+    });
+  }
+
+  async getUserProfile(username) {
+    return await this.request(`/users/${username}`);
+  }
+
+  // Notification Methods
+  async getNotifications(limit = 20, offset = 0, unreadOnly = false) {
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+      unread_only: unreadOnly.toString()
+    });
+    
+    return await this.request(`/notifications?${params}`);
+  }
+
+  async markNotificationsRead(notificationIds = []) {
+    return await this.request('/notifications/read', {
+      method: 'PUT',
+      body: JSON.stringify({ notificationIds }),
+    });
+  }
+
+  // ===================== EXISTING METHODS =====================
   async getLeaderboard() {
     return await this.request('/leaderboard');
   }
 
-  // Health check
   async healthCheck() {
     return await this.request('/health');
+  }
+
+  // ===================== UTILITY METHODS FOR SOCIAL FEATURES =====================
+
+  // Calculate estimated reward based on social engagement
+  calculateSocialReward(supportsCount, severity, viralScore = 0) {
+    const baseReward = this.getPointsForSeverity(severity);
+    const supportMultiplier = Math.min(1 + (supportsCount * 0.1), 10); // Max 10x multiplier
+    const viralBonus = viralScore > 1000 ? 2 : viralScore > 500 ? 1.5 : 1;
+    
+    return Math.round(baseReward * supportMultiplier * viralBonus);
+  }
+
+  getPointsForSeverity(severity) {
+    const points = { high: 500, medium: 300, low: 150 };
+    return points[severity] || 150;
+  }
+
+  // Format time ago
+  getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return `${Math.floor(diffInSeconds / 604800)}w ago`;
+  }
+
+  // Check if bug is trending
+  isTrendingBug(bug) {
+    return bug.is_trending || bug.viral_score > 500 || bug.supports_count > 50;
+  }
+
+  // Get user level based on points
+  getUserLevel(points) {
+    if (points >= 10000) return 'Bug Legend';
+    if (points >= 5000) return 'Bug Master';
+    if (points >= 1000) return 'Bug Hunter';
+    return 'Bug Spotter';
+  }
+
+  // Format large numbers
+  formatNumber(num) {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  }
+
+  // Generate share text for social media
+  generateShareText(bug) {
+    const supportText = bug.supports_count > 0 ? ` ${bug.supports_count} people also got this bug!` : '';
+    const hashtags = bug.hashtags ? ' ' + bug.hashtags.map(tag => `#${tag}`).join(' ') : '';
+    
+    return `🐛 Found a bug in ${bug.app_name}: "${bug.title}"${supportText} Report bugs and earn rewards on BugBuzzers!${hashtags}`;
+  }
+
+  // Get trending categories (mock data for now)
+  getTrendingCategories() {
+    return [
+      { id: 1, name: 'Instagram', icon: '📸', gradient: 'from-purple-500 to-pink-500', bugCount: 147 },
+      { id: 2, name: 'TikTok', icon: '🎵', gradient: 'from-black to-red-500', bugCount: 89 },
+      { id: 3, name: 'WhatsApp', icon: '💬', gradient: 'from-green-500 to-green-600', bugCount: 67 },
+      { id: 4, name: 'Uber', icon: '🚗', gradient: 'from-black to-gray-600', bugCount: 45 },
+      { id: 5, name: 'Netflix', icon: '🎬', gradient: 'from-red-600 to-red-700', bugCount: 34 }
+    ];
+  }
+
+  // Get platform stats (mock data for now)
+  getPlatformStats() {
+    return {
+      totalSupports: 15420,
+      activeUsers: 2847,
+      trendingBugs: 23,
+      totalRewards: 48650,
+      bugsReportedToday: 156,
+      avgResponseTime: '2.3h',
+      topReporter: 'Sarah Johnson',
+      mostSupportedBug: 'Instagram crashes when uploading stories'
+    };
   }
 }
 
