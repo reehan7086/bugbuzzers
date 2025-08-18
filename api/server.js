@@ -1415,6 +1415,7 @@ app.post('/api/users/:id/follow', authenticateToken, async (req, res) => {
 });
 
 // Add comment to bug
+// Replace the incomplete comment endpoint (starting around line 1056) with:
 app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
   try {
     const { id: bugId } = req.params;
@@ -1450,22 +1451,82 @@ app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
     // Log user activity
     await logUserActivity(userId, 'comment_added', `Commented on a bug report`, bugId);
 
-const handleSignup = async (e) => {
-  // ... existing code ...
+    res.json({ success: true, comment: result.rows[0] });
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Add these helper functions BEFORE the "module.exports = app;" line:
+
+// Helper function to update viral score
+async function updateBugViralScore(bugId) {
   try {
-    const response = await api.signup(signupForm.name, signupForm.email, signupForm.password);
-    // Fix: Extract user from response object
-    const userData = response.user || response;
-    setUser(userData);
-    setCurrentView('social-feed');
-    setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
-    // Show message if available
-    if (response.message) {
-      alert(response.message);
+    const result = await pool.query(`
+      SELECT supports_count, comments_count, shares_count 
+      FROM bugs WHERE id = $1
+    `, [bugId]);
+    
+    if (result.rows.length > 0) {
+      const bug = result.rows[0];
+      const viralScore = (bug.supports_count * 10) + 
+                        (bug.comments_count * 5) + 
+                        (bug.shares_count * 3);
+      
+      await pool.query(
+        'UPDATE bugs SET viral_score = $1, is_trending = $2 WHERE id = $3',
+        [viralScore, viralScore > 500, bugId]
+      );
     }
   } catch (error) {
-    // ... existing error handling ...
+    console.error('Update viral score error:', error);
   }
-};
+}
+
+// Helper function to create notification
+async function createNotification(userId, type, title, message, actionUrl, metadata = {}) {
+  try {
+    await pool.query(`
+      INSERT INTO notifications (user_id, type, title, message, action_url, metadata)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [userId, type, title, message, actionUrl, JSON.stringify(metadata)]);
+  } catch (error) {
+    console.error('Create notification error:', error);
+  }
+}
+
+// Helper function to log user activity
+async function logUserActivity(userId, activityType, description, relatedBugId = null) {
+  try {
+    await pool.query(`
+      INSERT INTO user_activities (user_id, activity_type, description, related_bug_id)
+      VALUES ($1, $2, $3, $4)
+    `, [userId, activityType, description, relatedBugId]);
+  } catch (error) {
+    console.error('Log activity error:', error);
+  }
+}
+
+// Helper function to calculate social reward
+function calculateSocialReward(supportsCount, severity, viralScore = 0) {
+  const basePoints = { high: 500, medium: 300, low: 150 };
+  const base = basePoints[severity] || 150;
+  const supportMultiplier = Math.min(1 + (supportsCount * 0.1), 10);
+  const viralBonus = viralScore > 1000 ? 2 : viralScore > 500 ? 1.5 : 1;
+  return Math.round(base * supportMultiplier * viralBonus);
+}
+
+// Helper function for time ago
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+  
+  if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return `${Math.floor(diffInSeconds / 604800)}w ago`;
+}
 
 module.exports = app;
