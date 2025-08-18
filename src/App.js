@@ -1933,6 +1933,12 @@ const BugBuzzers = () => {
         <Megaphone className="w-16 h-16 text-purple-600 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h2>
         <p className="text-gray-600">Please wait while we load your dashboard</p>
+        <button 
+          onClick={() => setCurrentView('landing')}
+          className="mt-4 text-purple-600 hover:text-purple-700"
+        >
+          Go to Home Page
+        </button>
       </div>
     </div>
   );
