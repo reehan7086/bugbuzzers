@@ -74,84 +74,89 @@ const BugBuzzers = () => {
     }
   };
 
-  useEffect(() => {
-    console.log('🔍 useEffect triggered - checking for stored token');
-    
-    // Handle reset password page
-    if (window.location.pathname === '/reset-password') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const resetToken = urlParams.get('token');
-      
-      if (resetToken) {
-        setCurrentView('reset-password');
-        return;
-      } else {
-        setError('Invalid reset link');
-        setCurrentView('landing');
-        return;
-      }
-    }
-    
-    // Check if this is a verification link
+useEffect(() => {
+  const hasRunRef = { current: false }; // Track if effect has already run
+  if (hasRunRef.current) return;
+  hasRunRef.current = true;
+
+  console.log('🔍 useEffect triggered - checking for stored token');
+
+  // Handle reset password page
+  if (window.location.pathname === '/reset-password') {
     const urlParams = new URLSearchParams(window.location.search);
-    const verificationToken = urlParams.get('token');
+    const resetToken = urlParams.get('token');
     
-    if (window.location.pathname === '/verify-email' && verificationToken) {
-      console.log('🔍 Found verification token in URL, handling verification');
-      handleEmailVerification(verificationToken);
+    if (resetToken) {
+      setCurrentView('reset-password');
+      return;
+    } else {
+      setError('Invalid reset link');
+      setCurrentView('landing');
       return;
     }
+  }
 
-    // Existing token logic
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        
-        const now = Date.now() / 1000;
-        if (payload.exp && payload.exp < now) {
-          localStorage.removeItem('token');
-          setCurrentView('landing');
-          return;
-        }
+  // Check if this is a verification link
+  const urlParams = new URLSearchParams(window.location.search);
+  const verificationToken = urlParams.get('token');
+  
+  if (window.location.pathname === '/verify-email' && verificationToken) {
+    console.log('🔍 Found verification token in URL, handling verification');
+    handleEmailVerification(verificationToken);
+    return;
+  }
 
-        // Create user from token
-        const userFromToken = {
-          id: payload.id,
-          email: payload.email,
-          name: payload.name || 'User',
-          points: payload.points || 0,
-          isAdmin: payload.isAdmin || false,
-          emailVerified: payload.emailVerified || false
-        };
-        
-        setUser(userFromToken);
-        setCurrentView(userFromToken.isAdmin ? 'admin' : 'social-feed'); // CHANGED: Default to social-feed
-        
-        // CRITICAL FIX: Fetch fresh user data from server
-        setTimeout(async () => {
-          try {
-            const response = await fetch('/api/auth/me', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (response.ok) {
-              const freshUserData = await response.json();
-              console.log('🔍 Fresh user data loaded:', freshUserData);
-              setUser(freshUserData);
-            }
-          } catch (error) {
-            console.log('Could not fetch fresh user data:', error);
-          }
-        }, 100);
-        
-      } catch (error) {
-        console.error('Token parsing error:', error);
+  // Existing token logic
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      
+      const now = Date.now() / 1000;
+      if (payload.exp && payload.exp < now) {
         localStorage.removeItem('token');
         setCurrentView('landing');
+        return;
       }
+
+      // Create user from token
+      const userFromToken = {
+        id: payload.id,
+        email: payload.email,
+        name: payload.name || 'User',
+        points: payload.points || 0,
+        isAdmin: payload.isAdmin || false,
+        emailVerified: payload.emailVerified || false
+      };
+      
+      setUser(userFromToken);
+      setCurrentView(userFromToken.isAdmin ? 'admin' : 'social-feed');
+      
+      // Fetch fresh user data from server
+      setTimeout(async () => {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const freshUserData = await response.json();
+            console.log('🔍 Fresh user data loaded:', freshUserData);
+            setUser(freshUserData);
+          }
+        } catch (error) {
+          console.log('Could not fetch fresh user data:', error);
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Token parsing error:', error);
+      localStorage.removeItem('token');
+      setCurrentView('landing');
     }
-  }, []);
+  }
+}, []);
+
 
   // Load data when user changes
   useEffect(() => {
