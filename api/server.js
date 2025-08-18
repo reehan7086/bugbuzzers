@@ -362,7 +362,7 @@ async function initDB() {
     `);
     console.log('✅ Bug supports table ready');
 
-    -- Bug Comments table
+// Bug Comments table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bug_comments (
         id SERIAL PRIMARY KEY,
