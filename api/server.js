@@ -234,9 +234,12 @@ async function testDatabaseConnection() {
 }
 
 // Initialize database tables
+// Enhanced Database Schema for Social Features
+// Replace the initDB function in your api/server.js with this enhanced version
+
 async function initDB() {
   try {
-    console.log('🔄 Initializing database...');
+    console.log('🔄 Initializing database with social features...');
     
     // Test connection first
     const connectionOk = await testDatabaseConnection();
@@ -245,7 +248,7 @@ async function initDB() {
       return;
     }
     
-    // Users table with email verification
+    // Enhanced Users table with social features
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -259,24 +262,31 @@ async function initDB() {
         verification_expires TIMESTAMP,
         reset_token VARCHAR(255),
         reset_expires TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        -- Social profile fields
+        username VARCHAR(50) UNIQUE,
+        bio TEXT,
+        avatar_url VARCHAR(500),
+        location VARCHAR(255),
+        website VARCHAR(500),
+        twitter_handle VARCHAR(50),
+        github_handle VARCHAR(50),
+        -- Social stats
+        followers_count INTEGER DEFAULT 0,
+        following_count INTEGER DEFAULT 0,
+        total_supports_received INTEGER DEFAULT 0,
+        -- User level/badges
+        user_level VARCHAR(50) DEFAULT 'Bug Spotter',
+        badges TEXT[],
+        -- Activity tracking
+        last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        streak_days INTEGER DEFAULT 0,
+        last_streak_date DATE
       )
     `);
-    console.log('✅ Users table ready');
+    console.log('✅ Enhanced users table ready');
 
-    // Add columns to existing table if they don't exist
-    try {
-      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE');
-      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)');
-      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP');
-      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)');
-      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
-      console.log('✅ Email verification and password reset columns added');
-    } catch (error) {
-      console.log('ℹ️ User table columns already exist');
-    }
-
-    // Bugs table
+    // Enhanced Bugs table with social features
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bugs (
         id VARCHAR(50) PRIMARY KEY,
@@ -292,26 +302,342 @@ async function initDB() {
         anonymous BOOLEAN DEFAULT FALSE,
         attachment_url VARCHAR(500),
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        review_time INTEGER NOT NULL
+        review_time INTEGER NOT NULL,
+        -- Social features
+        supports_count INTEGER DEFAULT 0,
+        comments_count INTEGER DEFAULT 0,
+        shares_count INTEGER DEFAULT 0,
+        views_count INTEGER DEFAULT 0,
+        -- Content features
+        caption TEXT,
+        hashtags TEXT[],
+        media_urls TEXT[],
+        tagged_users INTEGER[],
+        -- Viral tracking
+        is_trending BOOLEAN DEFAULT FALSE,
+        viral_score INTEGER DEFAULT 0,
+        trending_rank INTEGER,
+        viral_peak_supports INTEGER DEFAULT 0,
+        viral_peak_date TIMESTAMP,
+        -- Social validation
+        estimated_reward INTEGER DEFAULT 0,
+        social_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        -- Location and context
+        reported_location VARCHAR(255),
+        user_agent TEXT,
+        screen_resolution VARCHAR(50),
+        timezone VARCHAR(100),
+        -- Enhanced categorization
+        category VARCHAR(50) DEFAULT 'functional',
+        sub_category VARCHAR(50),
+        impact_level VARCHAR(50) DEFAULT 'some-users',
+        frequency VARCHAR(50) DEFAULT 'sometimes',
+        environment VARCHAR(50) DEFAULT 'production',
+        -- Additional metadata
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✅ Bugs table ready');
+    console.log('✅ Enhanced bugs table ready');
 
-    // Create default admin user (auto-verified)
+    -- Bug Supports table (like the "I got this too" feature)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bug_supports (
+        id SERIAL PRIMARY KEY,
+        bug_id VARCHAR(50) REFERENCES bugs(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        -- Support context
+        support_type VARCHAR(20) DEFAULT 'experienced', -- experienced, reproduced, affected
+        device_info VARCHAR(255),
+        additional_context TEXT,
+        UNIQUE(bug_id, user_id)
+      )
+    `);
+    console.log('✅ Bug supports table ready');
+
+    -- Bug Comments table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bug_comments (
+        id SERIAL PRIMARY KEY,
+        bug_id VARCHAR(50) REFERENCES bugs(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        parent_id INTEGER REFERENCES bug_comments(id) ON DELETE CASCADE,
+        comment TEXT NOT NULL,
+        is_admin BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        -- Social features
+        likes_count INTEGER DEFAULT 0,
+        is_pinned BOOLEAN DEFAULT FALSE,
+        -- Media attachments for comments
+        media_urls TEXT[]
+      )
+    `);
+    console.log('✅ Bug comments table ready');
+
+    -- User Following system
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_follows (
+        id SERIAL PRIMARY KEY,
+        follower_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        following_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        -- Follow context
+        follow_reason VARCHAR(100), -- found_through_bug, mutual_connection, etc.
+        UNIQUE(follower_id, following_id),
+        CHECK (follower_id != following_id)
+      )
+    `);
+    console.log('✅ User follows table ready');
+
+    -- Bug Shares tracking
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS bug_shares (
+        id SERIAL PRIMARY KEY,
+        bug_id VARCHAR(50) REFERENCES bugs(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        platform VARCHAR(50) NOT NULL, -- twitter, facebook, copy_link, internal
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Bug shares table ready');
+
+    -- Trending bugs tracking
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS trending_bugs (
+        id SERIAL PRIMARY KEY,
+        bug_id VARCHAR(50) REFERENCES bugs(id) ON DELETE CASCADE,
+        date DATE NOT NULL,
+        rank INTEGER NOT NULL,
+        supports_count INTEGER DEFAULT 0,
+        viral_score INTEGER DEFAULT 0,
+        category VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(bug_id, date)
+      )
+    `);
+    console.log('✅ Trending bugs table ready');
+
+    -- User notifications
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(50) NOT NULL, -- bug_supported, comment_added, trending, follow, etc.
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        action_url VARCHAR(500),
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        -- Context data
+        related_bug_id VARCHAR(50),
+        related_user_id INTEGER,
+        metadata JSONB
+      )
+    `);
+    console.log('✅ Notifications table ready');
+
+    -- User activity feed
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_activities (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        activity_type VARCHAR(50) NOT NULL, -- bug_reported, bug_supported, comment_added, etc.
+        description TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        -- Activity context
+        related_bug_id VARCHAR(50),
+        related_user_id INTEGER,
+        points_earned INTEGER DEFAULT 0,
+        metadata JSONB
+      )
+    `);
+    console.log('✅ User activities table ready');
+
+    -- Add new columns to existing tables if they don't exist
+    const userColumns = [
+      'username VARCHAR(50) UNIQUE',
+      'bio TEXT',
+      'avatar_url VARCHAR(500)',
+      'location VARCHAR(255)',
+      'website VARCHAR(500)',
+      'twitter_handle VARCHAR(50)',
+      'github_handle VARCHAR(50)',
+      'followers_count INTEGER DEFAULT 0',
+      'following_count INTEGER DEFAULT 0',
+      'total_supports_received INTEGER DEFAULT 0',
+      'user_level VARCHAR(50) DEFAULT \'Bug Spotter\'',
+      'badges TEXT[]',
+      'last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
+      'streak_days INTEGER DEFAULT 0',
+      'last_streak_date DATE'
+    ];
+
+    for (const column of userColumns) {
+      try {
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${column}`);
+      } catch (error) {
+        console.log(`User column ${column.split(' ')[0]} might already exist`);
+      }
+    }
+
+    const bugColumns = [
+      'supports_count INTEGER DEFAULT 0',
+      'comments_count INTEGER DEFAULT 0',
+      'shares_count INTEGER DEFAULT 0',
+      'views_count INTEGER DEFAULT 0',
+      'caption TEXT',
+      'hashtags TEXT[]',
+      'media_urls TEXT[]',
+      'tagged_users INTEGER[]',
+      'is_trending BOOLEAN DEFAULT FALSE',
+      'viral_score INTEGER DEFAULT 0',
+      'trending_rank INTEGER',
+      'viral_peak_supports INTEGER DEFAULT 0',
+      'viral_peak_date TIMESTAMP',
+      'estimated_reward INTEGER DEFAULT 0',
+      'social_multiplier DECIMAL(3,2) DEFAULT 1.0',
+      'reported_location VARCHAR(255)',
+      'user_agent TEXT',
+      'screen_resolution VARCHAR(50)',
+      'timezone VARCHAR(100)',
+      'category VARCHAR(50) DEFAULT \'functional\'',
+      'sub_category VARCHAR(50)',
+      'impact_level VARCHAR(50) DEFAULT \'some-users\'',
+      'frequency VARCHAR(50) DEFAULT \'sometimes\'',
+      'environment VARCHAR(50) DEFAULT \'production\'',
+      'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+    ];
+
+    for (const column of bugColumns) {
+      try {
+        await pool.query(`ALTER TABLE bugs ADD COLUMN IF NOT EXISTS ${column}`);
+      } catch (error) {
+        console.log(`Bug column ${column.split(' ')[0]} might already exist`);
+      }
+    }
+
+    console.log('✅ Enhanced table columns added');
+
+    -- Create indexes for better performance
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_bugs_supports_count ON bugs(supports_count DESC);
+      CREATE INDEX IF NOT EXISTS idx_bugs_trending ON bugs(is_trending, viral_score DESC);
+      CREATE INDEX IF NOT EXISTS idx_bugs_category ON bugs(category);
+      CREATE INDEX IF NOT EXISTS idx_bugs_submitted_at ON bugs(submitted_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_bug_supports_bug_id ON bug_supports(bug_id);
+      CREATE INDEX IF NOT EXISTS idx_bug_supports_user_id ON bug_supports(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bug_comments_bug_id ON bug_comments(bug_id);
+      CREATE INDEX IF NOT EXISTS idx_user_follows_follower ON user_follows(follower_id);
+      CREATE INDEX IF NOT EXISTS idx_user_follows_following ON user_follows(following_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
+      CREATE INDEX IF NOT EXISTS idx_trending_bugs_date_rank ON trending_bugs(date, rank);
+    `);
+    console.log('✅ Performance indexes created');
+
+    -- Create triggers for automatic updates
+    await pool.query(`
+      -- Function to update bug supports count
+      CREATE OR REPLACE FUNCTION update_bug_supports_count()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        IF TG_OP = 'INSERT' THEN
+          UPDATE bugs SET supports_count = supports_count + 1 WHERE id = NEW.bug_id;
+          UPDATE users SET total_supports_received = total_supports_received + 1 
+          WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
+        ELSIF TG_OP = 'DELETE' THEN
+          UPDATE bugs SET supports_count = supports_count - 1 WHERE id = OLD.bug_id;
+          UPDATE users SET total_supports_received = total_supports_received - 1 
+          WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
+        END IF;
+        RETURN COALESCE(NEW, OLD);
+      END;
+      $$ LANGUAGE plpgsql;
+
+      -- Trigger for bug supports
+      DROP TRIGGER IF EXISTS bug_supports_count_trigger ON bug_supports;
+      CREATE TRIGGER bug_supports_count_trigger
+        AFTER INSERT OR DELETE ON bug_supports
+        FOR EACH ROW EXECUTE FUNCTION update_bug_supports_count();
+    `);
+
+    await pool.query(`
+      -- Function to update user followers count
+      CREATE OR REPLACE FUNCTION update_followers_count()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        IF TG_OP = 'INSERT' THEN
+          UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
+          UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+        ELSIF TG_OP = 'DELETE' THEN
+          UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
+          UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+        END IF;
+        RETURN COALESCE(NEW, OLD);
+      END;
+      $$ LANGUAGE plpgsql;
+
+      -- Trigger for user follows
+      DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
+      CREATE TRIGGER user_follows_count_trigger
+        AFTER INSERT OR DELETE ON user_follows
+        FOR EACH ROW EXECUTE FUNCTION update_followers_count();
+    `);
+    console.log('✅ Database triggers created');
+
+    -- Add existing admin user columns if they don't exist
+    try {
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255)');
+      await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
+      console.log('✅ Email verification columns preserved');
+    } catch (error) {
+      console.log('ℹ️ User auth columns already exist');
+    }
+
+    -- Create default admin user (auto-verified) with social profile
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@bugbuzzers.com']);
     if (adminExists.rows.length === 0) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
       await pool.query(
-        'INSERT INTO users (name, email, password, is_admin, email_verified) VALUES ($1, $2, $3, $4, $5)',
-        ['Admin User', 'admin@bugbuzzers.com', hashedPassword, true, true]
+        `INSERT INTO users (name, email, password, is_admin, email_verified, username, bio, user_level) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          'Admin User', 
+          'admin@bugbuzzers.com', 
+          hashedPassword, 
+          true, 
+          true, 
+          'admin',
+          'BugBuzzers Administrator - Keeping the platform safe and fun! 🛡️',
+          'Platform Admin'
+        ]
       );
-      console.log('✅ Admin user created');
+      console.log('✅ Admin user created with social profile');
     } else {
-      // Update existing admin to be verified
-      await pool.query('UPDATE users SET email_verified = TRUE WHERE email = $1', ['admin@bugbuzzers.com']);
+      -- Update existing admin with social features
+      await pool.query(`
+        UPDATE users SET 
+          email_verified = TRUE, 
+          username = COALESCE(username, 'admin'),
+          bio = COALESCE(bio, 'BugBuzzers Administrator - Keeping the platform safe and fun! 🛡️'),
+          user_level = COALESCE(user_level, 'Platform Admin')
+        WHERE email = $1
+      `, ['admin@bugbuzzers.com']);
+      console.log('✅ Admin user updated with social features');
     }
 
-    console.log('🎉 Database initialized successfully');
+    -- Create sample trending categories for development
+    await pool.query(`
+      INSERT INTO trending_bugs (bug_id, date, rank, supports_count, viral_score, category)
+      SELECT 'SAMPLE-001', CURRENT_DATE, 1, 1000, 2500, 'Social Media'
+      WHERE NOT EXISTS (SELECT 1 FROM trending_bugs WHERE bug_id = 'SAMPLE-001')
+    `);
+
+    console.log('🎉 Database initialized successfully with social features!');
+    console.log('🚀 Ready for social bug reporting revolution!');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     console.error('Full error details:', {
@@ -772,5 +1098,351 @@ initDB().then(() => {
     console.log(`🚀 BugBuzzers API running on port ${port}`);
   });
 });
+
+// Social API Endpoints - Add these to your api/server.js after the existing routes
+
+// ===================== SOCIAL API ROUTES =====================
+
+// Support a bug (the main "I got this too" feature!)
+app.post('/api/bugs/:id/support', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const { supportType = 'experienced', deviceInfo = '', additionalContext = '' } = req.body;
+    const userId = req.user.id;
+
+    // Check if user already supported this bug
+    const existingSupport = await pool.query(
+      'SELECT id FROM bug_supports WHERE bug_id = $1 AND user_id = $2',
+      [bugId, userId]
+    );
+
+    if (existingSupport.rows.length > 0) {
+      return res.status(400).json({ error: 'You already support this bug' });
+    }
+
+    // Add support
+    await pool.query(
+      `INSERT INTO bug_supports (bug_id, user_id, support_type, device_info, additional_context)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [bugId, userId, supportType, deviceInfo, additionalContext]
+    );
+
+    // Update viral score and check for trending
+    await updateBugViralScore(bugId);
+
+    // Create notification for bug reporter
+    const bug = await pool.query('SELECT user_id, title FROM bugs WHERE id = $1', [bugId]);
+    if (bug.rows.length > 0 && bug.rows[0].user_id !== userId) {
+      await createNotification(
+        bug.rows[0].user_id,
+        'bug_supported',
+        'Your bug got support!',
+        `Someone also experienced "${bug.rows[0].title}"`,
+        `/bugs/${bugId}`,
+        { supporterUserId: userId, bugId }
+      );
+    }
+
+    // Log user activity
+    await logUserActivity(userId, 'bug_supported', `Supported a bug report`, bugId);
+
+    res.json({ success: true, message: 'Bug supported successfully!' });
+  } catch (error) {
+    console.error('Support bug error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Remove support from a bug
+app.delete('/api/bugs/:id/support', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      'DELETE FROM bug_supports WHERE bug_id = $1 AND user_id = $2 RETURNING id',
+      [bugId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Support not found' });
+    }
+
+    // Update viral score
+    await updateBugViralScore(bugId);
+
+    res.json({ success: true, message: 'Support removed successfully!' });
+  } catch (error) {
+    console.error('Remove support error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get bug supporters
+app.get('/api/bugs/:id/supporters', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+
+    const result = await pool.query(`
+      SELECT 
+        bs.created_at,
+        bs.support_type,
+        bs.device_info,
+        u.id,
+        u.name,
+        u.username,
+        u.avatar_url,
+        u.user_level
+      FROM bug_supports bs
+      JOIN users u ON bs.user_id = u.id
+      WHERE bs.bug_id = $1
+      ORDER BY bs.created_at DESC
+      LIMIT $2 OFFSET $3
+    `, [bugId, limit, offset]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get supporters error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get social feed (Instagram-style bug feed)
+app.get('/api/feed', authenticateToken, async (req, res) => {
+  try {
+    const { 
+      filter = 'trending', // trending, recent, following, category
+      category = null,
+      limit = 20, 
+      offset = 0 
+    } = req.query;
+    
+    let query = `
+      SELECT 
+        b.*,
+        u.name as reporter_name,
+        u.username as reporter_username,
+        u.avatar_url as reporter_avatar,
+        u.user_level as reporter_level,
+        u.followers_count as reporter_followers,
+        -- Check if current user supports this bug
+        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports,
+        -- Get recent supporters for preview
+        COALESCE(supporter_preview.supporters, '[]'::json) as recent_supporters
+      FROM bugs b
+      JOIN users u ON b.user_id = u.id
+      LEFT JOIN bug_supports bs ON b.id = bs.bug_id AND bs.user_id = $1
+      LEFT JOIN LATERAL (
+        SELECT json_agg(
+          json_build_object(
+            'name', su.name,
+            'username', su.username,
+            'avatar_url', su.avatar_url
+          )
+        ) as supporters
+        FROM bug_supports bsp
+        JOIN users su ON bsp.user_id = su.id
+        WHERE bsp.bug_id = b.id
+        ORDER BY bsp.created_at DESC
+        LIMIT 3
+      ) supporter_preview ON true
+    `;
+
+    let orderClause = '';
+    let whereClause = 'WHERE b.status != \'Rejected\'';
+    const queryParams = [req.user.id];
+
+    if (category) {
+      whereClause += ` AND b.category = $${queryParams.length + 1}`;
+      queryParams.push(category);
+    }
+
+    switch (filter) {
+      case 'trending':
+        orderClause = 'ORDER BY b.viral_score DESC, b.supports_count DESC, b.submitted_at DESC';
+        break;
+      case 'recent':
+        orderClause = 'ORDER BY b.submitted_at DESC';
+        break;
+      case 'following':
+        whereClause += ` AND EXISTS (
+          SELECT 1 FROM user_follows uf 
+          WHERE uf.follower_id = $1 AND uf.following_id = b.user_id
+        )`;
+        orderClause = 'ORDER BY b.submitted_at DESC';
+        break;
+      case 'most_supported':
+        orderClause = 'ORDER BY b.supports_count DESC, b.submitted_at DESC';
+        break;
+      default:
+        orderClause = 'ORDER BY b.viral_score DESC, b.submitted_at DESC';
+    }
+
+    query += ` ${whereClause} ${orderClause} LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
+
+    const result = await pool.query(query, queryParams);
+
+    // Calculate estimated rewards based on social validation
+    const enhancedBugs = result.rows.map(bug => ({
+      ...bug,
+      estimated_reward: calculateSocialReward(bug.supports_count, bug.severity, bug.viral_score),
+      time_ago: getTimeAgo(bug.submitted_at),
+      hashtags: bug.hashtags || [],
+      media_urls: bug.media_urls || [],
+      recent_supporters: bug.recent_supporters || []
+    }));
+
+    res.json(enhancedBugs);
+  } catch (error) {
+    console.error('Get feed error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get trending bugs
+app.get('/api/trending', authenticateToken, async (req, res) => {
+  try {
+    const { category = null, timeframe = 'today' } = req.query;
+    
+    let dateFilter = '';
+    switch (timeframe) {
+      case 'today':
+        dateFilter = "AND b.submitted_at >= CURRENT_DATE";
+        break;
+      case 'week':
+        dateFilter = "AND b.submitted_at >= CURRENT_DATE - INTERVAL '7 days'";
+        break;
+      case 'month':
+        dateFilter = "AND b.submitted_at >= CURRENT_DATE - INTERVAL '30 days'";
+        break;
+    }
+
+    let categoryFilter = '';
+    let queryParams = [req.user.id];
+    if (category) {
+      categoryFilter = `AND b.category = $${queryParams.length + 1}`;
+      queryParams.push(category);
+    }
+
+    const result = await pool.query(`
+      SELECT 
+        b.*,
+        u.name as reporter_name,
+        u.username as reporter_username,
+        u.avatar_url as reporter_avatar,
+        u.user_level as reporter_level,
+        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports
+      FROM bugs b
+      JOIN users u ON b.user_id = u.id
+      LEFT JOIN bug_supports bs ON b.id = bs.bug_id AND bs.user_id = $1
+      WHERE b.supports_count > 0 
+        ${dateFilter}
+        ${categoryFilter}
+      ORDER BY b.viral_score DESC, b.supports_count DESC
+      LIMIT 20
+    `, queryParams);
+
+    res.json(result.rows.map(bug => ({
+      ...bug,
+      estimated_reward: calculateSocialReward(bug.supports_count, bug.severity, bug.viral_score),
+      time_ago: getTimeAgo(bug.submitted_at)
+    })));
+  } catch (error) {
+    console.error('Get trending bugs error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Follow/Unfollow user
+app.post('/api/users/:id/follow', authenticateToken, async (req, res) => {
+  try {
+    const { id: followingId } = req.params;
+    const followerId = req.user.id;
+
+    if (followerId == followingId) {
+      return res.status(400).json({ error: 'Cannot follow yourself' });
+    }
+
+    // Check if already following
+    const existingFollow = await pool.query(
+      'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2',
+      [followerId, followingId]
+    );
+
+    if (existingFollow.rows.length > 0) {
+      // Unfollow
+      await pool.query(
+        'DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2',
+        [followerId, followingId]
+      );
+      
+      res.json({ following: false, message: 'Unfollowed successfully' });
+    } else {
+      // Follow
+      await pool.query(
+        'INSERT INTO user_follows (follower_id, following_id) VALUES ($1, $2)',
+        [followerId, followingId]
+      );
+
+      // Create notification
+      const follower = await pool.query('SELECT name, username FROM users WHERE id = $1', [followerId]);
+      if (follower.rows.length > 0) {
+        await createNotification(
+          followingId,
+          'new_follower',
+          'New Follower!',
+          `${follower.rows[0].name} (@${follower.rows[0].username}) started following you`,
+          `/profile/${follower.rows[0].username}`,
+          { followerId }
+        );
+      }
+
+      res.json({ following: true, message: 'Following successfully' });
+    }
+  } catch (error) {
+    console.error('Follow/unfollow error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Add comment to bug
+app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const { comment, parentId = null } = req.body;
+    const userId = req.user.id;
+
+    if (!comment || comment.trim().length === 0) {
+      return res.status(400).json({ error: 'Comment cannot be empty' });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO bug_comments (bug_id, user_id, parent_id, comment, is_admin)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [bugId, userId, parentId, comment.trim(), req.user.isAdmin]);
+
+    // Update comments count
+    await pool.query('UPDATE bugs SET comments_count = comments_count + 1 WHERE id = $1', [bugId]);
+
+    // Create notification for bug reporter
+    const bug = await pool.query('SELECT user_id, title FROM bugs WHERE id = $1', [bugId]);
+    if (bug.rows.length > 0 && bug.rows[0].user_id !== userId) {
+      await createNotification(
+        bug.rows[0].user_id,
+        'comment_added',
+        'New Comment!',
+        `Someone commented on "${bug.rows[0].title}"`,
+        `/bugs/${bugId}`,
+        { commenterId: userId, bugId }
+      );
+    }
+
+    // Log user activity
+    await logUserActivity(userId, 'comment_added', `Commented on a bug report`, bugId);
+
+    res.json({ success: true, comment: result.rows[
 
 module.exports = app;
