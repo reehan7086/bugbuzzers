@@ -382,7 +382,7 @@ async function initDB() {
     `);
     console.log('✅ Bug comments table ready');
 
-    -- User Following system
+    // User Following system
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_follows (
         id SERIAL PRIMARY KEY,
@@ -397,7 +397,7 @@ async function initDB() {
     `);
     console.log('✅ User follows table ready');
 
-    -- Bug Shares tracking
+   // Bug Shares tracking
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bug_shares (
         id SERIAL PRIMARY KEY,
@@ -409,7 +409,7 @@ async function initDB() {
     `);
     console.log('✅ Bug shares table ready');
 
-    -- Trending bugs tracking
+    // Trending bugs tracking
     await pool.query(`
       CREATE TABLE IF NOT EXISTS trending_bugs (
         id SERIAL PRIMARY KEY,
@@ -425,7 +425,7 @@ async function initDB() {
     `);
     console.log('✅ Trending bugs table ready');
 
-    -- User notifications
+    // User notifications
     await pool.query(`
       CREATE TABLE IF NOT EXISTS notifications (
         id SERIAL PRIMARY KEY,
@@ -444,7 +444,7 @@ async function initDB() {
     `);
     console.log('✅ Notifications table ready');
 
-    -- User activity feed
+   // User activity feed
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_activities (
         id SERIAL PRIMARY KEY,
@@ -461,7 +461,7 @@ async function initDB() {
     `);
     console.log('✅ User activities table ready');
 
-    -- Add new columns to existing tables if they don't exist
+    // Add new columns to existing tables if they don't exist
     const userColumns = [
       'username VARCHAR(50) UNIQUE',
       'bio TEXT',
@@ -526,7 +526,7 @@ async function initDB() {
 
     console.log('✅ Enhanced table columns added');
 
-    -- Create indexes for better performance
+    // Create indexes for better performance
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_bugs_supports_count ON bugs(supports_count DESC);
       CREATE INDEX IF NOT EXISTS idx_bugs_trending ON bugs(is_trending, viral_score DESC);
@@ -542,9 +542,9 @@ async function initDB() {
     `);
     console.log('✅ Performance indexes created');
 
-    -- Create triggers for automatic updates
+    // Create triggers for automatic updates
     await pool.query(`
-      -- Function to update bug supports count
+      // Function to update bug supports count
       CREATE OR REPLACE FUNCTION update_bug_supports_count()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -561,7 +561,7 @@ async function initDB() {
       END;
       $$ LANGUAGE plpgsql;
 
-      -- Trigger for bug supports
+     // Trigger for bug supports
       DROP TRIGGER IF EXISTS bug_supports_count_trigger ON bug_supports;
       CREATE TRIGGER bug_supports_count_trigger
         AFTER INSERT OR DELETE ON bug_supports
@@ -569,7 +569,7 @@ async function initDB() {
     `);
 
     await pool.query(`
-      -- Function to update user followers count
+      // Function to update user followers count
       CREATE OR REPLACE FUNCTION update_followers_count()
       RETURNS TRIGGER AS $$
       BEGIN
@@ -584,7 +584,7 @@ async function initDB() {
       END;
       $$ LANGUAGE plpgsql;
 
-      -- Trigger for user follows
+      // Trigger for user follows
       DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
       CREATE TRIGGER user_follows_count_trigger
         AFTER INSERT OR DELETE ON user_follows
@@ -592,7 +592,7 @@ async function initDB() {
     `);
     console.log('✅ Database triggers created');
 
-    -- Add existing admin user columns if they don't exist
+    // Add existing admin user columns if they don't exist
     try {
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE');
       await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)');
@@ -604,7 +604,7 @@ async function initDB() {
       console.log('ℹ️ User auth columns already exist');
     }
 
-    -- Create default admin user (auto-verified) with social profile
+    // Create default admin user (auto-verified) with social profile
     const adminExists = await pool.query('SELECT id FROM users WHERE email = $1', ['admin@bugbuzzers.com']);
     if (adminExists.rows.length === 0) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -624,7 +624,7 @@ async function initDB() {
       );
       console.log('✅ Admin user created with social profile');
     } else {
-      -- Update existing admin with social features
+      // Update existing admin with social features
       await pool.query(`
         UPDATE users SET 
           email_verified = TRUE, 
@@ -636,7 +636,7 @@ async function initDB() {
       console.log('✅ Admin user updated with social features');
     }
 
-    -- Create sample trending categories for development
+    // Create sample trending categories for development
     await pool.query(`
       INSERT INTO trending_bugs (bug_id, date, rank, supports_count, viral_score, category)
       SELECT 'SAMPLE-001', CURRENT_DATE, 1, 1000, 2500, 'Social Media'
@@ -1233,9 +1233,9 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
         u.avatar_url as reporter_avatar,
         u.user_level as reporter_level,
         u.followers_count as reporter_followers,
-        -- Check if current user supports this bug
+        // Check if current user supports this bug
         CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports,
-        -- Get recent supporters for preview
+        // Get recent supporters for preview
         COALESCE(supporter_preview.supporters, '[]'::json) as recent_supporters
       FROM bugs b
       JOIN users u ON b.user_id = u.id
