@@ -1,11 +1,10 @@
-// FIXED App.js Integration - Replace your existing App.js with this corrected version
-
+// FIXED App.js - Now properly shows landing page first
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, User, LogOut, Menu, X, Plus, FileText, Award, BarChart3, Settings, Home } from 'lucide-react';
 import api from './api';
 
 const BugBuzzers = () => {
-  const [currentView, setCurrentView] = useState('landing');
+  const [currentView, setCurrentView] = useState('landing'); // Default to landing page
   const [user, setUser] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,14 +25,14 @@ const BugBuzzers = () => {
   const [bugs, setBugs] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
 
-  // NEW: Social state variables
+  // Social state variables
   const [socialFeed, setSocialFeed] = useState([]);
   const [feedFilter, setFeedFilter] = useState('trending');
   const [feedLoading, setFeedLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Add email verification handler function - MOVED BEFORE useEffect
+  // Add email verification handler function
   const handleEmailVerification = async (token) => {
     console.log('🔍 Starting email verification for token:', token?.substring(0, 10) + '...');
     
@@ -74,88 +73,91 @@ const BugBuzzers = () => {
     }
   };
 
-useEffect(() => {
-  const hasRunRef = { current: false }; // Track if effect has already run
-  if (hasRunRef.current) return;
-  hasRunRef.current = true;
+  useEffect(() => {
+    const hasRunRef = { current: false }; // Track if effect has already run
+    if (hasRunRef.current) return;
+    hasRunRef.current = true;
 
-  console.log('🔍 useEffect triggered - checking for stored token');
+    console.log('🔍 useEffect triggered - checking for stored token');
 
-  // Handle reset password page
-  if (window.location.pathname === '/reset-password') {
-    const urlParams = new URLSearchParams(window.location.search);
-    const resetToken = urlParams.get('token');
-    
-    if (resetToken) {
-      setCurrentView('reset-password');
-      return;
-    } else {
-      setError('Invalid reset link');
-      setCurrentView('landing');
-      return;
-    }
-  }
-
-  // Check if this is a verification link
-  const urlParams = new URLSearchParams(window.location.search);
-  const verificationToken = urlParams.get('token');
-  
-  if (window.location.pathname === '/verify-email' && verificationToken) {
-    console.log('🔍 Found verification token in URL, handling verification');
-    handleEmailVerification(verificationToken);
-    return;
-  }
-
-  // Existing token logic
-  const token = localStorage.getItem('token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+    // Handle reset password page
+    if (window.location.pathname === '/reset-password') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const resetToken = urlParams.get('token');
       
-      const now = Date.now() / 1000;
-      if (payload.exp && payload.exp < now) {
-        localStorage.removeItem('token');
+      if (resetToken) {
+        setCurrentView('reset-password');
+        return;
+      } else {
+        setError('Invalid reset link');
         setCurrentView('landing');
         return;
       }
+    }
 
-      // Create user from token
-      const userFromToken = {
-        id: payload.id,
-        email: payload.email,
-        name: payload.name || 'User',
-        points: payload.points || 0,
-        isAdmin: payload.isAdmin || false,
-        emailVerified: payload.emailVerified || false
-      };
-      
-      setUser(userFromToken);
-      setCurrentView(userFromToken.isAdmin ? 'admin' : 'social-feed');
-      
-      // Fetch fresh user data from server
-      setTimeout(async () => {
-        try {
-          const response = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          if (response.ok) {
-            const freshUserData = await response.json();
-            console.log('🔍 Fresh user data loaded:', freshUserData);
-            setUser(freshUserData);
-          }
-        } catch (error) {
-          console.log('Could not fetch fresh user data:', error);
+    // Check if this is a verification link
+    const urlParams = new URLSearchParams(window.location.search);
+    const verificationToken = urlParams.get('token');
+    
+    if (window.location.pathname === '/verify-email' && verificationToken) {
+      console.log('🔍 Found verification token in URL, handling verification');
+      handleEmailVerification(verificationToken);
+      return;
+    }
+
+    // Existing token logic
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        const now = Date.now() / 1000;
+        if (payload.exp && payload.exp < now) {
+          localStorage.removeItem('token');
+          setCurrentView('landing');
+          return;
         }
-      }, 100);
-      
-    } catch (error) {
-      console.error('Token parsing error:', error);
-      localStorage.removeItem('token');
+
+        // Create user from token
+        const userFromToken = {
+          id: payload.id,
+          email: payload.email,
+          name: payload.name || 'User',
+          points: payload.points || 0,
+          isAdmin: payload.isAdmin || false,
+          emailVerified: payload.emailVerified || false
+        };
+        
+        setUser(userFromToken);
+        setCurrentView(userFromToken.isAdmin ? 'admin' : 'social-feed');
+        
+        // Fetch fresh user data from server
+        setTimeout(async () => {
+          try {
+            const response = await fetch('/api/auth/me', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+              const freshUserData = await response.json();
+              console.log('🔍 Fresh user data loaded:', freshUserData);
+              setUser(freshUserData);
+            }
+          } catch (error) {
+            console.log('Could not fetch fresh user data:', error);
+          }
+        }, 100);
+        
+      } catch (error) {
+        console.error('Token parsing error:', error);
+        localStorage.removeItem('token');
+        setCurrentView('landing');
+      }
+    } else {
+      // If no token, ensure we show landing page
       setCurrentView('landing');
     }
-  }
-}, []);
+  }, []);
 
 
   // Load data when user changes
