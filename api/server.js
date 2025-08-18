@@ -346,7 +346,7 @@ async function initDB() {
     `);
     console.log('✅ Enhanced bugs table ready');
 
-    -- Bug Supports table (like the "I got this too" feature)
+// Bug Supports table (like the "I got this too" feature)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bug_supports (
         id SERIAL PRIMARY KEY,
