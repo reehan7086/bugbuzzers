@@ -542,53 +542,86 @@ async function initDB() {
     `);
     console.log('✅ Performance indexes created');
 
-    // Create triggers for automatic updates
- CREATE OR REPLACE FUNCTION update_bug_supports_count()
-  RETURNS TRIGGER AS $$
-  BEGIN
-    IF TG_OP = 'INSERT' THEN
-      UPDATE bugs SET supports_count = supports_count + 1 WHERE id = NEW.bug_id;
-      UPDATE users SET total_supports_received = total_supports_received + 1 
-      WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
-    ELSIF TG_OP = 'DELETE' THEN
-      UPDATE bugs SET supports_count = supports_count - 1 WHERE id = OLD.bug_id;
-      UPDATE users SET total_supports_received = total_supports_received - 1 
-      WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
-    END IF;
-    RETURN COALESCE(NEW, OLD);
-  END;
-  $$ LANGUAGE plpgsql;
+// Create triggers for automatic updates
+// Bug supports trigger
+async function setupBugTriggers() {
+  const sql = `
+    CREATE OR REPLACE FUNCTION update_bug_supports_count()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'INSERT' THEN
+        UPDATE bugs 
+        SET supports_count = supports_count + 1 
+        WHERE id = NEW.bug_id;
 
-     // Trigger for bug supports
-  DROP TRIGGER IF EXISTS bug_supports_count_trigger ON bug_supports;
-  CREATE TRIGGER bug_supports_count_trigger
+        UPDATE users 
+        SET total_supports_received = total_supports_received + 1 
+        WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
+
+      ELSIF TG_OP = 'DELETE' THEN
+        UPDATE bugs 
+        SET supports_count = supports_count - 1 
+        WHERE id = OLD.bug_id;
+
+        UPDATE users 
+        SET total_supports_received = total_supports_received - 1 
+        WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
+      END IF;
+      RETURN COALESCE(NEW, OLD);
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS bug_supports_trigger ON bug_supports;
+
+    CREATE TRIGGER bug_supports_trigger
     AFTER INSERT OR DELETE ON bug_supports
-    FOR EACH ROW EXECUTE FUNCTION update_bug_supports_count();
-    `);
+    FOR EACH ROW
+    EXECUTE FUNCTION update_bug_supports_count();
+  `;
 
-    await pool.query(`
-      // Function to update user followers count
-  CREATE OR REPLACE FUNCTION update_followers_count()
-  RETURNS TRIGGER AS $$
-  BEGIN
-    IF TG_OP = 'INSERT' THEN
-      UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
-      UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
-    ELSIF TG_OP = 'DELETE' THEN
-      UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
-      UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
-    END IF;
-    RETURN COALESCE(NEW, OLD);
-  END;
-  $$ LANGUAGE plpgsql;
+  await pool.query(sql);
+  console.log("✅ Bug triggers created");
+}
 
-      // Trigger for user follows
-  DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
-  CREATE TRIGGER user_follows_count_trigger
+// Follower triggers
+async function setupFollowerTriggers() {
+  const sql = `
+    CREATE OR REPLACE FUNCTION update_followers_count()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF TG_OP = 'INSERT' THEN
+        UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
+        UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+
+      ELSIF TG_OP = 'DELETE' THEN
+        UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
+        UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+      END IF;
+      RETURN COALESCE(NEW, OLD);
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
+
+    CREATE TRIGGER user_follows_count_trigger
     AFTER INSERT OR DELETE ON user_follows
-    FOR EACH ROW EXECUTE FUNCTION update_followers_count();
-    `);
-    console.log('✅ Database triggers created');
+    FOR EACH ROW
+    EXECUTE FUNCTION update_followers_count();
+  `;
+
+  await pool.query(sql);
+  console.log("✅ Follower triggers created");
+}
+
+// Run them on startup
+(async () => {
+  try {
+    await setupBugTriggers();
+    await setupFollowerTriggers();
+  } catch (err) {
+    console.error("❌ Error setting up triggers:", err);
+  }
+})();
 
     // Add existing admin user columns if they don't exist
     try {
