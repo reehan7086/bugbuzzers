@@ -7,7 +7,14 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
-const nodemailer = require('nodemailer');
+// Add a try-catch for nodemailer import
+let nodemailer;
+try {
+  nodemailer = require('nodemailer');
+} catch (error) {
+  console.log('⚠️ Nodemailer not installed, email features disabled');
+  nodemailer = null;
+}
 const crypto = require('crypto');
 require('dotenv').config();
 
@@ -1443,6 +1450,22 @@ app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
     // Log user activity
     await logUserActivity(userId, 'comment_added', `Commented on a bug report`, bugId);
 
-    res.json({ success: true, comment: result.rows[
+const handleSignup = async (e) => {
+  // ... existing code ...
+  try {
+    const response = await api.signup(signupForm.name, signupForm.email, signupForm.password);
+    // Fix: Extract user from response object
+    const userData = response.user || response;
+    setUser(userData);
+    setCurrentView('social-feed');
+    setSignupForm({ name: '', email: '', password: '', confirmPassword: '' });
+    // Show message if available
+    if (response.message) {
+      alert(response.message);
+    }
+  } catch (error) {
+    // ... existing error handling ...
+  }
+};
 
 module.exports = app;
