@@ -309,16 +309,19 @@ class BugBuzzersAPI {
     return `🐛 Found a bug in ${bug.app_name}: "${bug.title}"${supportText} Report bugs and earn rewards on BugBuzzers!${hashtags}`;
   }
 
-  // Get trending categories (mock data for now)
-  getTrendingCategories() {
-    return [
-      { id: 1, name: 'Instagram', icon: '📸', gradient: 'from-purple-500 to-pink-500', bugCount: 147 },
-      { id: 2, name: 'TikTok', icon: '🎵', gradient: 'from-black to-red-500', bugCount: 89 },
-      { id: 3, name: 'WhatsApp', icon: '💬', gradient: 'from-green-500 to-green-600', bugCount: 67 },
-      { id: 4, name: 'Uber', icon: '🚗', gradient: 'from-black to-gray-600', bugCount: 45 },
-      { id: 5, name: 'Netflix', icon: '🎬', gradient: 'from-red-600 to-red-700', bugCount: 34 }
-    ];
-  }
+// Get trending categories
+getTrendingCategories() {
+  return [
+    { id: 1, name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500', bugCount: 247 },
+    { id: 2, name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500', bugCount: 189 },
+    { id: 3, name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500', bugCount: 156 },
+    { id: 4, name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500', bugCount: 134 },
+    { id: 5, name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600', bugCount: 98 },
+    { id: 6, name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800', bugCount: 87 },
+    { id: 7, name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500', bugCount: 76 },
+    { id: 8, name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600', bugCount: 92 }
+  ];
+}
 
   // Get platform stats (mock data for now)
   getPlatformStats() {
