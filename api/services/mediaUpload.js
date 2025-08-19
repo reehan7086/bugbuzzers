@@ -31,7 +31,7 @@ class MediaUploadService {
     }
   }
 
-  generateFileName(originalName, userId, bugId) {
+  generateFileName(originalName, userId, bugId, userName = null) {
     const timestamp = Date.now();
     const random = crypto.randomBytes(8).toString('hex');
     const extension = path.extname(originalName);
@@ -39,7 +39,16 @@ class MediaUploadService {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     
-    return `media/${year}/${month}/bugs/${bugId || 'temp'}/user-${userId}/${timestamp}-${random}${extension}`;
+    // Create safe folder name from user name
+    const safeFolderName = userName 
+      ? userName.toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')  // Replace non-alphanumeric with dashes
+          .replace(/-+/g, '-')         // Replace multiple dashes with single dash
+          .replace(/^-|-$/g, '')       // Remove leading/trailing dashes
+      : `user-${userId}`;
+    
+    // NEW: Create user-based folder structure with real names
+    return `media/${year}/${month}/users/${safeFolderName}/${bugId || `temp-${timestamp}`}/${timestamp}-${random}${extension}`;
   }
 
   // Convert origin URL to CDN URL for faster delivery
@@ -65,9 +74,9 @@ class MediaUploadService {
     return errors;
   }
 
-  async uploadFile(fileBuffer, fileName, mimeType, userId, bugId = null) {
+async uploadFile(fileBuffer, fileName, mimeType, userId, bugId = null, userName = null) {
     try {
-      const key = this.generateFileName(fileName, userId, bugId);
+      const key = this.generateFileName(fileName, userId, bugId, userName);
       
       const uploadParams = {
         Bucket: this.bucket,
@@ -78,26 +87,28 @@ class MediaUploadService {
         CacheControl: 'max-age=31536000', // 1 year cache for CDN
         Metadata: {
           'uploaded-by': userId.toString(),
+          'user-name': userName || 'unknown',
           'upload-timestamp': Date.now().toString(),
           'original-name': fileName,
           'bug-id': bugId || 'temp'
         }
       };
 
-      console.log(`📤 Uploading ${fileName} to DigitalOcean Spaces (BLR1)...`);
+      console.log(`📤 Uploading ${fileName} for user ${userName || userId} to DigitalOcean Spaces...`);
       const result = await s3.upload(uploadParams).promise();
       
       // Use CDN URL for faster delivery
       const cdnUrl = this.getCdnUrl(result.Location, key);
       
       return {
-        url: cdnUrl, // Return CDN URL instead of origin URL
-        originUrl: result.Location, // Keep origin URL for reference
+        url: cdnUrl,
+        originUrl: result.Location,
         key: result.Key,
         bucket: result.Bucket,
         size: fileBuffer.length,
         mimeType: mimeType,
-        originalName: fileName
+        originalName: fileName,
+        userName: userName
       };
     } catch (error) {
       console.error('Upload error:', error);
@@ -105,25 +116,26 @@ class MediaUploadService {
     }
   }
 
-  async uploadMultipleFiles(files, userId, bugId = null) {
+async uploadMultipleFiles(files, userId, bugId = null, userName = null) {
     const uploadPromises = files.map(async (file) => {
       const validationErrors = this.validateFile(file, file.originalname);
       if (validationErrors.length > 0) {
         throw new Error(validationErrors.join(', '));
       }
 
-      return await this.uploadFile(file.buffer, file.originalname, file.mimetype, userId, bugId);
+      return await this.uploadFile(file.buffer, file.originalname, file.mimetype, userId, bugId, userName);
     });
 
     try {
       const results = await Promise.all(uploadPromises);
-      console.log(`✅ Successfully uploaded ${results.length} files to DigitalOcean Spaces with CDN`);
+      console.log(`✅ Successfully uploaded ${results.length} files for user ${userName || userId}`);
       return results;
     } catch (error) {
       console.error('Multiple upload error:', error);
       throw error;
     }
   }
+}
 
   async testConnection() {
     try {
