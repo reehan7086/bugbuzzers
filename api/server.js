@@ -20,7 +20,25 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3001;
+const multer = require('multer');
+const mediaUploadService = require('./services/mediaUpload');
 
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+    files: 5 // Max 5 files
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not allowed`), false);
+    }
+  }
+});
 // Security middleware with CSP configured for blob URLs
 app.use(helmet({
   contentSecurityPolicy: {
@@ -1031,34 +1049,33 @@ app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        b.id,
-        b.title,
-        b.description,
-        b.steps,
-        b.device,
-        b.severity,
-        b.app_name,
-        b.status,
-        b.points,
-        b.user_id,
-        b.anonymous,
-        b.submitted_at,
-        b.review_time,
-        b.supports_count,
-        b.comments_count,
-        b.shares_count,
-        b.views_count,
+        b.*,
         u.name as reporter_name
       FROM bugs b 
       LEFT JOIN users u ON b.user_id = u.id 
       ORDER BY b.submitted_at DESC
     `);
     
-    // Add empty media_urls array for frontend compatibility
-    const processedBugs = result.rows.map(bug => ({
-      ...bug,
-      media_urls: [] // Default empty array until we fix the column properly
-    }));
+    // Process the results to parse media URLs
+    const processedBugs = result.rows.map(bug => {
+      let mediaUrls = [];
+      try {
+        if (bug.media_urls_json) {
+          mediaUrls = JSON.parse(bug.media_urls_json);
+        }
+      } catch (e) {
+        console.error('Error parsing media URLs for bug', bug.id, e);
+      }
+      
+      return {
+        ...bug,
+        media_urls: mediaUrls,
+        supports_count: bug.supports_count || 0,
+        comments_count: bug.comments_count || 0,
+        shares_count: bug.shares_count || 0,
+        views_count: bug.views_count || 0
+      };
+    });
     
     res.json(processedBugs);
   } catch (error) {
@@ -1078,14 +1095,25 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
     const reviewTimes = { high: 6, medium: 4, low: 2 };
     const reviewTime = reviewTimes[severity] || 2;
 
-    // Insert without media_urls column for now to avoid array issues
-    const result = await pool.query(`
-      INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time, category)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING *
-    `, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, category || 'others']);
+    // Store media URLs as JSON string (now contains DigitalOcean Spaces URLs)
+    const mediaJson = mediaUrls && mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : null;
 
-    // Add media info to response for frontend
+    // Add media_urls_json column if it doesn't exist
+    try {
+      await pool.query(`
+        ALTER TABLE bugs 
+        ADD COLUMN IF NOT EXISTS media_urls_json TEXT
+      `);
+    } catch (alterError) {
+      console.log('media_urls_json column might already exist');
+    }
+
+    const result = await pool.query(`
+      INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time, category, media_urls_json)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, category || 'others', mediaJson]);
+
     const bug = {
       ...result.rows[0],
       media_urls: mediaUrls || [],
@@ -1095,6 +1123,7 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
       views_count: 0
     };
 
+    console.log(`✅ Bug ${bugId} created with ${mediaUrls?.length || 0} media files`);
     res.json(bug);
   } catch (error) {
     console.error('Create bug error:', error);
@@ -1126,6 +1155,68 @@ app.put('/api/bugs/:id/status', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Update bug status error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Media upload endpoint
+app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    console.log(`📤 Uploading ${req.files.length} files for user ${req.user.id}...`);
+
+    const uploadedFiles = await mediaUploadService.uploadMultipleFiles(
+      req.files, 
+      req.user.id, 
+      req.body.bugId || null
+    );
+
+    console.log(`✅ Successfully uploaded ${uploadedFiles.length} files to DigitalOcean Spaces`);
+
+    res.json({
+      success: true,
+      files: uploadedFiles.map(file => ({
+        url: file.url,
+        type: file.mimeType,
+        name: file.originalName,
+        size: file.size,
+        key: file.key
+      }))
+    });
+
+  } catch (error) {
+    console.error('Media upload error:', error);
+    res.status(500).json({ 
+      error: 'Upload failed', 
+      message: error.message 
+    });
+  }
+});
+
+// Test Spaces connection (admin only)
+app.get('/api/test-spaces', authenticateToken, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const testResult = await mediaUploadService.testConnection();
+    
+    res.json({
+      success: testResult.success,
+      message: testResult.message,
+      config: {
+        bucket: process.env.DO_SPACES_BUCKET,
+        endpoint: process.env.DO_SPACES_ENDPOINT,
+        region: process.env.DO_SPACES_REGION,
+        cdnEnabled: testResult.cdnEnabled,
+        hasKeys: !!process.env.DO_SPACES_KEY
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
