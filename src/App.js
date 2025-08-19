@@ -430,49 +430,58 @@ const [bugForm, setBugForm] = useState({
     }
   };
 
-  // Media upload handlers
-  const handleMediaUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const maxFileSize = 10 * 1024 * 1024;
-    const maxFiles = 5;
-    
-    const validFiles = files.filter(file => {
-      if (file.size > maxFileSize) {
-        alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
-        return false;
-      }
-      
-      const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
-      if (!isValidType) {
-        alert(`File "${file.name}" is not a valid image or video file.`);
-        return false;
-      }
-      
-      return true;
-    });
-
-    const currentFiles = bugForm.mediaFiles || [];
-    if (currentFiles.length + validFiles.length > maxFiles) {
-      alert(`You can only upload up to ${maxFiles} files total.`);
-      return;
+const handleMediaUpload = (e) => {
+  const files = Array.from(e.target.files);
+  const maxFileSize = 2 * 1024 * 1024; // 2MB per file
+  const maxTotalFiles = 5;
+  
+  const validFiles = files.filter(file => {
+    if (file.size > maxFileSize) {
+      alert(`File "${file.name}" is too large. Maximum size is 2MB per file.`);
+      return false;
     }
+    
+    const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
+    if (!isValidType) {
+      alert(`File "${file.name}" is not a valid image or video file.`);
+      return false;
+    }
+    
+    return true;
+  });
 
-    const filesWithPreviews = validFiles.map(file => {
-      const preview = URL.createObjectURL(file);
-      return {
-        file,
-        preview,
-        name: file.name,
-        size: file.size,
-        type: file.type
-      };
-    });
+  const currentFiles = bugForm.mediaFiles || [];
+  if (currentFiles.length + validFiles.length > maxTotalFiles) {
+    alert(`You can only upload up to ${maxTotalFiles} files total.`);
+    return;
+  }
 
-    setBugForm(prev => ({
-      ...prev,
-      mediaFiles: [...currentFiles, ...filesWithPreviews]
-    }));
-  };
+  // Check total size
+  const currentTotalSize = currentFiles.reduce((total, file) => total + file.file.size, 0);
+  const newFilesSize = validFiles.reduce((total, file) => total + file.size, 0);
+  const maxTotalSize = 10 * 1024 * 1024; // 10MB total
+  
+  if (currentTotalSize + newFilesSize > maxTotalSize) {
+    alert(`Total files size cannot exceed 10MB. Current: ${formatFileSize(currentTotalSize)}, Adding: ${formatFileSize(newFilesSize)}`);
+    return;
+  }
+
+  const filesWithPreviews = validFiles.map(file => {
+    const preview = URL.createObjectURL(file);
+    return {
+      file,
+      preview,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    };
+  });
+
+  setBugForm(prev => ({
+    ...prev,
+    mediaFiles: [...currentFiles, ...filesWithPreviews]
+  }));
+};
 
   const removeMediaFile = (indexToRemove) => {
     setBugForm(prev => {
@@ -489,31 +498,42 @@ const [bugForm, setBugForm] = useState({
     });
   };
 
-  const uploadMediaFiles = async (mediaFiles) => {
-    try {
-      const uploadPromises = mediaFiles.map(async (mediaFile) => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            resolve({
-              url: reader.result,
-              type: mediaFile.type,
-              name: mediaFile.name,
-              size: mediaFile.size
-            });
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(mediaFile.file);
-        });
+const uploadMediaFiles = async (mediaFiles) => {
+  try {
+    const uploadPromises = mediaFiles.map(async (mediaFile) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          
+          // Check if the base64 result is too large
+          if (result.length > 3 * 1024 * 1024) { // ~2.25MB base64 limit
+            reject(new Error(`File ${mediaFile.name} is too large after encoding`));
+            return;
+          }
+          
+          resolve({
+            url: result,
+            type: mediaFile.type,
+            name: mediaFile.name,
+            size: mediaFile.size,
+            uploadedAt: new Date().toISOString()
+          });
+        };
+        reader.onerror = () => reject(new Error(`Failed to read file: ${mediaFile.name}`));
+        reader.readAsDataURL(mediaFile.file);
       });
+    });
 
-      const uploadedMedia = await Promise.all(uploadPromises);
-      return uploadedMedia;
-    } catch (error) {
-      console.error('Error uploading media:', error);
-      throw new Error('Failed to upload media files');
-    }
-  };
+    console.log(`📤 Uploading ${mediaFiles.length} media files...`);
+    const uploadedMedia = await Promise.all(uploadPromises);
+    console.log('✅ All media files processed successfully');
+    return uploadedMedia;
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    throw new Error(`Failed to upload media: ${error.message}`);
+  }
+};
 
   const handleBugSubmit = async (e) => {
     e.preventDefault();
@@ -593,13 +613,14 @@ setTimeout(() => {
     };
   }, [bugForm.mediaFiles]);
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const size = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
+  return `${size} ${sizes[i]}`;
+};
 
   const updateBugStatus = async (bugId, newStatus, assignedPoints = 0) => {
     setLoading(true);
@@ -642,7 +663,64 @@ setTimeout(() => {
       setLoading(false);
     }
   };
+const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
+  if (!mediaUrls || mediaUrls.length === 0) return null;
 
+  return (
+    <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
+      {mediaUrls.slice(0, maxDisplay).map((media, index) => {
+        const isVideo = media.type && media.type.startsWith('video/');
+        const isImage = media.type && media.type.startsWith('image/');
+        
+        return (
+          <div key={index} className="relative group">
+            {isImage ? (
+              <img 
+                src={media.url} 
+                alt={`Bug media ${index + 1}`}
+                className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => window.open(media.url, '_blank')}
+              />
+            ) : isVideo ? (
+              <div className="relative">
+                <video 
+                  src={media.url}
+                  className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => window.open(media.url, '_blank')}
+                  muted
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-black bg-opacity-50 rounded-full p-2">
+                    <span className="text-white text-lg">▶️</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors">
+                <span className="text-2xl">📎</span>
+              </div>
+            )}
+            
+            <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+              <span className="text-white text-xs">
+                {isImage ? '🖼️' : isVideo ? '🎬' : '📄'}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      
+      {mediaUrls.length > maxDisplay && (
+        <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-lg font-bold text-gray-700">+{mediaUrls.length - maxDisplay}</div>
+            <div className="text-xs text-gray-500">more files</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 	// PART 3: UI Components and Views (1-6)
 
   // UI Components
@@ -1033,108 +1111,141 @@ setTimeout(() => {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-              <div className="flex items-center p-4 border-b border-gray-100">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  S
-                </div>
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900">Sarah Johnson</span>
-                    <span className="text-purple-600 text-sm">@sarahj_dev</span>
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
-                      Bug Master
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <span>Instagram</span>
-                    <span>•</span>
-                    <span>2h ago</span>
-                    <span>•</span>
-                    <span>San Francisco, CA</span>
-                  </div>
-                </div>
-                <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
-                  Follow
-                </button>
-              </div>
+         <div className="space-y-6">
+  <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+    <div className="flex items-center p-4 border-b border-gray-100">
+      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+        S
+      </div>
+      <div className="ml-3 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-gray-900">Sarah Johnson</span>
+          <span className="text-purple-600 text-sm">@sarahj_dev</span>
+          <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
+            Bug Master
+          </span>
+        </div>
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <span>Social Media</span>
+          <span>•</span>
+          <span>2h ago</span>
+          <span>•</span>
+          <span>San Francisco, CA</span>
+        </div>
+      </div>
+      <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
+        Follow
+      </button>
+    </div>
 
-              <div className="px-4 pb-3">
-                <h3 className="font-bold text-lg mb-2 text-gray-900">Instagram crashes when uploading stories</h3>
-                <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
-                <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
-                
-                <div className="flex gap-2 flex-wrap mb-3">
-                  {['#InstagramBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
-                    <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 mb-3">
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    HIGH
-                  </span>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    functional
-                  </span>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
-                    🔥 Trending #1
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-6">
-                    <button className="flex items-center gap-2 transition-all active:scale-95">
-                      <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
-                      <span className="text-sm font-medium text-purple-600">I got this too!</span>
-                    </button>
-
-                    <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                      <span className="text-xl">💬</span>
-                      <span className="text-sm text-gray-600">Comment</span>
-                    </button>
-
-                    <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                      <span className="text-xl">📤</span>
-                      <span className="text-sm text-gray-600">Share</span>
-                    </button>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">$1,850</div>
-                    <div className="text-xs text-gray-500">Potential Reward</div>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-600">
-                    <span className="font-bold">1,247</span> people also got this bug
-                    <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
-                  </div>
-                  
-                  <div className="text-sm text-gray-500">
-                    <button className="hover:text-gray-700">View all 89 comments</button>
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-gray-500">Supported by:</span>
-                    <div className="flex -space-x-2">
-                      {['J', 'M', 'A'].map((initial, index) => (
-                        <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                          {initial}
-                        </div>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500">and 1,244 others</span>
-                  </div>
-                </div>
+    <div className="px-4 pb-3">
+      <h3 className="font-bold text-lg mb-2 text-gray-900">Social media app crashes when uploading stories</h3>
+      <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
+      <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
+      
+      {/* Sample Media Display */}
+      <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
+        <div className="relative group">
+          <div className="w-full h-32 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
+            <div className="text-center">
+              <span className="text-2xl mb-2 block">📱</span>
+              <span className="text-sm">Crash Screenshot</span>
+            </div>
+          </div>
+          <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+            <span className="text-white text-xs">🖼️</span>
+          </div>
+        </div>
+        
+        <div className="relative group">
+          <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
+            <div className="text-center">
+              <span className="text-2xl mb-2 block">🎬</span>
+              <span className="text-sm">Screen Recording</span>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black bg-opacity-50 rounded-full p-2">
+                <span className="text-white text-lg">▶️</span>
               </div>
             </div>
+          </div>
+          <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+            <span className="text-white text-xs">🎬</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex gap-2 flex-wrap mb-3">
+        {['#SocialMediaBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
+          <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      <div className="flex gap-2 mb-3">
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          HIGH
+        </span>
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          social-media
+        </span>
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
+          🔥 Trending #1
+        </span>
+      </div>
+    </div>
+
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-6">
+          <button className="flex items-center gap-2 transition-all active:scale-95">
+            <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
+            <span className="text-sm font-medium text-purple-600">I got this too!</span>
+          </button>
+
+          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xl">💬</span>
+            <span className="text-sm text-gray-600">Comment</span>
+          </button>
+
+          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xl">📤</span>
+            <span className="text-sm text-gray-600">Share</span>
+          </button>
+        </div>
+
+        <div className="text-right">
+          <div className="text-lg font-bold text-green-600">$1,850</div>
+          <div className="text-xs text-gray-500">Potential Reward</div>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-sm text-gray-600">
+          <span className="font-bold">1,247</span> people also got this bug
+          <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
+        </div>
+        
+        <div className="text-sm text-gray-500">
+          <button className="hover:text-gray-700">View all 89 comments</button>
+        </div>
+
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs text-gray-500">Supported by:</span>
+          <div className="flex -space-x-2">
+            {['J', 'M', 'A'].map((initial, index) => (
+              <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                {initial}
+              </div>
+            ))}
+          </div>
+          <span className="text-xs text-gray-500">and 1,244 others</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
             <div className="text-center py-8">
               <div className="text-4xl mb-4">🚀</div>
