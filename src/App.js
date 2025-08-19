@@ -487,33 +487,6 @@ useEffect(() => {
     }
   };
 
-  const loadUserBugs = async () => {
-    try {
-      const bugsData = await api.getBugs();
-      setBugs(bugsData.filter(bug => bug.user_id === user?.id));
-    } catch (error) {
-      // Mock data for demo
-      setBugs([
-        { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z' },
-        { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z' }
-      ]);
-    }
-  };
-
-  const loadLeaderboard = async () => {
-    try {
-      const leaderboardData = await api.getLeaderboard();
-      setLeaderboard(leaderboardData);
-    } catch (error) {
-      // Mock data for demo
-      setLeaderboard([
-        { name: 'John Doe', points: 1250, bugs_reported: 5 },
-        { name: 'Jane Smith', points: 980, bugs_reported: 3 },
-        { name: 'Mike Johnson', points: 750, bugs_reported: 4 }
-      ]);
-    }
-  };
-
   const logout = () => {
     api.logout();
     setUser(null);
