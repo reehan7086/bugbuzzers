@@ -1088,22 +1088,20 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
   try {
     const { title, description, steps, device, severity, appName, anonymous, mediaUrls, category } = req.body;
     
-    // Generate bug ID
+    // Generate bug ID first
     const bugCount = await pool.query('SELECT COUNT(*) FROM bugs');
     const bugId = `BUG-${String(parseInt(bugCount.rows[0].count) + 1).padStart(3, '0')}`;
     
     const reviewTimes = { high: 6, medium: 4, low: 2 };
     const reviewTime = reviewTimes[severity] || 2;
 
-    // Store media URLs as JSON string (now contains DigitalOcean Spaces URLs)
+    // If mediaUrls were uploaded with temp folders, we could move them here
+    // but for simplicity, we'll use the bug ID during upload in the frontend
+
     const mediaJson = mediaUrls && mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : null;
 
-    // Add media_urls_json column if it doesn't exist
     try {
-      await pool.query(`
-        ALTER TABLE bugs 
-        ADD COLUMN IF NOT EXISTS media_urls_json TEXT
-      `);
+      await pool.query(`ALTER TABLE bugs ADD COLUMN IF NOT EXISTS media_urls_json TEXT`);
     } catch (alterError) {
       console.log('media_urls_json column might already exist');
     }
@@ -1120,10 +1118,11 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
       supports_count: 0,
       comments_count: 0,
       shares_count: 0,
-      views_count: 0
+      views_count: 0,
+      reporter_name: anonymous ? null : req.user.name
     };
 
-    console.log(`✅ Bug ${bugId} created with ${mediaUrls?.length || 0} media files`);
+    console.log(`✅ Bug ${bugId} created for user ${req.user.name} with ${mediaUrls?.length || 0} media files`);
     res.json(bug);
   } catch (error) {
     console.error('Create bug error:', error);
