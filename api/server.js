@@ -1131,11 +1131,40 @@ app.get('*', (req, res) => {
 // ===================== START SERVER =====================
 
 // Initialize database and start server
-initDB().then(() => {
-  app.listen(port, () => {
-    console.log(`🚀 BugBuzzers API running on port ${port}`);
-  });
-});
+// FIXED: Proper server startup sequence
+async function startServer() {
+  try {
+    console.log('🔄 Starting BugBuzzers API...');
+    
+    // Only initialize database if connection exists
+    if (pool && pool.query) {
+      console.log('🔄 Initializing database...');
+      await initDB();
+    } else {
+      console.log('⚠️ Starting in development mode (no database)');
+    }
+    
+    const server = app.listen(port, () => {
+      console.log(`🚀 BugBuzzers API running on port ${port}`);
+      console.log(`📊 Database: ${pool ? 'Connected' : 'Disconnected (dev mode)'}`);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('🔄 Shutting down gracefully...');
+      server.close(() => {
+        if (pool && pool.end) pool.end();
+        process.exit(0);
+      });
+    });
+
+  } catch (error) {
+    console.error('❌ Server startup failed:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 // Social API Endpoints - Add these to your api/server.js after the existing routes
 
