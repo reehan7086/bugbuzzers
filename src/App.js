@@ -508,12 +508,19 @@ const uploadMediaFiles = async (mediaFiles) => {
       formData.append('media', mediaFile.file);
     });
 
-    console.log(`📤 Uploading ${mediaFiles.length} files to DigitalOcean Spaces...`);
+    // Add user name and bug info to form data
+    formData.append('userName', user.name);
+    if (bugForm.title) {
+      formData.append('bugTitle', bugForm.title);
+    }
+
+    console.log(`📤 Uploading ${mediaFiles.length} files for user ${user.name}...`);
 
     const response = await fetch('/api/upload-media', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
+        // Note: Don't set Content-Type header when using FormData
       },
       body: formData
     });
@@ -524,11 +531,11 @@ const uploadMediaFiles = async (mediaFiles) => {
     }
 
     const data = await response.json();
-    console.log('✅ Files uploaded successfully to DigitalOcean Spaces');
+    console.log(`✅ Files uploaded successfully for user ${user.name}`);
     
     return data.files;
   } catch (error) {
-    console.error('Error uploading to DigitalOcean Spaces:', error);
+    console.error('Error uploading media:', error);
     throw new Error(`Failed to upload media: ${error.message}`);
   }
 };
