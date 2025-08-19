@@ -2030,200 +2030,113 @@ if (currentView === 'report') {
             </div>
           </div>
 
-          {/* Bug Reports Table */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Bug Reports</h2>
-            </div>
-            
-            {bugs.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No bug reports yet</h3>
-                <p className="text-gray-600">Bug reports will appear here once users start reporting them.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
-					<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-					<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {bugs.map((bug) => (
-                      <tr key={bug.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
-<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
-<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-{(() => {
-  let mediaUrls = [];
+        {/* Bug Reports Table */}
+<div className="bg-white rounded-lg shadow-sm overflow-hidden">
+  <div className="px-6 py-4 border-b border-gray-200">
+    <h2 className="text-lg font-semibold text-gray-900">Bug Reports</h2>
+  </div>
   
-  // Try to get media URLs from the bug data
-  if (bug.media_urls && Array.isArray(bug.media_urls)) {
-    mediaUrls = bug.media_urls;
-  } else if (bug.media_urls_json) {
-    try {
-      mediaUrls = JSON.parse(bug.media_urls_json);
-    } catch (e) {
-      console.error('Error parsing media JSON:', e);
-    }
-  }
-  
-  return mediaUrls.length > 0 ? (
-    <div className="flex gap-2 flex-wrap max-w-xs">
-      {mediaUrls.slice(0, 2).map((media, index) => {
-        const isVideo = media.type && media.type.startsWith('video/');
-        const isImage = media.type && media.type.startsWith('image/');
-        
-        return (
-          <div key={index} className="relative group">
-            {isImage ? (
-              <img 
-                src={media.url} 
-                alt={`Bug screenshot ${index + 1}`}
-                className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-75 shadow-sm"
-                onClick={() => window.open(media.url, '_blank')}
-                title="Click to view full size"
-              />
-            ) : isVideo ? (
-              <div className="relative">
-                <video 
-                  src={media.url}
-                  className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-75 shadow-sm"
-                  onClick={() => window.open(media.url, '_blank')}
-                  title="Click to view video"
-                  muted
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-black bg-opacity-50 rounded-full p-1">
-                    <span className="text-white text-xs">▶️</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div 
-                className="w-16 h-16 bg-gray-200 rounded border flex items-center justify-center cursor-pointer hover:bg-gray-300 shadow-sm"
-                onClick={() => window.open(media.url, '_blank')}
-                title="Click to open file"
-              >
-                <span className="text-lg">📎</span>
-              </div>
-            )}
-            
-            {/* Media type indicator */}
-            <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-              {isImage ? '🖼️' : isVideo ? '🎬' : '📄'}
-            </div>
-            
-            {/* Hover overlay with actions */}
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(media.url, '_blank');
-                }}
-                className="bg-white text-gray-800 px-2 py-1 rounded text-xs font-medium shadow-lg hover:bg-gray-100"
-              >
-                View
-              </button>
-            </div>
-          </div>
-        );
-      })}
-      
-      {/* Show count if more than 2 files */}
-      {mediaUrls.length > 2 && (
-        <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded border flex items-center justify-center shadow-sm">
-          <div className="text-center">
-            <div className="text-sm font-bold text-gray-700">+{mediaUrls.length - 2}</div>
-            <div className="text-xs text-gray-500">more</div>
-          </div>
-        </div>
-      )}
-      
-      {/* Action buttons */}
-      <div className="w-full mt-2 flex gap-2">
-        <button 
-          className="text-blue-600 hover:text-blue-800 text-xs underline flex items-center gap-1"
-          onClick={() => {
-            const urls = mediaUrls.map(m => m.url).join('\n');
-            navigator.clipboard.writeText(urls);
-            alert('All media URLs copied to clipboard!');
-          }}
-        >
-          📋 Copy URLs
-        </button>
-        
-        <button 
-          className="text-green-600 hover:text-green-800 text-xs underline flex items-center gap-1"
-          onClick={() => {
-            // Open all media in new tabs
-            mediaUrls.forEach((media, index) => {
-              setTimeout(() => window.open(media.url, '_blank'), index * 100);
-            });
-          }}
-        >
-          🔗 Open All
-        </button>
-      </div>
+  {bugs.length === 0 ? (
+    <div className="text-center py-12">
+      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No bug reports yet</h3>
+      <p className="text-gray-600">Bug reports will appear here once users start reporting them.</p>
     </div>
   ) : (
-    <div className="text-center py-2">
-      <span className="text-gray-400 text-sm">No media</span>
-      <div className="text-xs text-gray-300 mt-1">Screenshots/videos not provided</div>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {bugs.map((bug) => (
+            <tr key={bug.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {(() => {
+                  let mediaUrls = [];
+                  
+                  if (bug.media_urls && Array.isArray(bug.media_urls)) {
+                    mediaUrls = bug.media_urls;
+                  } else if (bug.media_urls_json) {
+                    try {
+                      mediaUrls = JSON.parse(bug.media_urls_json);
+                    } catch (e) {
+                      console.error('Error parsing media JSON:', e);
+                    }
+                  }
+                  
+                  return mediaUrls.length > 0 ? (
+                    <div className="flex gap-1">
+                      {mediaUrls.slice(0, 3).map((media, index) => (
+                        <img 
+                          key={index} 
+                          src={typeof media === 'string' ? media : media.url} 
+                          alt={`Bug media ${index + 1}`}
+                          className="w-8 h-8 object-cover rounded border cursor-pointer"
+                          onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
+                        />
+                      ))}
+                      {mediaUrls.length > 3 && (
+                        <span className="text-xs text-gray-500">+{mediaUrls.length - 3}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">No media</span>
+                  );
+                })()}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.reporter_name || 'Anonymous'}</td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+                  bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-green-100 text-green-800'
+                }`}>
+                  {bug.severity}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+                  {bug.status}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                {bug.status === 'Submitted' && (
+                  <>
+                    <button
+                      onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
+                      className="text-green-600 hover:text-green-900"
+                      disabled={loading}
+                    >
+                      Verify
+                    </button>
+                    <button
+                      onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
+                      className="text-red-600 hover:text-red-900"
+                      disabled={loading}
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  );
-})()}
-</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.reporter_name || 'Anonymous'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            bug.severity === 'high' ? 'bg-red-100 text-red-800' :
-                            bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {bug.severity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
-                            {bug.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                          {bug.status === 'Submitted' && (
-                            <>
-                              <button
-                                onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
-                                className="text-green-600 hover:text-green-900"
-                                disabled={loading}
-                              >
-                                Verify
-                              </button>
-                              <button
-                                onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
-                                className="text-red-600 hover:text-red-900"
-                                disabled={loading}
-                              >
-                                Reject
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+  )}
+</div>
         </main>
       </div>
     );
