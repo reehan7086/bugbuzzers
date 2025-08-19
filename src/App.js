@@ -476,24 +476,6 @@ useEffect(() => {
       setLoading(false);
     }
   };
-
-// Media Upload Handler Functions
-// Add these functions to your App.js component
-
-// Update your bugForm state to include media files
-const [bugForm, setBugForm] = useState({
-  title: '', 
-  description: '', 
-  steps: '', 
-  device: '', 
-  severity: 'medium', 
-  appName: '', 
-  anonymous: false, 
-  attachment: null,
-  mediaFiles: [], // Add this new field
-  mediaUrls: []   // Add this for storing uploaded URLs
-});
-
 // Media upload handler function
 const handleMediaUpload = (e) => {
   const files = Array.from(e.target.files);
