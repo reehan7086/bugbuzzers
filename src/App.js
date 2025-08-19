@@ -890,25 +890,36 @@ const SocialNavigation = () => (
   <nav className="bg-white shadow-sm border-b">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center h-16">
-        {/* Navigation content */}
-        <div className="hidden md:flex items-center space-x-8">
+        {/* Logo */}
+        <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🐛</span>
+            <span className="text-xl font-bold text-gray-900 hidden sm:block">
+              BugBuzzers
+            </span>
+          </div>
+        </div>
+
+        {/* Navigation Links - Desktop */}
+        <div className="hidden md:flex items-center space-x-6">
           <button
             onClick={() => {
               setCurrentView('social-feed');
-              // Load all bugs when going to social feed
               setTimeout(() => loadAllBugs(), 100);
             }}
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
               currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
             }`}
           >
-            <Home className="w-4 h-4 mr-2" />
+            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+            </svg>
             Feed
           </button>
+          
           <button
             onClick={() => {
               setCurrentView('trending');
-              // Load all bugs when going to trending
               setTimeout(() => loadAllBugs(), 100);
             }}
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
@@ -918,48 +929,144 @@ const SocialNavigation = () => (
             <span className="w-4 h-4 mr-2">🔥</span>
             Trending
           </button>
-          {/* Add a "My Bugs" button for personal bug list */}
+          
           <button
             onClick={() => {
               setCurrentView('bugs');
-              // Load only user's bugs when going to personal bugs
               setTimeout(() => loadUserBugs(), 100);
             }}
             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
               currentView === 'bugs' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
             }`}
           >
-            <FileText className="w-4 h-4 mr-2" />
+            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+              <path fillRule="evenodd" d="M4 5a2 2 0 012-2v1a2 2 0 00-2 2v6a2 2 0 002 2v1a2 2 0 01-2-2V5zM16 5a2 2 0 00-2-2v1a2 2 0 012 2v6a2 2 0 01-2 2v1a2 2 0 002-2V5z"/>
+            </svg>
             My Bugs
           </button>
-          {/* Other navigation buttons */}
+          
+          <button
+            onClick={() => setCurrentView('report')}
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+          >
+            + Report Bug
+          </button>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* User Menu - DESKTOP */}
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-600">Welcome,</span>
+            <span className="font-medium text-gray-900">{user?.name}</span>
+            <span className="text-purple-600 font-bold">{user?.points || 0} pts</span>
+          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Logout"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 001-1h10.586l-2.293-2.293a1 1 0 10-1.414 1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 101.414 1.414L15.586 11H5a1 1 0 100 2h10.586l-2.293 2.293a1 1 0 101.414 1.414l4-4a1 1 0 000-1.414l-4-4A1 1 0 0015.586 9H5a1 1 0 010-2h10.586l-2.293-2.293a1 1 0 10-1.414 1.414L17.586 8H7a1 1 0 01-1-1V3z"/>
+            </svg>
+            Logout
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-200 bg-white">
+          <div className="py-4 space-y-2">
+            <button
+              onClick={() => {
+                setCurrentView('social-feed');
+                setMobileMenuOpen(false);
+                setTimeout(() => loadAllBugs(), 100);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg ${
+                currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              🏠 Feed
+            </button>
+            <button
+              onClick={() => {
+                setCurrentView('trending');
+                setMobileMenuOpen(false);
+                setTimeout(() => loadAllBugs(), 100);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg ${
+                currentView === 'trending' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              🔥 Trending
+            </button>
+            <button
+              onClick={() => {
+                setCurrentView('bugs');
+                setMobileMenuOpen(false);
+                setTimeout(() => loadUserBugs(), 100);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg ${
+                currentView === 'bugs' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              📋 My Bugs
+            </button>
+            <button
+              onClick={() => {
+                setCurrentView('report');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700"
+            >
+              ➕ Report Bug
+            </button>
+            
+            {/* Mobile User Info & Logout */}
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              <div className="px-4 py-2 text-sm">
+                <div className="font-medium text-gray-900">{user?.name}</div>
+                <div className="text-purple-600 font-bold">{user?.points || 0} points</div>
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 001-1h10.586l-2.293-2.293a1 1 0 10-1.414 1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 101.414 1.414L15.586 11H5a1 1 0 100 2h10.586l-2.293 2.293a1 1 0 101.414 1.414l4-4a1 1 0 000-1.414l-4-4A1 1 0 0015.586 9H5a1 1 0 010-2h10.586l-2.293-2.293a1 1 0 10-1.414 1.414L17.586 8H7a1 1 0 01-1-1V3z"/>
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   </nav>
 );
-  // VIEW 1: Email Verification
-  if (currentView === 'verify-email') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Email Verified!</h2>
-            <p className="text-gray-600 mb-6">
-              Your email has been successfully verified. You now have full access to BugBuzzers!
-            </p>
-            <button
-              onClick={() => setCurrentView('social-feed')}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700"
-            >
-              Go to Feed
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // VIEW 2: Social Feed
 // =================== COMPLETE SOCIAL FEED VIEW ===================
@@ -975,21 +1082,21 @@ if (currentView === 'social-feed') {
       <main className="max-w-2xl mx-auto px-4 py-6">
         {/* Stats Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{bugs.length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">{bugs.length}</div>
               <div className="text-xs text-gray-500">Total Reports</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{leaderboard.length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{leaderboard.length}</div>
               <div className="text-xs text-gray-500">Active Users</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{bugs.filter(b => b.severity === 'high').length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{bugs.filter(b => b.severity === 'high').length}</div>
               <div className="text-xs text-gray-500">High Priority</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{bugs.filter(b => b.status === 'Verified').length}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{bugs.filter(b => b.status === 'Verified').length}</div>
               <div className="text-xs text-gray-500">Verified</div>
             </div>
           </div>
@@ -998,33 +1105,35 @@ if (currentView === 'social-feed') {
         {/* Category Selection */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
           <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Report Bug by Category</h3>
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            <div className="flex-shrink-0 text-center">
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9 gap-3">
+            <div className="text-center">
               <button 
                 onClick={() => setCurrentView('report')}
-                className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-105 transition-transform"
+                className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-105 transition-transform mx-auto"
               >
                 <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-purple-600" />
+                  <svg className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                  </svg>
                 </div>
               </button>
-              <p className="text-xs mt-1 text-gray-600">Report Bug</p>
+              <p className="text-xs mt-1 text-gray-600">Report</p>
             </div>
             
             {[
-              { name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
+              { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
               { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
               { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
-              { name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
+              { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
               { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
-              { name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
-              { name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
+              { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
+              { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
               { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
             ].map((category, index) => (
-              <div key={index} className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform">
-                <div className={`w-16 h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5`}>
+              <div key={index} className="text-center cursor-pointer hover:scale-105 transition-transform">
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5 mx-auto`}>
                   <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                    <span className="text-2xl">{category.icon}</span>
+                    <span className="text-lg sm:text-2xl">{category.icon}</span>
                   </div>
                 </div>
                 <p className="text-xs mt-1 text-gray-600">{category.name}</p>
