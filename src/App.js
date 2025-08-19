@@ -2288,6 +2288,7 @@ if (currentView === 'report') {
     );
   }
 // Landing Page
+// Landing Page - Complete Fixed Code
 if (currentView === 'landing') {
   return (
     <div className="min-h-screen bg-gray-50">
