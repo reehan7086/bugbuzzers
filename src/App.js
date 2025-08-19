@@ -17,9 +17,11 @@ const BugBuzzers = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [bugForm, setBugForm] = useState({
-    title: '', description: '', steps: '', device: '', severity: 'medium', 
-    appName: '', anonymous: false, attachment: null
-  });
+  title: '', description: '', steps: '', device: '', severity: 'medium', 
+  appName: '', anonymous: false, attachment: null,
+  mediaFiles: [],
+  mediaUrls: []
+});
 
   // Data state
   const [bugs, setBugs] = useState([]);
@@ -475,6 +477,206 @@ useEffect(() => {
     }
   };
 
+// Media Upload Handler Functions
+// Add these functions to your App.js component
+
+// Update your bugForm state to include media files
+const [bugForm, setBugForm] = useState({
+  title: '', 
+  description: '', 
+  steps: '', 
+  device: '', 
+  severity: 'medium', 
+  appName: '', 
+  anonymous: false, 
+  attachment: null,
+  mediaFiles: [], // Add this new field
+  mediaUrls: []   // Add this for storing uploaded URLs
+});
+
+// Media upload handler function
+const handleMediaUpload = (e) => {
+  const files = Array.from(e.target.files);
+  const maxFileSize = 10 * 1024 * 1024; // 10MB limit
+  const maxFiles = 5; // Maximum 5 files
+  
+  // Validate files
+  const validFiles = files.filter(file => {
+    if (file.size > maxFileSize) {
+      alert(`File "${file.name}" is too large. Maximum size is 10MB.`);
+      return false;
+    }
+    
+    const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
+    if (!isValidType) {
+      alert(`File "${file.name}" is not a valid image or video file.`);
+      return false;
+    }
+    
+    return true;
+  });
+
+  // Check total file count
+  const currentFiles = bugForm.mediaFiles || [];
+  if (currentFiles.length + validFiles.length > maxFiles) {
+    alert(`You can only upload up to ${maxFiles} files total.`);
+    return;
+  }
+
+  // Create preview URLs for valid files
+  const filesWithPreviews = validFiles.map(file => {
+    const preview = URL.createObjectURL(file);
+    return {
+      file,
+      preview,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    };
+  });
+
+  // Update form state
+  setBugForm(prev => ({
+    ...prev,
+    mediaFiles: [...currentFiles, ...filesWithPreviews]
+  }));
+};
+
+// Remove media file function
+const removeMediaFile = (indexToRemove) => {
+  setBugForm(prev => {
+    const newMediaFiles = prev.mediaFiles.filter((_, index) => index !== indexToRemove);
+    
+    // Cleanup preview URL to prevent memory leaks
+    if (prev.mediaFiles[indexToRemove]?.preview) {
+      URL.revokeObjectURL(prev.mediaFiles[indexToRemove].preview);
+    }
+    
+    return {
+      ...prev,
+      mediaFiles: newMediaFiles
+    };
+  });
+};
+
+// Upload media files to server (or convert to base64 for demo)
+const uploadMediaFiles = async (mediaFiles) => {
+  try {
+    // For demo purposes, convert to base64 data URLs
+    // In production, you'd upload to a file storage service
+    const uploadPromises = mediaFiles.map(async (mediaFile) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            url: reader.result, // base64 data URL
+            type: mediaFile.type,
+            name: mediaFile.name,
+            size: mediaFile.size
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(mediaFile.file);
+      });
+    });
+
+    const uploadedMedia = await Promise.all(uploadPromises);
+    return uploadedMedia;
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    throw new Error('Failed to upload media files');
+  }
+};
+
+// Enhanced bug submit handler with media upload
+const handleBugSubmit = async (e) => {
+  e.preventDefault();
+
+  // Check email verification
+  if (!user?.emailVerified) {
+    setError('Please verify your email address before reporting bugs.');
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+  
+  try {
+    // Upload media files if any
+    let uploadedMediaUrls = [];
+    
+    if (bugForm.mediaFiles && bugForm.mediaFiles.length > 0) {
+      console.log('📤 Uploading media files...');
+      uploadedMediaUrls = await uploadMediaFiles(bugForm.mediaFiles);
+      console.log('✅ Media uploaded successfully');
+    }
+
+    // Create bug data with media URLs
+    const bugData = {
+      title: bugForm.title,
+      description: bugForm.description,
+      steps: bugForm.steps,
+      device: bugForm.device,
+      severity: bugForm.severity,
+      appName: bugForm.appName,
+      anonymous: bugForm.anonymous,
+      mediaUrls: uploadedMediaUrls // Include uploaded media
+    };
+
+    const newBug = await api.createBug(bugData);
+    
+    // Reset form including media files
+    setBugForm({
+      title: '', 
+      description: '', 
+      steps: '', 
+      device: '', 
+      severity: 'medium', 
+      appName: '', 
+      anonymous: false, 
+      attachment: null,
+      mediaFiles: [],
+      mediaUrls: []
+    });
+    
+    // Cleanup preview URLs
+    bugForm.mediaFiles?.forEach(mediaFile => {
+      if (mediaFile.preview) {
+        URL.revokeObjectURL(mediaFile.preview);
+      }
+    });
+    
+    alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
+    setCurrentView('social-feed');
+    loadUserBugs();
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Cleanup function for component unmount
+React.useEffect(() => {
+  return () => {
+    // Cleanup all preview URLs when component unmounts
+    bugForm.mediaFiles?.forEach(mediaFile => {
+      if (mediaFile.preview) {
+        URL.revokeObjectURL(mediaFile.preview);
+      }
+    });
+  };
+}, []);
+
+// Helper function to format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+	
   const updateBugStatus = async (bugId, newStatus, assignedPoints = 0) => {
     setLoading(true);
     try {
@@ -919,143 +1121,304 @@ useEffect(() => {
               ))}
             </div>
           </div>
-          
-          {/* Social Bug Feed */}
-          <div className="space-y-0">
-            {/* Sample Instagram-style Bug Post */}
-            <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden border border-gray-200">
-              {/* User Header */}
-              <div className="flex items-center p-4 border-b border-gray-100">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  S
-                </div>
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900">Sarah Johnson</span>
-                    <span className="text-purple-600 text-sm">@sarahj_dev</span>
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
-                      Bug Master
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
-                    <span>Instagram</span>
-                    <span>•</span>
-                    <span>2h ago</span>
-                    <span>•</span>
-                    <span>San Francisco, CA</span>
-                  </div>
-                </div>
-                <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
-                  Follow
-                </button>
+// Enhanced Social Feed Component with Media Display
+// Replace the existing social feed bug post in your App.js
+
+{/* Enhanced Social Bug Feed with Media */}
+<div className="space-y-6">
+  {/* Sample Instagram-style Bug Post with Media */}
+  <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+    {/* User Header */}
+    <div className="flex items-center p-4 border-b border-gray-100">
+      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+        S
+      </div>
+      <div className="ml-3 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-gray-900">Sarah Johnson</span>
+          <span className="text-purple-600 text-sm">@sarahj_dev</span>
+          <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
+            Bug Master
+          </span>
+        </div>
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <span>Instagram</span>
+          <span>•</span>
+          <span>2h ago</span>
+          <span>•</span>
+          <span>San Francisco, CA</span>
+        </div>
+      </div>
+      <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
+        Follow
+      </button>
+    </div>
+
+    {/* Bug Content */}
+    <div className="px-4 pb-3">
+      <h3 className="font-bold text-lg mb-2 text-gray-900">Instagram crashes when uploading stories</h3>
+      <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
+      <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
+      
+      {/* Hashtags */}
+      <div className="flex gap-2 flex-wrap mb-3">
+        {['#InstagramBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
+          <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Badges */}
+      <div className="flex gap-2 mb-3">
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          HIGH
+        </span>
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          functional
+        </span>
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
+          🔥 Trending #1
+        </span>
+      </div>
+    </div>
+
+    {/* Media Gallery */}
+    <div className="relative">
+      {/* Multiple Media Carousel */}
+      <div className="relative overflow-hidden">
+        <div className="flex transition-transform duration-300 ease-in-out">
+          {/* Screenshot 1 */}
+          <div className="w-full flex-shrink-0">
+            <div className="relative">
+              <img 
+                src="/api/placeholder/600/400" 
+                alt="Bug screenshot 1"
+                className="w-full h-80 object-cover"
+              />
+              <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+                1/3
               </div>
-
-              {/* Bug Content */}
-              <div className="px-4 pb-3">
-                <h3 className="font-bold text-lg mb-2 text-gray-900">Instagram crashes when uploading stories</h3>
-                <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
-                <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
-                
-                {/* Hashtags */}
-                <div className="flex gap-2 flex-wrap mb-3">
-                  {['#InstagramBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
-                    <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Badges */}
-                <div className="flex gap-2 mb-3">
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    HIGH
-                  </span>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    functional
-                  </span>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
-                    🔥 Trending #1
-                  </span>
-                </div>
+              <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm">
+                📱 Screenshot
               </div>
-
-              {/* Media */}
-              <div className="relative">
-                <div className="w-full h-80 bg-gray-100 flex items-center justify-center text-gray-400">
-                  <span className="text-lg">📸 Bug Screenshot</span>
-                </div>
-              </div>
-
-              {/* Action Bar */}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-6">
-                    {/* Support Button */}
-                    <button className="flex items-center gap-2 transition-all active:scale-95">
-                      <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
-                      <span className="text-sm font-medium text-purple-600">I got this too!</span>
-                    </button>
-
-                    <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                      <span className="text-xl">💬</span>
-                      <span className="text-sm text-gray-600">Comment</span>
-                    </button>
-
-                    <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                      <span className="text-xl">📤</span>
-                      <span className="text-sm text-gray-600">Share</span>
-                    </button>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">$1,850</div>
-                    <div className="text-xs text-gray-500">Potential Reward</div>
-                  </div>
-                </div>
-
-                {/* Engagement Stats */}
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-600">
-                    <span className="font-bold">1,247</span> people also got this bug
-                    <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
-                  </div>
-                  
-                  <div className="text-sm text-gray-500">
-                    <button className="hover:text-gray-700">View all 89 comments</button>
-                  </div>
-
-                  {/* Recent Supporters */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-gray-500">Supported by:</span>
-                    <div className="flex -space-x-2">
-                      {['J', 'M', 'A'].map((initial, index) => (
-                        <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                          {initial}
-                        </div>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500">and 1,244 others</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Call to Action for More Bugs */}
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">🚀</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
-              <p className="text-gray-600 mb-4">Found a bug? Share it with the community and earn rewards!</p>
-              <button
-                onClick={() => setCurrentView('report')}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
-              >
-                🐛 Report Your First Bug
-              </button>
             </div>
           </div>
-        </main>
+        </div>
+        
+        {/* Navigation dots */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+          <div className="w-2 h-2 bg-white rounded-full opacity-100"></div>
+          <div className="w-2 h-2 bg-white rounded-full opacity-50"></div>
+          <div className="w-2 h-2 bg-white rounded-full opacity-50"></div>
+        </div>
+        
+        {/* Navigation arrows */}
+        <button className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center">
+          ←
+        </button>
+        <button className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center">
+          →
+        </button>
       </div>
-    );
+    </div>
+
+    {/* Action Bar */}
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-6">
+          {/* Support Button */}
+          <button className="flex items-center gap-2 transition-all active:scale-95">
+            <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
+            <span className="text-sm font-medium text-purple-600">I got this too!</span>
+          </button>
+
+          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xl">💬</span>
+            <span className="text-sm text-gray-600">Comment</span>
+          </button>
+
+          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xl">📤</span>
+            <span className="text-sm text-gray-600">Share</span>
+          </button>
+        </div>
+
+        <div className="text-right">
+          <div className="text-lg font-bold text-green-600">$1,850</div>
+          <div className="text-xs text-gray-500">Potential Reward</div>
+        </div>
+      </div>
+
+      {/* Engagement Stats */}
+      <div className="space-y-1">
+        <div className="text-sm text-gray-600">
+          <span className="font-bold">1,247</span> people also got this bug
+          <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
+        </div>
+        
+        <div className="text-sm text-gray-500">
+          <button className="hover:text-gray-700">View all 89 comments</button>
+        </div>
+
+        {/* Recent Supporters */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs text-gray-500">Supported by:</span>
+          <div className="flex -space-x-2">
+            {['J', 'M', 'A'].map((initial, index) => (
+              <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                {initial}
+              </div>
+            ))}
+          </div>
+          <span className="text-xs text-gray-500">and 1,244 others</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Video Bug Post Example */}
+  <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+    {/* User Header */}
+    <div className="flex items-center p-4 border-b border-gray-100">
+      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+        M
+      </div>
+      <div className="ml-3 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-gray-900">Mike Chen</span>
+          <span className="text-purple-600 text-sm">@mikec_tech</span>
+          <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+            Bug Hunter
+          </span>
+        </div>
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <span>TikTok</span>
+          <span>•</span>
+          <span>5h ago</span>
+          <span>•</span>
+          <span>New York, NY</span>
+        </div>
+      </div>
+      <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
+        Follow
+      </button>
+    </div>
+
+    {/* Bug Content */}
+    <div className="px-4 pb-3">
+      <h3 className="font-bold text-lg mb-2 text-gray-900">TikTok video upload stuck at 99%</h3>
+      <p className="text-gray-700 mb-2">Been trying to upload this video for hours! 😫</p>
+      <p className="text-gray-600 text-sm mb-3">Upload gets stuck at 99% every single time. Video is under 60 seconds and follows all guidelines.</p>
+      
+      {/* Hashtags */}
+      <div className="flex gap-2 flex-wrap mb-3">
+        {['#TikTokBug', '#Upload', '#Stuck', '#Android'].map((tag, index) => (
+          <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {/* Badges */}
+      <div className="flex gap-2 mb-3">
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          MEDIUM
+        </span>
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          upload
+        </span>
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
+          🔥 Trending #2
+        </span>
+      </div>
+    </div>
+
+    {/* Video Media */}
+    <div className="relative">
+      <div className="relative bg-black">
+        <video 
+          className="w-full h-80 object-contain"
+          poster="/api/placeholder/600/400"
+          controls
+        >
+          <source src="/api/placeholder/video.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm">
+          🎬 Screen Recording
+        </div>
+      </div>
+    </div>
+
+    {/* Action Bar */}
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-6">
+          {/* Support Button */}
+          <button className="flex items-center gap-2 transition-all active:scale-95">
+            <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
+            <span className="text-sm font-medium text-purple-600">I got this too!</span>
+          </button>
+
+          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xl">💬</span>
+            <span className="text-sm text-gray-600">Comment</span>
+          </button>
+
+          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-xl">📤</span>
+            <span className="text-sm text-gray-600">Share</span>
+          </button>
+        </div>
+
+        <div className="text-right">
+          <div className="text-lg font-bold text-green-600">$856</div>
+          <div className="text-xs text-gray-500">Potential Reward</div>
+        </div>
+      </div>
+
+      {/* Engagement Stats */}
+      <div className="space-y-1">
+        <div className="text-sm text-gray-600">
+          <span className="font-bold">856</span> people also got this bug
+          <span className="ml-2 text-orange-500 font-medium">🔥 Trending #2</span>
+        </div>
+        
+        <div className="text-sm text-gray-500">
+          <button className="hover:text-gray-700">View all 34 comments</button>
+        </div>
+
+        {/* Recent Supporters */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs text-gray-500">Supported by:</span>
+          <div className="flex -space-x-2">
+            {['T', 'R', 'K'].map((initial, index) => (
+              <div key={index} className="w-6 h-6 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                {initial}
+              </div>
+            ))}
+          </div>
+          <span className="text-xs text-gray-500">and 853 others</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Call to Action for More Bugs */}
+  <div className="text-center py-8">
+    <div className="text-4xl mb-4">🚀</div>
+    <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
+    <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn massive rewards!</p>
+    <button
+      onClick={() => setCurrentView('report')}
+      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+    >
+      📸 Report Bug with Media
+    </button>
+  </div>
+</div>          
+          
+);
   }
 
   // NEW: Trending Page
@@ -1389,146 +1752,231 @@ useEffect(() => {
   }
 
   // Report Bug Page (Updated with social navigation)
-  if (currentView === 'report') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-        <SocialNavigation />
-        <EmailVerificationBanner /> 
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
-            <p className="text-gray-600 mt-2">Help us improve by reporting bugs you find</p>
+// Enhanced Report Bug Page Component with Media Upload
+// Add this to replace the existing "Report Bug Page" section in your App.js
+
+// Report Bug Page (Updated with Media Upload)
+if (currentView === 'report') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner /> 
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
+          <p className="text-gray-600 mt-2">Help us improve by reporting bugs you find. Add screenshots or videos to get more support!</p>
+        </div>
+
+        <form onSubmit={handleBugSubmit} className="bg-white rounded-lg shadow-sm p-8">
+          <ErrorMessage />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bug Title *</label>
+              <input
+                type="text"
+                value={bugForm.title}
+                onChange={(e) => setBugForm({...bugForm, title: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Brief description of the bug"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">App/Website Name *</label>
+              <input
+                type="text"
+                value={bugForm.appName}
+                onChange={(e) => setBugForm({...bugForm, appName: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Name of the application"
+                required
+                disabled={loading}
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleBugSubmit} className="bg-white rounded-lg shadow-sm p-8">
-            <ErrorMessage />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bug Title *</label>
-                <input
-                  type="text"
-                  value={bugForm.title}
-                  onChange={(e) => setBugForm({...bugForm, title: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Brief description of the bug"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">App/Website Name *</label>
-                <input
-                  type="text"
-                  value={bugForm.appName}
-                  onChange={(e) => setBugForm({...bugForm, appName: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Name of the application"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+            <textarea
+              value={bugForm.description}
+              onChange={(e) => setBugForm({...bugForm, description: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              rows="4"
+              placeholder="Detailed description of what happened"
+              required
+              disabled={loading}
+            />
+          </div>
 
- <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-              <textarea
-                value={bugForm.description}
-                onChange={(e) => setBugForm({...bugForm, description: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                rows="4"
-                placeholder="Detailed description of what happened"
-                required
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Steps to Reproduce *</label>
+            <textarea
+              value={bugForm.steps}
+              onChange={(e) => setBugForm({...bugForm, steps: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              rows="4"
+              placeholder="1. Step one&#10;2. Step two&#10;3. Step three"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          {/* NEW: Media Upload Section */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📸 Screenshots/Videos <span className="text-gray-500">(Highly recommended!)</span>
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+              <input
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handleMediaUpload}
+                className="hidden"
+                id="media-upload"
                 disabled={loading}
               />
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Steps to Reproduce *</label>
-              <textarea
-                value={bugForm.steps}
-                onChange={(e) => setBugForm({...bugForm, steps: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                rows="4"
-                placeholder="1. Step one&#10;2. Step two&#10;3. Step three"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
-                <input
-                  type="text"
-                  value={bugForm.device}
-                  onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
-                  required
-                  disabled={loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
-                <select
-                  value={bugForm.severity}
-                  onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  disabled={loading}
-                >
-                  <option value="low">Low (150 pts) - Minor issues</option>
-                  <option value="medium">Medium (300 pts) - Affects functionality</option>
-                  <option value="high">High (500 pts) - Critical issues</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={bugForm.anonymous}
-                  onChange={(e) => setBugForm({...bugForm, anonymous: e.target.checked})}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                  disabled={loading}
-                />
-                <span className="ml-2 text-sm text-gray-700">Submit anonymously</span>
+              <label 
+                htmlFor="media-upload" 
+                className="cursor-pointer flex flex-col items-center"
+              >
+                <Upload className="w-12 h-12 text-gray-400 mb-4" />
+                <div className="text-lg font-medium text-gray-900 mb-2">
+                  Upload Screenshots or Videos
+                </div>
+                <div className="text-sm text-gray-500 mb-4">
+                  Drag and drop files here, or click to browse
+                </div>
+                <div className="text-xs text-gray-400">
+                  Supported: JPG, PNG, GIF, MP4, MOV, WebM • Max 10MB per file
+                </div>
               </label>
             </div>
 
-            <div className="bg-blue-50 rounded-lg p-4 mb-6">
-              <h3 className="font-medium text-blue-900 mb-2">Estimated Review Time</h3>
-              <p className="text-sm text-blue-700">
-                Your bug will be reviewed within approximately {getEstimatedReviewTime(bugForm.severity)} hours.
-                If verified, you'll earn {getPointsForSeverity(bugForm.severity)} points!
-              </p>
-            </div>
+            {/* Media Preview */}
+            {bugForm.mediaFiles && bugForm.mediaFiles.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  Uploaded Media ({bugForm.mediaFiles.length} file{bugForm.mediaFiles.length !== 1 ? 's' : ''})
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {bugForm.mediaFiles.map((file, index) => (
+                    <div key={index} className="relative group">
+                      {file.type.startsWith('image/') ? (
+                        <img 
+                          src={file.preview} 
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border"
+                        />
+                      ) : (
+                        <div className="w-full h-24 bg-gray-100 rounded-lg border flex items-center justify-center">
+                          <div className="text-center">
+                            <span className="text-2xl">🎬</span>
+                            <div className="text-xs text-gray-600 mt-1">{file.name}</div>
+                          </div>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeMediaFile(index)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => setCurrentView('social-feed')}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
+              <input
+                type="text"
+                value={bugForm.device}
+                onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
+                required
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
+              <select
+                value={bugForm.severity}
+                onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 disabled={loading}
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Submitting...' : 'Submit Bug Report'}
-              </button>
+                <option value="low">Low (150 pts) - Minor issues</option>
+                <option value="medium">Medium (300 pts) - Affects functionality</option>
+                <option value="high">High (500 pts) - Critical issues</option>
+              </select>
             </div>
-          </form>
-        </main>
-      </div>
-    );
-  }
+          </div>
 
+          <div className="mb-6">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={bugForm.anonymous}
+                onChange={(e) => setBugForm({...bugForm, anonymous: e.target.checked})}
+                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                disabled={loading}
+              />
+              <span className="ml-2 text-sm text-gray-700">Submit anonymously</span>
+            </label>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-blue-900 mb-2">💡 Pro Tips for Better Bug Reports</h3>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• <strong>Add screenshots/videos</strong> - Get 3x more support from the community!</li>
+              <li>• <strong>Be specific</strong> - Detailed descriptions help others reproduce the bug</li>
+              <li>• <strong>Include your device info</strong> - Helps identify if it's device-specific</li>
+              <li>• Your bug will be reviewed within approximately {getEstimatedReviewTime(bugForm.severity)} hours</li>
+              <li>• If verified, you'll earn {getPointsForSeverity(bugForm.severity)} points + social bonuses!</li>
+            </ul>
+          </div>
+
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => setCurrentView('social-feed')}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !bugForm.title || !bugForm.description}
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <span>🚀</span>
+                  Share Bug Report
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+}
   // My Bugs Page (Updated with social navigation)
   if (currentView === 'bugs') {
     return (
