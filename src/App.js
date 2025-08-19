@@ -351,43 +351,6 @@ useEffect(() => {
     }
   };
 
-  const handleBugSubmit = async (e) => {
-    e.preventDefault();
-
-    // Check email verification
-    if (!user?.emailVerified) {
-      setError('Please verify your email address before reporting bugs.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    
-    try {
-      const newBug = await api.createBug({
-        title: bugForm.title,
-        description: bugForm.description,
-        steps: bugForm.steps,
-        device: bugForm.device,
-        severity: bugForm.severity,
-        appName: bugForm.appName,
-        anonymous: bugForm.anonymous
-      });
-      
-      setBugForm({
-        title: '', description: '', steps: '', device: '', severity: 'medium', 
-        appName: '', anonymous: false, attachment: null
-      });
-      
-      alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
-      setCurrentView('social-feed'); // CHANGED: Go back to social feed
-      loadUserBugs();
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Add forgot password handler
   const handleForgotPassword = async (e) => {
     e.preventDefault();
