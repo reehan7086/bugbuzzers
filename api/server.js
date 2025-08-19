@@ -614,14 +614,14 @@ async function setupFollowerTriggers() {
 }
 
 // Run them on startup
-(async () => {
-  try {
-    await setupBugTriggers();
-    await setupFollowerTriggers();
-  } catch (err) {
-    console.error("❌ Error setting up triggers:", err);
-  }
-})();
+
+    // Setup database triggers
+    try {
+      await setupBugTriggers();
+      await setupFollowerTriggers();
+    } catch (error) {
+      console.log("⚠️ Trigger setup failed:", error.message);
+    }
 
     // Add existing admin user columns if they don't exist
     try {
@@ -703,10 +703,20 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// FIXED: Database availability middleware
+const requireDatabase = (req, res, next) => {
+  if (!pool || pool.query === undefined) {
+    return res.status(503).json({ 
+      error: 'Database unavailable',
+      message: 'Service temporarily unavailable. Please try again later.'
+    });
+  }
+  next();
+};
 // ===================== API ROUTES =====================
 
 // Auth Routes
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', requireDatabase, async (req, res) => {
   try {
     const { email, password } = req.body;
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -1293,9 +1303,9 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
         u.avatar_url as reporter_avatar,
         u.user_level as reporter_level,
         u.followers_count as reporter_followers,
-        // Check if current user supports this bug
+        -- Check if current user supports this bug
         CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports,
-        // Get recent supporters for preview
+        -- Get recent supporters for preview
         COALESCE(supporter_preview.supporters, '[]'::json) as recent_supporters
       FROM bugs b
       JOIN users u ON b.user_id = u.id
