@@ -533,7 +533,6 @@ const uploadMediaFiles = async (mediaFiles) => {
   }
 };
 
-// Enhanced bug submit handler with media upload
 const handleBugSubmit = async (e) => {
   e.preventDefault();
 
@@ -565,12 +564,10 @@ const handleBugSubmit = async (e) => {
       severity: bugForm.severity,
       appName: bugForm.appName,
       anonymous: bugForm.anonymous,
-      mediaUrls: uploadedMediaUrls // Include uploaded media
+      mediaUrls: uploadedMediaUrls 
     };
 
     const newBug = await api.createBug(bugData);
-    
-    // Reset form including media files
     setBugForm({
       title: '', 
       description: '', 
@@ -601,7 +598,6 @@ const handleBugSubmit = async (e) => {
   }
 };
 
-// Cleanup function for component unmount
 React.useEffect(() => {
   return () => {
     // Cleanup all preview URLs when component unmounts
@@ -944,10 +940,6 @@ const formatFileSize = (bytes) => {
     </nav>
   );
 
-  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURNS
-  // NOW WE CAN HAVE CONDITIONAL RETURNS
-
-  // Add verification success page handling
   if (currentView === 'verify-email') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -974,7 +966,6 @@ const formatFileSize = (bytes) => {
     );
   }
 
-  // NEW: Social Feed Page (Main View)
   if (currentView === 'social-feed') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -1693,11 +1684,6 @@ const formatFileSize = (bytes) => {
     );
   }
 
-  // Report Bug Page (Updated with social navigation)
-// Enhanced Report Bug Page Component with Media Upload
-// Add this to replace the existing "Report Bug Page" section in your App.js
-
-// Report Bug Page (Updated with Media Upload)
 if (currentView === 'report') {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1919,7 +1905,7 @@ if (currentView === 'report') {
     </div>
   );
 }
-  // My Bugs Page (Updated with social navigation)
+
   if (currentView === 'bugs') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -2002,7 +1988,6 @@ if (currentView === 'report') {
     );
   }
 
-  // Leaderboard Page (Updated with social navigation)
   if (currentView === 'leaderboard') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -2069,7 +2054,6 @@ if (currentView === 'report') {
     );
   }
 
-  // Admin Panel (Updated with social navigation)
   if (currentView === 'admin' && user?.isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50">
