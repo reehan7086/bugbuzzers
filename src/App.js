@@ -1018,248 +1018,247 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
   }
 
   // VIEW 2: Social Feed
-  if (currentView === 'social-feed') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-        <SocialNavigation />
-        <EmailVerificationBanner />
-        
-        <main className="max-w-2xl mx-auto px-4 py-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">15.4K</div>
-                <div className="text-xs text-gray-500">Total Supports</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">2.8K</div>
-                <div className="text-xs text-gray-500">Active Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">23</div>
-                <div className="text-xs text-gray-500">Trending Bugs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">$48.6K</div>
-                <div className="text-xs text-gray-500">Rewards Paid</div>
-              </div>
+if (currentView === 'social-feed') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner />
+      
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">15.4K</div>
+              <div className="text-xs text-gray-500">Total Supports</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">2.8K</div>
+              <div className="text-xs text-gray-500">Active Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">23</div>
+              <div className="text-xs text-gray-500">Trending Bugs</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">$48.6K</div>
+              <div className="text-xs text-gray-500">Rewards Paid</div>
             </div>
           </div>
+        </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Trending Bug Categories</h3>
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              <div className="flex-shrink-0 text-center">
-                <button 
-                  onClick={() => setCurrentView('report')}
-                  className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-105 transition-transform"
-                >
-                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-purple-600" />
-                  </div>
-                </button>
-                <p className="text-xs mt-1 text-gray-600">Report Bug</p>
-              </div>
-              
-{[
-  { name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
-  { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
-  { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
-  { name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
-  { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
-  { name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
-  { name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
-  { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
-].map((category, index) => (
-                <div key={index} className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5`}>
-                    <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                      <span className="text-2xl">{category.icon}</span>
-                    </div>
-                  </div>
-                  <p className="text-xs mt-1 text-gray-600">{category.name}</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Trending Bug Categories</h3>
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            <div className="flex-shrink-0 text-center">
+              <button 
+                onClick={() => setCurrentView('report')}
+                className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-105 transition-transform"
+              >
+                <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-purple-600" />
                 </div>
-              ))}
+              </button>
+              <p className="text-xs mt-1 text-gray-600">Report Bug</p>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-6">
-            <div className="flex space-x-1 overflow-x-auto">
-              {[
-                { key: 'trending', label: '🔥 Trending', icon: '📈' },
-                { key: 'recent', label: '🕐 Recent', icon: '⏰' },
-                { key: 'following', label: '👥 Following', icon: '❤️' },
-                { key: 'most_supported', label: '🙋‍♀️ Most Supported', icon: '🏆' }
-              ].map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setFeedFilter(filter.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                    feedFilter === filter.key
-                      ? 'bg-purple-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <span>{filter.icon}</span>
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-         <div className="space-y-6">
-  <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-    <div className="flex items-center p-4 border-b border-gray-100">
-      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-        S
-      </div>
-      <div className="ml-3 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-gray-900">Sarah Johnson</span>
-          <span className="text-purple-600 text-sm">@sarahj_dev</span>
-          <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
-            Bug Master
-          </span>
-        </div>
-        <div className="text-sm text-gray-500 flex items-center gap-2">
-          <span>Social Media</span>
-          <span>•</span>
-          <span>2h ago</span>
-          <span>•</span>
-          <span>San Francisco, CA</span>
-        </div>
-      </div>
-      <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
-        Follow
-      </button>
-    </div>
-
-    <div className="px-4 pb-3">
-      <h3 className="font-bold text-lg mb-2 text-gray-900">Social media app crashes when uploading stories</h3>
-      <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
-      <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
-      
-      {/* Sample Media Display */}
-      <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
-        <div className="relative group">
-          <div className="w-full h-32 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
-            <div className="text-center">
-              <span className="text-2xl mb-2 block">📱</span>
-              <span className="text-sm">Crash Screenshot</span>
-            </div>
-          </div>
-          <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-            <span className="text-white text-xs">🖼️</span>
-          </div>
-        </div>
-        
-        <div className="relative group">
-          <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
-            <div className="text-center">
-              <span className="text-2xl mb-2 block">🎬</span>
-              <span className="text-sm">Screen Recording</span>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-black bg-opacity-50 rounded-full p-2">
-                <span className="text-white text-lg">▶️</span>
-              </div>
-            </div>
-          </div>
-          <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-            <span className="text-white text-xs">🎬</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex gap-2 flex-wrap mb-3">
-        {['#SocialMediaBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
-          <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="flex gap-2 mb-3">
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          HIGH
-        </span>
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          social-media
-        </span>
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
-          🔥 Trending #1
-        </span>
-      </div>
-    </div>
-
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-6">
-          <button className="flex items-center gap-2 transition-all active:scale-95">
-            <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
-            <span className="text-sm font-medium text-purple-600">I got this too!</span>
-          </button>
-
-          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-            <span className="text-xl">💬</span>
-            <span className="text-sm text-gray-600">Comment</span>
-          </button>
-
-          <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-            <span className="text-xl">📤</span>
-            <span className="text-sm text-gray-600">Share</span>
-          </button>
-        </div>
-
-        <div className="text-right">
-          <div className="text-lg font-bold text-green-600">$1,850</div>
-          <div className="text-xs text-gray-500">Potential Reward</div>
-        </div>
-      </div>
-
-      <div className="space-y-1">
-        <div className="text-sm text-gray-600">
-          <span className="font-bold">1,247</span> people also got this bug
-          <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
-        </div>
-        
-        <div className="text-sm text-gray-500">
-          <button className="hover:text-gray-700">View all 89 comments</button>
-        </div>
-
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs text-gray-500">Supported by:</span>
-          <div className="flex -space-x-2">
-            {['J', 'M', 'A'].map((initial, index) => (
-              <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                {initial}
+            
+            {[
+              { name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
+              { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
+              { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
+              { name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
+              { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
+              { name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
+              { name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
+              { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
+            ].map((category, index) => (
+              <div key={index} className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform">
+                <div className={`w-16 h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5`}>
+                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                    <span className="text-2xl">{category.icon}</span>
+                  </div>
+                </div>
+                <p className="text-xs mt-1 text-gray-600">{category.name}</p>
               </div>
             ))}
           </div>
-          <span className="text-xs text-gray-500">and 1,244 others</span>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">🚀</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
-              <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn massive rewards!</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-6">
+          <div className="flex space-x-1 overflow-x-auto">
+            {[
+              { key: 'trending', label: '🔥 Trending', icon: '📈' },
+              { key: 'recent', label: '🕐 Recent', icon: '⏰' },
+              { key: 'following', label: '👥 Following', icon: '❤️' },
+              { key: 'most_supported', label: '🙋‍♀️ Most Supported', icon: '🏆' }
+            ].map((filter) => (
               <button
-                onClick={() => setCurrentView('report')}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+                key={filter.key}
+                onClick={() => setFeedFilter(filter.key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  feedFilter === filter.key
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                📸 Report Bug with Media
+                <span>{filter.icon}</span>
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+            <div className="flex items-center p-4 border-b border-gray-100">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                S
+              </div>
+              <div className="ml-3 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-gray-900">Sarah Johnson</span>
+                  <span className="text-purple-600 text-sm">@sarahj_dev</span>
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                    Bug Master
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 flex items-center gap-2">
+                  <span>Social Media</span>
+                  <span>•</span>
+                  <span>2h ago</span>
+                  <span>•</span>
+                  <span>San Francisco, CA</span>
+                </div>
+              </div>
+              <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
+                Follow
               </button>
             </div>
+
+            <div className="px-4 pb-3">
+              <h3 className="font-bold text-lg mb-2 text-gray-900">Social media app crashes when uploading stories</h3>
+              <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
+              <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
+              
+              {/* Sample Media Display */}
+              <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
+                <div className="relative group">
+                  <div className="w-full h-32 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
+                    <div className="text-center">
+                      <span className="text-2xl mb-2 block">📱</span>
+                      <span className="text-sm">Crash Screenshot</span>
+                    </div>
+                  </div>
+                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+                    <span className="text-white text-xs">🖼️</span>
+                  </div>
+                </div>
+                
+                <div className="relative group">
+                  <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
+                    <div className="text-center">
+                      <span className="text-2xl mb-2 block">🎬</span>
+                      <span className="text-sm">Screen Recording</span>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black bg-opacity-50 rounded-full p-2">
+                        <span className="text-white text-lg">▶️</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+                    <span className="text-white text-xs">🎬</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 flex-wrap mb-3">
+                {['#SocialMediaBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
+                  <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex gap-2 mb-3">
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  HIGH
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  social-media
+                </span>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
+                  🔥 Trending #1
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-6">
+                  <button className="flex items-center gap-2 transition-all active:scale-95">
+                    <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
+                    <span className="text-sm font-medium text-purple-600">I got this too!</span>
+                  </button>
+
+                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span className="text-xl">💬</span>
+                    <span className="text-sm text-gray-600">Comment</span>
+                  </button>
+
+                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span className="text-xl">📤</span>
+                    <span className="text-sm text-gray-600">Share</span>
+                  </button>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-lg font-bold text-green-600">$1,850</div>
+                  <div className="text-xs text-gray-500">Potential Reward</div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-sm text-gray-600">
+                  <span className="font-bold">1,247</span> people also got this bug
+                  <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
+                </div>
+                
+                <div className="text-sm text-gray-500">
+                  <button className="hover:text-gray-700">View all 89 comments</button>
+                </div>
+
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-500">Supported by:</span>
+                  <div className="flex -space-x-2">
+                    {['J', 'M', 'A'].map((initial, index) => (
+                      <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                        {initial}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-500">and 1,244 others</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </main>
-      </div>
-    );
-  }
+
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">🚀</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
+            <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn massive rewards!</p>
+            <button
+              onClick={() => setCurrentView('report')}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+            >
+              📸 Report Bug with Media
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
 // PART 4: Views 3-12 and Component Closing
 
   // VIEW 3: Trending Page
