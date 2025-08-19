@@ -1031,12 +1031,13 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // Bug Routes
 app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT b.*, u.name as reporter_name 
-      FROM bugs b 
-      LEFT JOIN users u ON b.user_id = u.id 
-      ORDER BY b.submitted_at DESC
-    `);
+const result = await pool.query(`
+  SELECT b.*, u.name as reporter_name,
+         CASE WHEN b.media_urls IS NOT NULL THEN b.media_urls ELSE '[]'::json END as media_urls
+  FROM bugs b 
+  LEFT JOIN users u ON b.user_id = u.id 
+  ORDER BY b.submitted_at DESC
+`);
     res.json(result.rows);
   } catch (error) {
     console.error('Get bugs error:', error);
@@ -1055,11 +1056,13 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
     const reviewTimes = { high: 6, medium: 4, low: 2 };
     const reviewTime = reviewTimes[severity] || 2;
 
+    const { title, description, steps, device, severity, appName, anonymous, mediaUrls } = req.body;
+
     const result = await pool.query(`
-      INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *
-    `, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime]);
+  INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time, media_urls)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+  RETURNING *
+`, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, JSON.stringify(mediaUrls || [])]);
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -1342,7 +1345,7 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
     `;
 
     let orderClause = '';
-    let whereClause = 'WHERE b.status != \'Rejected\'';
+    let whereClause = 'WHERE 1=1'; // Show all bugs including newly submitted ones
     const queryParams = [req.user.id];
 
     if (category) {
