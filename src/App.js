@@ -82,18 +82,30 @@ const [bugForm, setBugForm] = useState({
   };
 
   // Data loading functions
-  const loadUserBugs = useCallback(async () => {
-    try {
-      const bugsData = await api.getBugs();
-      setBugs(bugsData.filter(bug => bug.user_id === user?.id));
-    } catch (error) {
-      setBugs([
-        { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z' },
-        { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z' }
-      ]);
-    }
-  }, [user?.id]);
+const loadUserBugs = useCallback(async () => {
+  try {
+    const bugsData = await api.getBugs();
+    setBugs(bugsData.filter(bug => bug.user_id === user?.id));
+  } catch (error) {
+    setBugs([
+      { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z' },
+      { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z' }
+    ]);
+  }
+}, [user?.id]);
 
+	const loadAllBugs = useCallback(async () => {
+  try {
+    const bugsData = await api.getBugs();
+    setBugs(bugsData); // Show ALL bugs, not filtered by user
+  } catch (error) {
+    setBugs([
+      { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z', reporter_name: 'John Doe', user_id: 1 },
+      { id: 'BUG-002', title: 'Typo in welcome message', status: 'In Review', severity: 'low', points: 0, submitted_at: '2025-01-14T15:45:00Z', reporter_name: 'Jane Smith', user_id: 2 },
+      { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z', reporter_name: 'Mike Johnson', user_id: 3 }
+    ]);
+  }
+}, []);
   const loadBugs = useCallback(async () => {
     try {
       const bugsData = await api.getBugs();
@@ -198,25 +210,33 @@ const [bugForm, setBugForm] = useState({
     initializeAuth();
   }, []);
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
-        try {
-          if (user.isAdmin) {
-            await loadBugs();
-          } else {
-            await loadUserBugs();
-          }
-          await loadLeaderboard();
-        } catch (error) {
-          console.error('Error loading user data:', error);
-          setError('Failed to load data. Please refresh the page.');
+useEffect(() => {
+  const loadUserData = async () => {
+    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
+      try {
+        if (user.isAdmin) {
+          // Admin sees all bugs
+          await loadAllBugs();
+        } else if (currentView === 'social-feed' || currentView === 'trending') {
+          // Social feed shows all bugs for everyone
+          await loadAllBugs();
+        } else if (currentView === 'bugs') {
+          // "My Bugs" view shows only user's own bugs
+          await loadUserBugs();
+        } else {
+          // Default: show all bugs
+          await loadAllBugs();
         }
+        await loadLeaderboard();
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setError('Failed to load data. Please refresh the page.');
       }
-    };
+    }
+  };
 
-    loadUserData();
-  }, [user?.id, user?.isAdmin, currentView, loadBugs, loadUserBugs, loadLeaderboard]);
+  loadUserData();
+}, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);
 
   useEffect(() => {
     if (user && currentView === 'dashboard') {
@@ -225,13 +245,12 @@ const [bugForm, setBugForm] = useState({
   }, [user?.id, currentView]);
 
 useEffect(() => {
-  // Auto-refresh feed every 30 seconds if user is on social-feed
   let intervalId;
   
-  if (user && currentView === 'social-feed') {
+  if (user && (currentView === 'social-feed' || currentView === 'trending')) {
     intervalId = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        loadUserBugs();
+        loadAllBugs(); // Load all bugs, not just user's bugs
       }
     }, 30 * 1000); // 30 seconds
   }
@@ -241,7 +260,7 @@ useEffect(() => {
       clearInterval(intervalId);
     }
   };
-}, [user?.id, currentView, loadUserBugs]);
+}, [user?.id, currentView, loadAllBugs]);
 
   // Helper functions
   const getEstimatedReviewTime = (severity) => {
@@ -596,19 +615,22 @@ const handleBugSubmit = async (e) => {
       }
     });
     
+    // Add reporter name to the new bug for immediate display
+    const newBugWithReporter = {
+      ...newBug,
+      reporter_name: newBug.anonymous ? null : user.name,
+      user_id: user.id
+    };
+    
     // IMMEDIATELY update the bugs list and go to feed
-    setBugs(prevBugs => [newBug, ...prevBugs]);
+    setBugs(prevBugs => [newBugWithReporter, ...prevBugs]);
     
     alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
     setCurrentView('social-feed');
     
     // Also reload to ensure fresh data from server
     setTimeout(() => {
-      if (user.isAdmin) {
-        loadBugs();
-      } else {
-        loadUserBugs();
-      }
+      loadAllBugs(); // Load all bugs to show the new one in the feed
     }, 1000);
   } catch (error) {
     setError(error.message);
@@ -864,153 +886,58 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
     );
   };
 
-  const SocialNavigation = () => (
-    <nav className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <Megaphone className="w-8 h-8 text-purple-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
-            <span className="ml-2 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-medium">
-              SOCIAL
-            </span>
-          </div>
-          
-          <div className="hidden md:flex items-center space-x-8">
-            <button
-              onClick={() => setCurrentView('social-feed')}
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
-              }`}
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Feed
-            </button>
-            <button
-              onClick={() => setCurrentView('trending')}
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                currentView === 'trending' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
-              }`}
-            >
-              <span className="w-4 h-4 mr-2">🔥</span>
-              Trending
-            </button>
-            <button
-              onClick={() => setCurrentView('report')}
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                currentView === 'report' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
-              }`}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Report Bug
-            </button>
-            <button
-              onClick={() => setCurrentView('leaderboard')}
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                currentView === 'leaderboard' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
-              }`}
-            >
-              <Trophy className="w-4 h-4 mr-2" />
-              Leaderboard
-            </button>
-            {user?.isAdmin && (
-              <button
-                onClick={() => setCurrentView('admin')}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                  currentView === 'admin' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
-                }`}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Admin
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <button className="p-2 text-gray-400 hover:text-gray-600 relative">
-                <AlertCircle className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
-            
-            <div className="hidden md:flex items-center text-sm text-gray-600 bg-yellow-50 px-3 py-1 rounded-full">
-              <Trophy className="w-4 h-4 mr-1 text-yellow-500" />
-              {user?.points || 0} pts
-            </div>
-            
-            <div className="relative">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="flex items-center text-sm font-medium text-gray-700 hover:text-purple-600"
-              >
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">
-                  {user?.name?.charAt(0) || 'U'}
-                </div>
-                {user?.name}
-                <Menu className="w-4 h-4 ml-2 md:hidden" />
-              </button>
-              
-              {mobileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                  <div className="md:hidden">
-                    <button
-                      onClick={() => { setCurrentView('social-feed'); setMobileMenuOpen(false); }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      🏠 Feed
-                    </button>
-                    <button
-                      onClick={() => { setCurrentView('trending'); setMobileMenuOpen(false); }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      🔥 Trending
-                    </button>
-                    <button
-                      onClick={() => { setCurrentView('report'); setMobileMenuOpen(false); }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      ➕ Report Bug
-                    </button>
-                    <button
-                      onClick={() => { setCurrentView('leaderboard'); setMobileMenuOpen(false); }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      🏆 Leaderboard
-                    </button>
-                    {user?.isAdmin && (
-                      <button
-                        onClick={() => { setCurrentView('admin'); setMobileMenuOpen(false); }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        ⚙️ Admin
-                      </button>
-                    )}
-                    <hr className="my-1" />
-                    <div className="px-4 py-2 text-sm text-gray-500">
-                      Points: {user?.points || 0}
-                    </div>
-                  </div>
-                  <button
-                    onClick={logout}
-                    className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+const SocialNavigation = () => (
+  <nav className="bg-white shadow-sm border-b">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex justify-between items-center h-16">
+        {/* Navigation content */}
+        <div className="hidden md:flex items-center space-x-8">
+          <button
+            onClick={() => {
+              setCurrentView('social-feed');
+              // Load all bugs when going to social feed
+              setTimeout(() => loadAllBugs(), 100);
+            }}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Feed
+          </button>
+          <button
+            onClick={() => {
+              setCurrentView('trending');
+              // Load all bugs when going to trending
+              setTimeout(() => loadAllBugs(), 100);
+            }}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'trending' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <span className="w-4 h-4 mr-2">🔥</span>
+            Trending
+          </button>
+          {/* Add a "My Bugs" button for personal bug list */}
+          <button
+            onClick={() => {
+              setCurrentView('bugs');
+              // Load only user's bugs when going to personal bugs
+              setTimeout(() => loadUserBugs(), 100);
+            }}
+            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+              currentView === 'bugs' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            }`}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            My Bugs
+          </button>
+          {/* Other navigation buttons */}
         </div>
       </div>
-    </nav>
-  );
-
+    </div>
+  </nav>
+);
   // VIEW 1: Email Verification
   if (currentView === 'verify-email') {
     return (
@@ -1035,6 +962,9 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
   }
 
   // VIEW 2: Social Feed
+// =================== COMPLETE SOCIAL FEED VIEW ===================
+// In src/App.js - Replace your entire social-feed view with this:
+
 if (currentView === 'social-feed') {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1128,7 +1058,7 @@ if (currentView === 'social-feed') {
           </div>
         </div>
 
-        {/* REAL BUG FEED - Replace static content with dynamic */}
+        {/* ===== HERE'S WHERE THE BUG LIST GOES ===== */}
         <div className="space-y-6">
           {bugs.length === 0 ? (
             // Empty state
@@ -1144,7 +1074,7 @@ if (currentView === 'social-feed') {
               </button>
             </div>
           ) : (
-            // Real bugs feed
+            // ===== PASTE THE BUG LIST CODE HERE =====
             bugs
               .filter(bug => {
                 if (feedFilter === 'recent') return true;
@@ -1175,6 +1105,12 @@ if (currentView === 'social-feed') {
                         }`}>
                           {bug.severity.toUpperCase()}
                         </span>
+                        {/* Show if this is the current user's bug */}
+                        {bug.user_id === user?.id && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            YOUR BUG
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center gap-2">
                         <span>{bug.app_name}</span>
