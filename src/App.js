@@ -565,9 +565,16 @@ const BugBuzzers = () => {
         }
       });
       
-      alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
-      setCurrentView('social-feed');
-      loadUserBugs();
+// Add the new bug to the existing bugs list immediately
+setBugs(prevBugs => [newBug, ...prevBugs]);
+
+alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
+setCurrentView('social-feed');
+
+// Also reload to ensure fresh data
+setTimeout(() => {
+  loadUserBugs();
+}, 1000);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -1908,7 +1915,8 @@ if (currentView === 'report') {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+					<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+					<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -1919,7 +1927,27 @@ if (currentView === 'report') {
                     {bugs.map((bug) => (
                       <tr key={bug.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+  {bug.media_urls && JSON.parse(bug.media_urls || '[]').length > 0 ? (
+    <div className="flex gap-1">
+      {JSON.parse(bug.media_urls).slice(0, 3).map((media, index) => (
+        <img 
+          key={index} 
+          src={media.url} 
+          alt={`Bug media ${index + 1}`}
+          className="w-8 h-8 object-cover rounded border cursor-pointer"
+          onClick={() => window.open(media.url, '_blank')}
+        />
+      ))}
+      {JSON.parse(bug.media_urls).length > 3 && (
+        <span className="text-xs text-gray-500">+{JSON.parse(bug.media_urls).length - 3}</span>
+      )}
+    </div>
+  ) : (
+    <span className="text-gray-400">No media</span>
+  )}
+</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.reporter_name || 'Anonymous'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
