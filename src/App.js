@@ -1066,11 +1066,8 @@ const formatFileSize = (bytes) => {
               ))}
             </div>
           </div>
-// Enhanced Social Feed Component with Media Display
-// Replace the existing social feed bug post in your App.js
-
 {/* Enhanced Social Bug Feed with Media */}
-<div className="space-y-6">
+				<div className="space-y-6">
   {/* Sample Instagram-style Bug Post with Media */}
   <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
     {/* User Header */}
