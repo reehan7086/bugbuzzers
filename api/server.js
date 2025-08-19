@@ -1165,12 +1165,19 @@ app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async
       return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    console.log(`📤 Uploading ${req.files.length} files for user ${req.user.id}...`);
+    // Get user info from the authenticated user
+    const userId = req.user.id;
+    const userName = req.user.name; // Get actual user name
+    const bugId = req.body.bugId || null;
 
+    console.log(`📤 Uploading ${req.files.length} files for user ${userName} (ID: ${userId})...`);
+
+    // Pass userName to the upload service
     const uploadedFiles = await mediaUploadService.uploadMultipleFiles(
       req.files, 
-      req.user.id, 
-      req.body.bugId || null
+      userId, 
+      bugId,
+      userName  // NEW: Pass the actual user name
     );
 
     console.log(`✅ Successfully uploaded ${uploadedFiles.length} files to DigitalOcean Spaces`);
@@ -1182,7 +1189,8 @@ app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async
         type: file.mimeType,
         name: file.originalName,
         size: file.size,
-        key: file.key
+        key: file.key,
+        userName: file.userName
       }))
     });
 
@@ -1194,6 +1202,7 @@ app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async
     });
   }
 });
+
 
 // Test Spaces connection (admin only)
 app.get('/api/test-spaces', authenticateToken, async (req, res) => {
