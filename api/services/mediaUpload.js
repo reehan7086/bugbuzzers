@@ -47,7 +47,7 @@ class MediaUploadService {
           .replace(/^-|-$/g, '')       // Remove leading/trailing dashes
       : `user-${userId}`;
     
-    // NEW: Create user-based folder structure with real names
+    // Create user-based folder structure with real names
     return `media/${year}/${month}/users/${safeFolderName}/${bugId || `temp-${timestamp}`}/${timestamp}-${random}${extension}`;
   }
 
@@ -74,7 +74,7 @@ class MediaUploadService {
     return errors;
   }
 
-async uploadFile(fileBuffer, fileName, mimeType, userId, bugId = null, userName = null) {
+  async uploadFile(fileBuffer, fileName, mimeType, userId, bugId = null, userName = null) {
     try {
       const key = this.generateFileName(fileName, userId, bugId, userName);
       
@@ -116,7 +116,7 @@ async uploadFile(fileBuffer, fileName, mimeType, userId, bugId = null, userName 
     }
   }
 
-async uploadMultipleFiles(files, userId, bugId = null, userName = null) {
+  async uploadMultipleFiles(files, userId, bugId = null, userName = null) {
     const uploadPromises = files.map(async (file) => {
       const validationErrors = this.validateFile(file, file.originalname);
       if (validationErrors.length > 0) {
@@ -135,7 +135,6 @@ async uploadMultipleFiles(files, userId, bugId = null, userName = null) {
       throw error;
     }
   }
-}
 
   async testConnection() {
     try {
