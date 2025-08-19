@@ -487,19 +487,6 @@ useEffect(() => {
     }
   };
 
-  const loadBugs = async () => {
-    try {
-      const bugsData = await api.getBugs();
-      setBugs(bugsData);
-    } catch (error) {
-      // Mock data for demo
-      setBugs([
-        { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z', reporter_name: 'John Doe' },
-        { id: 'BUG-002', title: 'Typo in welcome message', status: 'In Review', severity: 'low', points: 0, submitted_at: '2025-01-14T15:45:00Z', reporter_name: 'Jane Smith' }
-      ]);
-    }
-  };
-
   const loadUserBugs = async () => {
     try {
       const bugsData = await api.getBugs();
