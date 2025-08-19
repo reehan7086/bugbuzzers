@@ -73,11 +73,13 @@ const BugBuzzers = () => {
     }
   };
 
-  useEffect(() => {
-    const hasRunRef = { current: false }; // Track if effect has already run
-    if (hasRunRef.current) return;
-    hasRunRef.current = true;
+// FIXED: useEffect hooks with proper dependencies to prevent infinite re-renders
 
+// Replace the existing useEffect hooks in App.js with these fixed versions:
+
+// 1. FIXED: Initial authentication check
+useEffect(() => {
+  const initializeAuth = async () => {
     console.log('🔍 useEffect triggered - checking for stored token');
 
     // Handle reset password page
@@ -101,7 +103,7 @@ const BugBuzzers = () => {
     
     if (window.location.pathname === '/verify-email' && verificationToken) {
       console.log('🔍 Found verification token in URL, handling verification');
-      handleEmailVerification(verificationToken);
+      await handleEmailVerification(verificationToken);
       return;
     }
 
@@ -132,21 +134,19 @@ const BugBuzzers = () => {
         setCurrentView(userFromToken.isAdmin ? 'admin' : 'social-feed');
         
         // Fetch fresh user data from server
-        setTimeout(async () => {
-          try {
-            const response = await fetch('/api/auth/me', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            if (response.ok) {
-              const freshUserData = await response.json();
-              console.log('🔍 Fresh user data loaded:', freshUserData);
-              setUser(freshUserData);
-            }
-          } catch (error) {
-            console.log('Could not fetch fresh user data:', error);
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const freshUserData = await response.json();
+            console.log('🔍 Fresh user data loaded:', freshUserData);
+            setUser(freshUserData);
           }
-        }, 100);
+        } catch (error) {
+          console.log('Could not fetch fresh user data:', error);
+        }
         
       } catch (error) {
         console.error('Token parsing error:', error);
@@ -157,28 +157,61 @@ const BugBuzzers = () => {
       // If no token, ensure we show landing page
       setCurrentView('landing');
     }
-  }, []);
+  };
 
+  initializeAuth();
+}, []); // FIXED: Empty dependency array - only run once on mount
 
-  // Load data when user changes
-  useEffect(() => {
+// 2. FIXED: Load data when user changes (with proper dependencies)
+useEffect(() => {
+  const loadUserData = async () => {
     if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
-      if (user.isAdmin) {
-        loadBugs();
-      } else {
+      try {
+        if (user.isAdmin) {
+          await loadBugs();
+        } else {
+          await loadUserBugs();
+        }
+        await loadLeaderboard();
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setError('Failed to load data. Please refresh the page.');
+      }
+    }
+  };
+
+  loadUserData();
+}, [user?.id, user?.isAdmin, currentView]); // FIXED: Specific dependencies
+
+// 3. FIXED: Social feed redirection (with proper dependencies)
+useEffect(() => {
+  if (user && currentView === 'dashboard') {
+    setCurrentView('social-feed');
+  }
+}, [user?.id, currentView]); // FIXED: Specific dependencies
+
+// 4. FIXED: Add cleanup for any timers or subscriptions
+useEffect(() => {
+  let intervalId;
+  
+  // Example: Auto-refresh data every 5 minutes when user is active
+  if (user && (currentView === 'social-feed' || currentView === 'trending')) {
+    intervalId = setInterval(() => {
+      // Refresh data silently
+      if (document.visibilityState === 'visible') {
         loadUserBugs();
       }
-      loadLeaderboard();
-    }
-  }, [user, currentView]);
+    }, 5 * 60 * 1000); // 5 minutes
+  }
 
-  // NEW: Default to social feed for logged-in users
-  useEffect(() => {
-    if (user && currentView === 'dashboard') {
-      setCurrentView('social-feed');
+  // Cleanup function
+  return () => {
+    if (intervalId) {
+      clearInterval(intervalId);
     }
-  }, [user]);
-
+  };
+}, [user?.id, currentView]); // FIXED: Proper dependencies
+	
   const getEstimatedReviewTime = (severity) => {
     const times = { high: 6, medium: 4, low: 2 };
     return times[severity] || 2;
