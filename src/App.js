@@ -1954,24 +1954,40 @@ if (currentView === 'report') {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-  {bug.media_urls && JSON.parse(bug.media_urls || '[]').length > 0 ? (
-    <div className="flex gap-1">
-      {JSON.parse(bug.media_urls).slice(0, 3).map((media, index) => (
-        <img 
-          key={index} 
-          src={media.url} 
-          alt={`Bug media ${index + 1}`}
-          className="w-8 h-8 object-cover rounded border cursor-pointer"
-          onClick={() => window.open(media.url, '_blank')}
-        />
-      ))}
-      {JSON.parse(bug.media_urls).length > 3 && (
-        <span className="text-xs text-gray-500">+{JSON.parse(bug.media_urls).length - 3}</span>
-      )}
-    </div>
-  ) : (
-    <span className="text-gray-400">No media</span>
-  )}
+{(() => {
+  try {
+    let mediaUrls = [];
+    if (bug.media_urls) {
+      if (Array.isArray(bug.media_urls)) {
+        mediaUrls = bug.media_urls;
+      } else if (typeof bug.media_urls === 'string' && bug.media_urls.trim()) {
+        mediaUrls = JSON.parse(bug.media_urls);
+      }
+    }
+    
+    return mediaUrls.length > 0 ? (
+      <div className="flex gap-1">
+        {mediaUrls.slice(0, 3).map((media, index) => (
+          <img 
+            key={index} 
+            src={typeof media === 'string' ? media : media.url} 
+            alt={`Bug media ${index + 1}`}
+            className="w-8 h-8 object-cover rounded border cursor-pointer"
+            onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
+          />
+        ))}
+        {mediaUrls.length > 3 && (
+          <span className="text-xs text-gray-500">+{mediaUrls.length - 3}</span>
+        )}
+      </div>
+    ) : (
+      <span className="text-gray-400">No media</span>
+    );
+  } catch (error) {
+    console.error('Error parsing media URLs:', error);
+    return <span className="text-gray-400">No media</span>;
+  }
+})()}
 </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.reporter_name || 'Anonymous'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
