@@ -16,18 +16,19 @@ const BugBuzzers = () => {
   // Forms state
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-  const [bugForm, setBugForm] = useState({
-    title: '', 
-    description: '', 
-    steps: '', 
-    device: '', 
-    severity: 'medium', 
-    appName: '', 
-    anonymous: false, 
-    attachment: null,
-    mediaFiles: [],
-    mediaUrls: []
-  });
+const [bugForm, setBugForm] = useState({
+  title: '', 
+  description: '', 
+  steps: '', 
+  device: '', 
+  severity: 'medium', 
+  appName: '', 
+  category: 'others',
+  anonymous: false, 
+  attachment: null,
+  mediaFiles: [],
+  mediaUrls: []
+});
 
   // Data state
   const [bugs, setBugs] = useState([]);
@@ -1615,33 +1616,54 @@ if (currentView === 'report') {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
-              <input
-                type="text"
-                value={bugForm.device}
-                onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
-                required
-                disabled={loading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
-              <select
-                value={bugForm.severity}
-                onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                disabled={loading}
-              >
-                <option value="low">Low (150 pts) - Minor issues</option>
-                <option value="medium">Medium (300 pts) - Affects functionality</option>
-                <option value="high">High (500 pts) - Critical issues</option>
-              </select>
-            </div>
-          </div>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Device/Browser *</label>
+    <input
+      type="text"
+      value={bugForm.device}
+      onChange={(e) => setBugForm({...bugForm, device: e.target.value})}
+      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+      placeholder="e.g., Chrome 120, iPhone 15, Windows 11"
+      required
+      disabled={loading}
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
+    <select
+      value={bugForm.severity}
+      onChange={(e) => setBugForm({...bugForm, severity: e.target.value})}
+      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+      disabled={loading}
+    >
+      <option value="low">Low (150 pts) - Minor issues</option>
+      <option value="medium">Medium (300 pts) - Affects functionality</option>
+      <option value="high">High (500 pts) - Critical issues</option>
+    </select>
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+    <select
+      value={bugForm.category || 'others'}
+      onChange={(e) => setBugForm({...bugForm, category: e.target.value})}
+      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+      disabled={loading}
+    >
+      <option value="social-media">Social Media</option>
+      <option value="finance">Finance</option>
+      <option value="education">Education</option>
+      <option value="e-commerce">E-commerce</option>
+      <option value="entertainment">Entertainment</option>
+      <option value="transportation">Transportation</option>
+      <option value="healthcare">Healthcare</option>
+      <option value="productivity">Productivity</option>
+      <option value="games">Games</option>
+      <option value="news">News</option>
+      <option value="others">Others</option>
+    </select>
+  </div>
+</div>
 
           <div className="mb-6">
             <label className="flex items-center">
