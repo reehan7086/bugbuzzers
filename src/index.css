@@ -1,3 +1,15 @@
+/* src/index.css - Add custom styles if needed */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom fixes for your app */
+@layer components {
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-transparent border-t-purple-600;
+  }
+  
+  .media-grid {
+    @apply grid grid-cols-2 md:grid-cols-3 gap-2 max-w-md;
+  }
+}
