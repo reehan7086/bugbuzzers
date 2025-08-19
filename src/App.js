@@ -972,7 +972,41 @@ const BugBuzzers = () => {
       </div>
     );
   }
+if (currentView === 'social-feed') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner />
+      
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Social Stats Bar */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">15.4K</div>
+              <div className="text-xs text-gray-500">Total Supports</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">2.8K</div>
+              <div className="text-xs text-gray-500">Active Users</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">23</div>
+              <div className="text-xs text-gray-500">Trending Bugs</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">$48.6K</div>
+              <div className="text-xs text-gray-500">Rewards Paid</div>
+            </div>
+          </div>
+        </div>
 
+        {/* Instagram-style content here... rest of social feed */}
+      </main>
+    </div>
+  );
+}
 
   // Forgot Password Page
   if (currentView === 'forgot-password') {
@@ -1223,12 +1257,7 @@ const BugBuzzers = () => {
       </div>
     </div>
   );
-};
-
-export default BugBuzzers;
-        <SocialNavigation />
-        <EmailVerificationBanner />
-        
+};     
         <main className="max-w-2xl mx-auto px-4 py-6">
           {/* Social Stats Bar */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
