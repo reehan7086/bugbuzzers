@@ -503,34 +503,33 @@ async function initDB() {
       }
     }
 
-    const bugColumns = [
-      'supports_count INTEGER DEFAULT 0',
-      'comments_count INTEGER DEFAULT 0',
-      'shares_count INTEGER DEFAULT 0',
-      'views_count INTEGER DEFAULT 0',
-      'caption TEXT',
-      'hashtags TEXT[]',
-      'media_urls TEXT[]',
-      'tagged_users INTEGER[]',
-      'is_trending BOOLEAN DEFAULT FALSE',
-      'viral_score INTEGER DEFAULT 0',
-      'trending_rank INTEGER',
-      'viral_peak_supports INTEGER DEFAULT 0',
-      'viral_peak_date TIMESTAMP',
-      'estimated_reward INTEGER DEFAULT 0',
-      'social_multiplier DECIMAL(3,2) DEFAULT 1.0',
-      'reported_location VARCHAR(255)',
-      'user_agent TEXT',
-      'screen_resolution VARCHAR(50)',
-      'timezone VARCHAR(100)',
-      'category VARCHAR(50) DEFAULT \'functional\'',
-      'sub_category VARCHAR(50)',
-      'impact_level VARCHAR(50) DEFAULT \'some-users\'',
-      'frequency VARCHAR(50) DEFAULT \'sometimes\'',
-      'environment VARCHAR(50) DEFAULT \'production\'',
-      'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-    ];
-
+const bugColumns = [
+  'supports_count INTEGER DEFAULT 0',
+  'comments_count INTEGER DEFAULT 0',
+  'shares_count INTEGER DEFAULT 0',
+  'views_count INTEGER DEFAULT 0',
+  'caption TEXT',
+  'category VARCHAR(50) DEFAULT \'others\'',
+  // Temporarily removing array columns that cause issues
+  // 'hashtags TEXT[]',
+  // 'media_urls TEXT[]',
+  // 'tagged_users INTEGER[]',
+  'viral_score INTEGER DEFAULT 0',
+  'trending_rank INTEGER',
+  'viral_peak_supports INTEGER DEFAULT 0',
+  'viral_peak_date TIMESTAMP',
+  'estimated_reward INTEGER DEFAULT 0',
+  'social_multiplier DECIMAL(3,2) DEFAULT 1.0',
+  'reported_location VARCHAR(255)',
+  'user_agent TEXT',
+  'screen_resolution VARCHAR(50)',
+  'timezone VARCHAR(100)',
+  'sub_category VARCHAR(50)',
+  'impact_level VARCHAR(50) DEFAULT \'some-users\'',
+  'frequency VARCHAR(50) DEFAULT \'sometimes\'',
+  'environment VARCHAR(50) DEFAULT \'production\'',
+  'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+];
     for (const column of bugColumns) {
       try {
         await pool.query(`ALTER TABLE bugs ADD COLUMN IF NOT EXISTS ${column}`);
@@ -682,12 +681,12 @@ async function setupFollowerTriggers() {
       console.log('✅ Admin user updated with social features');
     }
 
-    // Create sample trending categories for development
-    await pool.query(`
-      INSERT INTO trending_bugs (bug_id, date, rank, supports_count, viral_score, category)
-      SELECT 'SAMPLE-001', CURRENT_DATE, 1, 1000, 2500, 'Social Media'
-      WHERE NOT EXISTS (SELECT 1 FROM trending_bugs WHERE bug_id = 'SAMPLE-001')
-    `);
+// Create sample trending categories for development - commented out for now
+// await pool.query(`
+//   INSERT INTO trending_bugs (bug_id, date, rank, supports_count, viral_score, category)
+//   SELECT 'SAMPLE-001', CURRENT_DATE, 1, 1000, 2500, 'Social Media'
+//   WHERE NOT EXISTS (SELECT 1 FROM trending_bugs WHERE bug_id = 'SAMPLE-001')
+// `);
 
     console.log('🎉 Database initialized successfully with social features!');
     console.log('🚀 Ready for social bug reporting revolution!');
@@ -1028,50 +1027,75 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-// Bug Routes
 app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        b.*,
-        u.name as reporter_name,
-        COALESCE(b.media_urls, '[]'::text[]) as media_urls
+        b.id,
+        b.title,
+        b.description,
+        b.steps,
+        b.device,
+        b.severity,
+        b.app_name,
+        b.status,
+        b.points,
+        b.user_id,
+        b.anonymous,
+        b.submitted_at,
+        b.review_time,
+        b.supports_count,
+        b.comments_count,
+        b.shares_count,
+        b.views_count,
+        u.name as reporter_name
       FROM bugs b 
       LEFT JOIN users u ON b.user_id = u.id 
       ORDER BY b.submitted_at DESC
     `);
     
-    // Process the results to ensure media_urls is properly formatted
+    // Add empty media_urls array for frontend compatibility
     const processedBugs = result.rows.map(bug => ({
       ...bug,
-      media_urls: Array.isArray(bug.media_urls) ? bug.media_urls : []
+      media_urls: [] // Default empty array until we fix the column properly
     }));
     
     res.json(processedBugs);
   } catch (error) {
     console.error('Get bugs error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 });
 
 app.post('/api/bugs', authenticateToken, async (req, res) => {
   try {
-     // Generate bug ID
+    const { title, description, steps, device, severity, appName, anonymous, mediaUrls, category } = req.body;
+    
+    // Generate bug ID
     const bugCount = await pool.query('SELECT COUNT(*) FROM bugs');
     const bugId = `BUG-${String(parseInt(bugCount.rows[0].count) + 1).padStart(3, '0')}`;
     
     const reviewTimes = { high: 6, medium: 4, low: 2 };
     const reviewTime = reviewTimes[severity] || 2;
 
-    const { title, description, steps, device, severity, appName, anonymous, mediaUrls } = req.body;
+    // Insert without media_urls column for now to avoid array issues
+    const result = await pool.query(`
+      INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time, category)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+    `, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, category || 'others']);
 
-const result = await pool.query(`
-  INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time, media_urls)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-  RETURNING *
-`, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, mediaUrls || []]);
+    // Add media info to response for frontend
+    const bug = {
+      ...result.rows[0],
+      media_urls: mediaUrls || [],
+      supports_count: 0,
+      comments_count: 0,
+      shares_count: 0,
+      views_count: 0
+    };
 
-    res.json(result.rows[0]);
+    res.json(bug);
   } catch (error) {
     console.error('Create bug error:', error);
     res.status(500).json({ error: 'Server error' });
