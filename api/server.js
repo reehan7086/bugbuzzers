@@ -1031,14 +1031,23 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // Bug Routes
 app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
-const result = await pool.query(`
-  SELECT b.*, u.name as reporter_name,
-         CASE WHEN b.media_urls IS NOT NULL THEN b.media_urls ELSE '[]'::json END as media_urls
-  FROM bugs b 
-  LEFT JOIN users u ON b.user_id = u.id 
-  ORDER BY b.submitted_at DESC
-`);
-    res.json(result.rows);
+    const result = await pool.query(`
+      SELECT 
+        b.*,
+        u.name as reporter_name,
+        COALESCE(b.media_urls, '[]'::text[]) as media_urls
+      FROM bugs b 
+      LEFT JOIN users u ON b.user_id = u.id 
+      ORDER BY b.submitted_at DESC
+    `);
+    
+    // Process the results to ensure media_urls is properly formatted
+    const processedBugs = result.rows.map(bug => ({
+      ...bug,
+      media_urls: Array.isArray(bug.media_urls) ? bug.media_urls : []
+    }));
+    
+    res.json(processedBugs);
   } catch (error) {
     console.error('Get bugs error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -1056,11 +1065,11 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
 
     const { title, description, steps, device, severity, appName, anonymous, mediaUrls } = req.body;
 
-    const result = await pool.query(`
+const result = await pool.query(`
   INSERT INTO bugs (id, title, description, steps, device, severity, app_name, user_id, anonymous, review_time, media_urls)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
   RETURNING *
-`, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, JSON.stringify(mediaUrls || [])]);
+`, [bugId, title, description, steps, device, severity, appName, req.user.id, anonymous, reviewTime, mediaUrls || []]);
 
     res.json(result.rows[0]);
   } catch (error) {
