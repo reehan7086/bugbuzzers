@@ -1047,9 +1047,7 @@ const result = await pool.query(`
 
 app.post('/api/bugs', authenticateToken, async (req, res) => {
   try {
-const { title, description, steps, device, severity, appName, anonymous, mediaUrls } = req.body;
-    
-    // Generate bug ID
+     // Generate bug ID
     const bugCount = await pool.query('SELECT COUNT(*) FROM bugs');
     const bugId = `BUG-${String(parseInt(bugCount.rows[0].count) + 1).padStart(3, '0')}`;
     
