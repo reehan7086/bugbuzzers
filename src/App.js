@@ -986,13 +986,16 @@ setTimeout(() => {
                 <p className="text-xs mt-1 text-gray-600">Report Bug</p>
               </div>
               
-              {[
-                { name: 'Instagram', icon: '📸', gradient: 'from-purple-500 to-pink-500' },
-                { name: 'TikTok', icon: '🎵', gradient: 'from-black to-red-500' },
-                { name: 'WhatsApp', icon: '💬', gradient: 'from-green-500 to-green-600' },
-                { name: 'Uber', icon: '🚗', gradient: 'from-black to-gray-600' },
-                { name: 'Netflix', icon: '🎬', gradient: 'from-red-600 to-red-700' }
-              ].map((category, index) => (
+{[
+  { name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
+  { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
+  { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
+  { name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
+  { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
+  { name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
+  { name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
+  { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
+].map((category, index) => (
                 <div key={index} className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform">
                   <div className={`w-16 h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5`}>
                     <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
