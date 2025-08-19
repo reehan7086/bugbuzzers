@@ -224,23 +224,24 @@ const [bugForm, setBugForm] = useState({
     }
   }, [user?.id, currentView]);
 
-  useEffect(() => {
-    let intervalId;
-    
-    if (user && (currentView === 'social-feed' || currentView === 'trending')) {
-      intervalId = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-          loadUserBugs();
-        }
-      }, 5 * 60 * 1000);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+useEffect(() => {
+  // Auto-refresh feed every 30 seconds if user is on social-feed
+  let intervalId;
+  
+  if (user && currentView === 'social-feed') {
+    intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadUserBugs();
       }
-    };
-  }, [user?.id, currentView, loadUserBugs]);
+    }, 30 * 1000); // 30 seconds
+  }
+
+  return () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+  };
+}, [user?.id, currentView, loadUserBugs]);
 
   // Helper functions
   const getEstimatedReviewTime = (severity) => {
@@ -532,73 +533,82 @@ const uploadMediaFiles = async (mediaFiles) => {
   }
 };
 
-  const handleBugSubmit = async (e) => {
-    e.preventDefault();
+const handleBugSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!user?.emailVerified) {
-      setError('Please verify your email address before reporting bugs.');
-      return;
-    }
+  if (!user?.emailVerified) {
+    setError('Please verify your email address before reporting bugs.');
+    return;
+  }
 
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError('');
+  
+  try {
+    let uploadedMediaUrls = [];
     
-    try {
-      let uploadedMediaUrls = [];
-      
-      if (bugForm.mediaFiles && bugForm.mediaFiles.length > 0) {
-        console.log('📤 Uploading media files...');
-        uploadedMediaUrls = await uploadMediaFiles(bugForm.mediaFiles);
-        console.log('✅ Media uploaded successfully');
-      }
-
-      const bugData = {
-        title: bugForm.title,
-        description: bugForm.description,
-        steps: bugForm.steps,
-        device: bugForm.device,
-        severity: bugForm.severity,
-        appName: bugForm.appName,
-        anonymous: bugForm.anonymous,
-        mediaUrls: uploadedMediaUrls 
-      };
-
-      const newBug = await api.createBug(bugData);
-      setBugForm({
-        title: '', 
-        description: '', 
-        steps: '', 
-        device: '', 
-        severity: 'medium', 
-        appName: '', 
-        anonymous: false, 
-        attachment: null,
-        mediaFiles: [],
-        mediaUrls: []
-      });
-      
-      bugForm.mediaFiles?.forEach(mediaFile => {
-        if (mediaFile.preview) {
-          URL.revokeObjectURL(mediaFile.preview);
-        }
-      });
-      
-// Add the new bug to the existing bugs list immediately
-setBugs(prevBugs => [newBug, ...prevBugs]);
-
-alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
-setCurrentView('social-feed');
-
-// Also reload to ensure fresh data
-setTimeout(() => {
-  loadUserBugs();
-}, 1000);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
+    if (bugForm.mediaFiles && bugForm.mediaFiles.length > 0) {
+      console.log('📤 Uploading media files...');
+      uploadedMediaUrls = await uploadMediaFiles(bugForm.mediaFiles);
+      console.log('✅ Media uploaded successfully');
     }
-  };
+
+    const bugData = {
+      title: bugForm.title,
+      description: bugForm.description,
+      steps: bugForm.steps,
+      device: bugForm.device,
+      severity: bugForm.severity,
+      appName: bugForm.appName,
+      anonymous: bugForm.anonymous,
+      category: bugForm.category,
+      mediaUrls: uploadedMediaUrls 
+    };
+
+    const newBug = await api.createBug(bugData);
+    
+    // Clear form
+    setBugForm({
+      title: '', 
+      description: '', 
+      steps: '', 
+      device: '', 
+      severity: 'medium', 
+      appName: '', 
+      anonymous: false, 
+      attachment: null,
+      mediaFiles: [],
+      mediaUrls: [],
+      category: 'others'
+    });
+    
+    // Cleanup preview URLs
+    bugForm.mediaFiles?.forEach(mediaFile => {
+      if (mediaFile.preview) {
+        URL.revokeObjectURL(mediaFile.preview);
+      }
+    });
+    
+    // IMMEDIATELY update the bugs list and go to feed
+    setBugs(prevBugs => [newBug, ...prevBugs]);
+    
+    alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
+    setCurrentView('social-feed');
+    
+    // Also reload to ensure fresh data from server
+    setTimeout(() => {
+      if (user.isAdmin) {
+        loadBugs();
+      } else {
+        loadUserBugs();
+      }
+    }, 1000);
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   React.useEffect(() => {
     return () => {
@@ -1026,29 +1036,31 @@ if (currentView === 'social-feed') {
       <EmailVerificationBanner />
       
       <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* Stats Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">15.4K</div>
-              <div className="text-xs text-gray-500">Total Supports</div>
+              <div className="text-2xl font-bold text-purple-600">{bugs.length}</div>
+              <div className="text-xs text-gray-500">Total Reports</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">2.8K</div>
+              <div className="text-2xl font-bold text-green-600">{leaderboard.length}</div>
               <div className="text-xs text-gray-500">Active Users</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">23</div>
-              <div className="text-xs text-gray-500">Trending Bugs</div>
+              <div className="text-2xl font-bold text-orange-600">{bugs.filter(b => b.severity === 'high').length}</div>
+              <div className="text-xs text-gray-500">High Priority</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">$48.6K</div>
-              <div className="text-xs text-gray-500">Rewards Paid</div>
+              <div className="text-2xl font-bold text-blue-600">{bugs.filter(b => b.status === 'Verified').length}</div>
+              <div className="text-xs text-gray-500">Verified</div>
             </div>
           </div>
         </div>
 
+        {/* Category Selection */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Trending Bug Categories</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Report Bug by Category</h3>
           <div className="flex gap-4 overflow-x-auto pb-2">
             <div className="flex-shrink-0 text-center">
               <button 
@@ -1084,13 +1096,14 @@ if (currentView === 'social-feed') {
           </div>
         </div>
 
+        {/* Filter Buttons */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-6">
           <div className="flex space-x-1 overflow-x-auto">
             {[
-              { key: 'trending', label: '🔥 Trending', icon: '📈' },
+              { key: 'all', label: '🔥 All Bugs', icon: '📈' },
               { key: 'recent', label: '🕐 Recent', icon: '⏰' },
-              { key: 'following', label: '👥 Following', icon: '❤️' },
-              { key: 'most_supported', label: '🙋‍♀️ Most Supported', icon: '🏆' }
+              { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
+              { key: 'verified', label: '✅ Verified', icon: '🏆' }
             ].map((filter) => (
               <button
                 key={filter.key}
@@ -1108,145 +1121,179 @@ if (currentView === 'social-feed') {
           </div>
         </div>
 
+        {/* REAL BUG FEED - Replace static content with dynamic */}
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-            <div className="flex items-center p-4 border-b border-gray-100">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                S
-              </div>
-              <div className="ml-3 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-900">Sarah Johnson</span>
-                  <span className="text-purple-600 text-sm">@sarahj_dev</span>
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-medium">
-                    Bug Master
-                  </span>
-                </div>
-                <div className="text-sm text-gray-500 flex items-center gap-2">
-                  <span>Social Media</span>
-                  <span>•</span>
-                  <span>2h ago</span>
-                  <span>•</span>
-                  <span>San Francisco, CA</span>
-                </div>
-              </div>
-              <button className="text-purple-600 font-medium text-sm px-3 py-1 rounded-lg hover:bg-purple-50 transition-colors">
-                Follow
+          {bugs.length === 0 ? (
+            // Empty state
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+              <div className="text-4xl mb-4">🐛</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No bugs reported yet!</h3>
+              <p className="text-gray-600 mb-4">Be the first to report a bug and start earning rewards.</p>
+              <button
+                onClick={() => setCurrentView('report')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+              >
+                📸 Report First Bug
               </button>
             </div>
+          ) : (
+            // Real bugs feed
+            bugs
+              .filter(bug => {
+                if (feedFilter === 'recent') return true;
+                if (feedFilter === 'high') return bug.severity === 'high';
+                if (feedFilter === 'verified') return bug.status === 'Verified';
+                return true; // 'all'
+              })
+              .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
+              .map((bug) => (
+                <div key={bug.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+                  {/* Bug Header */}
+                  <div className="flex items-center p-4 border-b border-gray-100">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {bug.reporter_name ? bug.reporter_name.charAt(0).toUpperCase() : 'A'}
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900">
+                          {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Anonymous')}
+                        </span>
+                        <span className="text-purple-600 text-sm">
+                          @{bug.anonymous ? 'anonymous' : (bug.reporter_name?.toLowerCase().replace(' ', '') || 'user')}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+                          bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {bug.severity.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                        <span>{bug.app_name}</span>
+                        <span>•</span>
+                        <span>{new Date(bug.submitted_at).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{bug.device}</span>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+                      {bug.status}
+                    </span>
+                  </div>
 
-            <div className="px-4 pb-3">
-              <h3 className="font-bold text-lg mb-2 text-gray-900">Social media app crashes when uploading stories</h3>
-              <p className="text-gray-700 mb-2">This is so annoying! Anyone else having this issue? 😤</p>
-              <p className="text-gray-600 text-sm mb-3">App crashes immediately when I try to upload a story with music. Happens every time!</p>
-              
-              {/* Sample Media Display */}
-              <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
-                <div className="relative group">
-                  <div className="w-full h-32 bg-gradient-to-br from-red-400 to-pink-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
-                    <div className="text-center">
-                      <span className="text-2xl mb-2 block">📱</span>
-                      <span className="text-sm">Crash Screenshot</span>
+                  {/* Bug Content */}
+                  <div className="px-4 pb-3">
+                    <h3 className="font-bold text-lg mb-2 text-gray-900">{bug.title}</h3>
+                    <p className="text-gray-700 mb-2">{bug.description}</p>
+                    <p className="text-gray-600 text-sm mb-3">
+                      <strong>Steps:</strong> {bug.steps}
+                    </p>
+                    
+                    {/* Media Display - Show actual uploaded media */}
+                    {bug.media_urls && bug.media_urls.length > 0 && (
+                      <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
+                        {bug.media_urls.slice(0, 4).map((media, index) => {
+                          const mediaUrl = typeof media === 'string' ? media : media.url;
+                          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
+                          
+                          return (
+                            <div key={index} className="relative group">
+                              {isVideo ? (
+                                <div className="relative">
+                                  <video 
+                                    src={mediaUrl}
+                                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={() => window.open(mediaUrl, '_blank')}
+                                    muted
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="bg-black bg-opacity-50 rounded-full p-2">
+                                      <span className="text-white text-lg">▶️</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <img 
+                                  src={mediaUrl} 
+                                  alt={`Bug media ${index + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => window.open(mediaUrl, '_blank')}
+                                />
+                              )}
+                              <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+                                <span className="text-white text-xs">
+                                  {isVideo ? '🎬' : '🖼️'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        {bug.media_urls.length > 4 && (
+                          <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-gray-700">+{bug.media_urls.length - 4}</div>
+                              <div className="text-xs text-gray-500">more files</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bug Tags */}
+                    <div className="flex gap-2 mb-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bug.status)}`}>
+                        {bug.status}
+                      </span>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {bug.category || 'general'}
+                      </span>
+                      {bug.severity === 'high' && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
+                          🔥 High Priority
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-                    <span className="text-white text-xs">🖼️</span>
-                  </div>
-                </div>
-                
-                <div className="relative group">
-                  <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity">
-                    <div className="text-center">
-                      <span className="text-2xl mb-2 block">🎬</span>
-                      <span className="text-sm">Screen Recording</span>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-black bg-opacity-50 rounded-full p-2">
-                        <span className="text-white text-lg">▶️</span>
+
+                  {/* Bug Actions */}
+                  <div className="p-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <button className="flex items-center gap-2 text-gray-400 hover:text-purple-600 transition-colors">
+                          <span className="text-xl">🙋‍♀️</span>
+                          <span className="text-sm text-gray-600">I got this too!</span>
+                        </button>
+
+                        <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                          <span className="text-xl">💬</span>
+                          <span className="text-sm text-gray-600">Comment</span>
+                        </button>
+
+                        <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
+                          <span className="text-xl">📤</span>
+                          <span className="text-sm text-gray-600">Share</span>
+                        </button>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
+                        <div className="text-xs text-gray-500">
+                          {bug.status === 'Verified' ? 'Earned' : 'Potential'}
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-                    <span className="text-white text-xs">🎬</span>
-                  </div>
                 </div>
-              </div>
-              
-              <div className="flex gap-2 flex-wrap mb-3">
-                {['#SocialMediaBug', '#Stories', '#Crash', '#iOS'].map((tag, index) => (
-                  <span key={index} className="text-purple-600 text-sm hover:underline cursor-pointer">
-                    {tag}
-                  </span>
-                ))}
-              </div>
+              ))
+          )}
 
-              <div className="flex gap-2 mb-3">
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  HIGH
-                </span>
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  social-media
-                </span>
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1">
-                  🔥 Trending #1
-                </span>
-              </div>
-            </div>
-
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-6">
-                  <button className="flex items-center gap-2 transition-all active:scale-95">
-                    <span className="text-2xl text-purple-600 scale-110">🙋‍♀️</span>
-                    <span className="text-sm font-medium text-purple-600">I got this too!</span>
-                  </button>
-
-                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                    <span className="text-xl">💬</span>
-                    <span className="text-sm text-gray-600">Comment</span>
-                  </button>
-
-                  <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                    <span className="text-xl">📤</span>
-                    <span className="text-sm text-gray-600">Share</span>
-                  </button>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-lg font-bold text-green-600">$1,850</div>
-                  <div className="text-xs text-gray-500">Potential Reward</div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-sm text-gray-600">
-                  <span className="font-bold">1,247</span> people also got this bug
-                  <span className="ml-2 text-orange-500 font-medium">🔥 Trending #1</span>
-                </div>
-                
-                <div className="text-sm text-gray-500">
-                  <button className="hover:text-gray-700">View all 89 comments</button>
-                </div>
-
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs text-gray-500">Supported by:</span>
-                  <div className="flex -space-x-2">
-                    {['J', 'M', 'A'].map((initial, index) => (
-                      <div key={index} className="w-6 h-6 rounded-full bg-purple-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                        {initial}
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-500">and 1,244 others</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          {/* Call to Action */}
           <div className="text-center py-8">
             <div className="text-4xl mb-4">🚀</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
-            <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn massive rewards!</p>
+            <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn rewards!</p>
             <button
               onClick={() => setCurrentView('report')}
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
@@ -1259,6 +1306,7 @@ if (currentView === 'social-feed') {
     </div>
   );
 }
+
 // PART 4: Views 3-12 and Component Closing
 
   // VIEW 3: Trending Page
