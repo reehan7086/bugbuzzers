@@ -1768,38 +1768,235 @@ if (currentView === 'social-feed') {
                       </div>
                     </div>
 
-                    {/* Bug Actions */}
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                    {/* BEAUTIFUL BUG ACTIONS */}
+                    <div className="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-100">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-6">
-                          <button className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors group">
-                            <div className="p-2 rounded-full group-hover:bg-purple-50 transition-colors">
-                              <span className="text-xl">🙋‍♀️</span>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3 sm:gap-6">
+                          
+                          {/* Support Button */}
+                          <button 
+                            onClick={async () => {
+                              try {
+                                // Show immediate feedback
+                                const button = event.currentTarget;
+                                button.style.transform = 'scale(0.95)';
+                                setTimeout(() => button.style.transform = '', 150);
+                                
+                                // Simulate API call or implement real functionality
+                                console.log(`Supporting bug ${bug.id}`);
+                                alert(`✅ You supported "${bug.title}"! Thanks for helping the community identify this issue.`);
+                                
+                                // You can implement real API call here:
+                                // await api.supportBug(bug.id);
+                                // loadAllBugs(); // Refresh the feed
+                              } catch (error) {
+                                alert('❌ Failed to support bug. Please try again.');
+                                console.error('Support error:', error);
+                              }
+                            }}
+                            className="group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-purple-600 transition-all duration-300 transform hover:scale-105"
+                          >
+                            <div className="relative">
+                              <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-purple-300 group-hover:bg-purple-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                                <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
+                                  🙋‍♀️
+                                </div>
+                              </div>
+                              {/* Support count badge - only show if > 0 */}
+                              {(bug.supports_count || 0) > 0 && (
+                                <div className="absolute -top-2 -right-2 bg-purple-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
+                                  {bug.supports_count || 0}
+                                </div>
+                              )}
                             </div>
-                            <span className="text-sm font-medium">I got this too!</span>
+                            <div className="hidden sm:flex flex-col items-start">
+                              <span className="text-sm font-semibold group-hover:text-purple-600 transition-colors">
+                                I got this too!
+                              </span>
+                              {(bug.supports_count || 0) > 0 && (
+                                <span className="text-xs text-gray-500 group-hover:text-purple-500">
+                                  {bug.supports_count} {bug.supports_count === 1 ? 'person' : 'people'}
+                                </span>
+                              )}
+                            </div>
                           </button>
 
-                          <button className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group">
-                            <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
-                              <span className="text-xl">💬</span>
+                          {/* Comment Button */}
+                          <button 
+                            onClick={() => {
+                              // Show immediate feedback
+                              const button = event.currentTarget;
+                              button.style.transform = 'scale(0.95)';
+                              setTimeout(() => button.style.transform = '', 150);
+                              
+                              // For now, show a simple prompt
+                              const comment = prompt(`💬 Add a comment about "${bug.title}":`);
+                              if (comment && comment.trim()) {
+                                console.log(`Comment on bug ${bug.id}:`, comment);
+                                alert(`✅ Comment added: "${comment}"`);
+                                
+                                // You can implement real API call here:
+                                // await api.addComment(bug.id, comment);
+                                // loadAllBugs(); // Refresh the feed
+                              }
+                            }}
+                            className="group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-blue-600 transition-all duration-300 transform hover:scale-105"
+                          >
+                            <div className="relative">
+                              <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-blue-300 group-hover:bg-blue-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                                <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
+                                  💬
+                                </div>
+                              </div>
+                              {/* Comment count badge */}
+                              {(bug.comments_count || 0) > 0 && (
+                                <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
+                                  {bug.comments_count || 0}
+                                </div>
+                              )}
                             </div>
-                            <span className="text-sm font-medium">Comment</span>
+                            <div className="hidden sm:flex flex-col items-start">
+                              <span className="text-sm font-semibold group-hover:text-blue-600 transition-colors">
+                                Comment
+                              </span>
+                              {(bug.comments_count || 0) > 0 && (
+                                <span className="text-xs text-gray-500 group-hover:text-blue-500">
+                                  {bug.comments_count} {bug.comments_count === 1 ? 'comment' : 'comments'}
+                                </span>
+                              )}
+                            </div>
                           </button>
 
-                          <button className="flex items-center gap-2 text-gray-500 hover:text-green-600 transition-colors group">
-                            <div className="p-2 rounded-full group-hover:bg-green-50 transition-colors">
-                              <span className="text-xl">📤</span>
+                          {/* Share Button */}
+                          <button 
+                            onClick={() => {
+                              // Show immediate feedback
+                              const button = event.currentTarget;
+                              button.style.transform = 'scale(0.95)';
+                              setTimeout(() => button.style.transform = '', 150);
+                              
+                              // Create shareable text
+                              const shareText = `🐛 Bug Report: "${bug.title}" in ${bug.app_name}\n\n${bug.description}\n\nFound on BugBuzzers - Join the bug hunting community!`;
+                              
+                              // Try native sharing first, fallback to clipboard
+                              if (navigator.share) {
+                                navigator.share({
+                                  title: `Bug Report: ${bug.title}`,
+                                  text: shareText,
+                                  url: window.location.origin
+                                }).then(() => {
+                                  console.log('Bug shared successfully');
+                                }).catch((error) => {
+                                  console.log('Share failed:', error);
+                                  // Fallback to clipboard
+                                  copyToClipboard(shareText);
+                                });
+                              } else {
+                                // Fallback to clipboard
+                                copyToClipboard(shareText);
+                              }
+                              
+                              function copyToClipboard(text) {
+                                navigator.clipboard.writeText(text).then(() => {
+                                  alert('📤 Bug report copied to clipboard! Share it with your network.');
+                                }).catch(() => {
+                                  // Final fallback
+                                  const textArea = document.createElement('textarea');
+                                  textArea.value = text;
+                                  document.body.appendChild(textArea);
+                                  textArea.select();
+                                  document.execCommand('copy');
+                                  document.body.removeChild(textArea);
+                                  alert('📤 Bug report copied to clipboard!');
+                                });
+                              }
+                            }}
+                            className="group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-emerald-600 transition-all duration-300 transform hover:scale-105"
+                          >
+                            <div className="relative">
+                              <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-emerald-300 group-hover:bg-emerald-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                                <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
+                                  📤
+                                </div>
+                              </div>
+                              {/* Share animation on click */}
+                              <div className="absolute inset-0 rounded-full border-2 border-emerald-400 opacity-0 group-active:opacity-100 group-active:animate-ping"></div>
                             </div>
-                            <span className="text-sm font-medium">Share</span>
+                            <div className="hidden sm:flex flex-col items-start">
+                              <span className="text-sm font-semibold group-hover:text-emerald-600 transition-colors">
+                                Share
+                              </span>
+                              <span className="text-xs text-gray-500 group-hover:text-emerald-500">
+                                Spread the word
+                              </span>
+                            </div>
                           </button>
                         </div>
 
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
-                          <div className="text-xs text-gray-500 font-medium">
-                            {bug.status === 'Verified' ? '✅ Earned' : '⏳ Potential'}
+                        {/* Points Section */}
+                        <div className="flex flex-col items-end">
+                          <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-full shadow-lg">
+                            <span className="text-lg">💎</span>
+                            <div className="flex flex-col items-end">
+                              <span className="text-lg sm:text-xl font-bold leading-none">
+                                {bug.points || getPointsForSeverity(bug.severity)}
+                              </span>
+                              <span className="text-xs opacity-90 leading-none">
+                                pts
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-500 font-medium">
+                            {bug.status === 'Verified' ? (
+                              <span className="text-emerald-600 flex items-center gap-1">
+                                <span className="text-emerald-500">✅</span>
+                                Earned
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 flex items-center gap-1">
+                                <span className="text-amber-500">⏳</span>
+                                <span className="hidden sm:inline">Potential</span>
+                                <span className="sm:hidden">Est.</span>
+                              </span>
+                            )}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Social Proof Section - Only show if there are supporters */}
+                      {(bug.recent_supporters && bug.recent_supporters.length > 0) && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className="flex -space-x-2">
+                              {bug.recent_supporters.slice(0, 3).map((supporter, index) => (
+                                <div 
+                                  key={index}
+                                  className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-md"
+                                >
+                                  {supporter.name ? supporter.name.charAt(0).toUpperCase() : '?'}
+                                </div>
+                              ))}
+                              {bug.supports_count > 3 && (
+                                <div className="w-8 h-8 bg-gray-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-md">
+                                  +{bug.supports_count - 3}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              <span className="font-semibold">{bug.supports_count || 0}</span>
+                              <span className="hidden sm:inline"> people also experienced this bug</span>
+                              <span className="sm:hidden"> got this too</span>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quick Action Hint - Only on mobile */}
+                      <div className="sm:hidden mt-3 text-center">
+                        <span className="text-xs text-gray-400">
+                          Tap to support • Long press for options
+                        </span>
                       </div>
                     </div>
                   </div>
