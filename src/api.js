@@ -1,4 +1,5 @@
 /* eslint-disable import/no-anonymous-default-export */
+/* eslint-disable import/no-anonymous-default-export */
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
 
 class BugBuzzersAPI {
@@ -250,40 +251,7 @@ class BugBuzzersAPI {
 
   async healthCheck() {
     return await this.request('/health');
-async supportBug(bugId, supportData = {}) {
-  return await this.request(`/bugs/${bugId}/support`, {
-    method: 'POST',
-    body: JSON.stringify({
-      supportType: supportData.supportType || 'experienced',
-      deviceInfo: supportData.deviceInfo || '',
-      additionalContext: supportData.additionalContext || ''
-    }),
-  });
-}
-
-async removeBugSupport(bugId) {
-  return await this.request(`/bugs/${bugId}/support`, {
-    method: 'DELETE',
-  });
-}
-
-async addComment(bugId, comment, parentId = null) {
-  return await this.request(`/bugs/${bugId}/comments`, {
-    method: 'POST',
-    body: JSON.stringify({ comment, parentId }),
-  });
-}
-
-async getBugComments(bugId, limit = 50, offset = 0) {
-  return await this.request(`/bugs/${bugId}/comments?limit=${limit}&offset=${offset}`);
-}
-
-async shareBug(bugId, platform = 'copy_link') {
-  return await this.request(`/bugs/${bugId}/share`, {
-    method: 'POST',
-    body: JSON.stringify({ platform }),
-  });
-}  }
+  }
 
   // ===================== UTILITY METHODS FOR SOCIAL FEATURES =====================
 
@@ -341,19 +309,19 @@ async shareBug(bugId, platform = 'copy_link') {
     return `🐛 Found a bug in ${bug.app_name}: "${bug.title}"${supportText} Report bugs and earn rewards on BugBuzzers!${hashtags}`;
   }
 
-// Get trending categories
-getTrendingCategories() {
-  return [
-    { id: 1, name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500', bugCount: 247 },
-    { id: 2, name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500', bugCount: 189 },
-    { id: 3, name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500', bugCount: 156 },
-    { id: 4, name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500', bugCount: 134 },
-    { id: 5, name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600', bugCount: 98 },
-    { id: 6, name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800', bugCount: 87 },
-    { id: 7, name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500', bugCount: 76 },
-    { id: 8, name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600', bugCount: 92 }
-  ];
-}
+  // Get trending categories
+  getTrendingCategories() {
+    return [
+      { id: 1, name: 'Social Media', icon: '📱', gradient: 'from-purple-500 to-pink-500', bugCount: 247 },
+      { id: 2, name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500', bugCount: 189 },
+      { id: 3, name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500', bugCount: 156 },
+      { id: 4, name: 'E-commerce', icon: '🛒', gradient: 'from-orange-500 to-red-500', bugCount: 134 },
+      { id: 5, name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600', bugCount: 98 },
+      { id: 6, name: 'Transportation', icon: '🚗', gradient: 'from-gray-600 to-gray-800', bugCount: 87 },
+      { id: 7, name: 'Healthcare', icon: '🏥', gradient: 'from-teal-500 to-cyan-500', bugCount: 76 },
+      { id: 8, name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600', bugCount: 92 }
+    ];
+  }
 
   // Get platform stats (mock data for now)
   getPlatformStats() {
