@@ -27,7 +27,8 @@ const [bugForm, setBugForm] = useState({
   anonymous: false, 
   attachment: null,
   mediaFiles: [],
-  mediaUrls: []
+  mediaUrls: [],
+  stepImages: []
 });
 
   // Data state
@@ -453,7 +454,7 @@ useEffect(() => {
 const handleMediaUpload = (e) => {
   const files = Array.from(e.target.files);
   const maxFileSize = 2 * 1024 * 1024; // 2MB per file
-  const maxTotalFiles = 5;
+  const maxTotalFiles = 10; // Increase to 10 for step images
   
   const validFiles = files.filter(file => {
     if (file.size > maxFileSize) {
@@ -476,24 +477,16 @@ const handleMediaUpload = (e) => {
     return;
   }
 
-  // Check total size
-  const currentTotalSize = currentFiles.reduce((total, file) => total + file.file.size, 0);
-  const newFilesSize = validFiles.reduce((total, file) => total + file.size, 0);
-  const maxTotalSize = 10 * 1024 * 1024; // 10MB total
-  
-  if (currentTotalSize + newFilesSize > maxTotalSize) {
-    alert(`Total files size cannot exceed 10MB. Current: ${formatFileSize(currentTotalSize)}, Adding: ${formatFileSize(newFilesSize)}`);
-    return;
-  }
-
-  const filesWithPreviews = validFiles.map(file => {
+  const filesWithPreviews = validFiles.map((file, index) => {
     const preview = URL.createObjectURL(file);
     return {
       file,
       preview,
       name: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
+      stepDescription: `Step ${currentFiles.length + index + 1}`, // Add step description
+      stepNumber: currentFiles.length + index + 1
     };
   });
 
@@ -502,7 +495,14 @@ const handleMediaUpload = (e) => {
     mediaFiles: [...currentFiles, ...filesWithPreviews]
   }));
 };
-
+const updateStepDescription = (index, description) => {
+  setBugForm(prev => ({
+    ...prev,
+    mediaFiles: prev.mediaFiles.map((file, i) => 
+      i === index ? { ...file, stepDescription: description } : file
+    )
+  }));
+};
   const removeMediaFile = (indexToRemove) => {
     setBugForm(prev => {
       const newMediaFiles = prev.mediaFiles.filter((_, index) => index !== indexToRemove);
@@ -579,17 +579,19 @@ const handleBugSubmit = async (e) => {
       console.log('✅ Media uploaded successfully');
     }
 
-    const bugData = {
-      title: bugForm.title,
-      description: bugForm.description,
-      steps: bugForm.steps,
-      device: bugForm.device,
-      severity: bugForm.severity,
-      appName: bugForm.appName,
-      anonymous: bugForm.anonymous,
-      category: bugForm.category,
-      mediaUrls: uploadedMediaUrls 
-    };
+// In handleBugSubmit function, modify the bugData object:
+const bugData = {
+  title: bugForm.title,
+  description: bugForm.description,
+  steps: bugForm.steps,
+  device: bugForm.device,
+  severity: bugForm.severity,
+  appName: bugForm.appName,
+  anonymous: bugForm.anonymous,
+  category: bugForm.category,
+  mediaUrls: uploadedMediaUrls,
+  stepDescriptions: bugForm.mediaFiles.map(file => file.stepDescription || '') // Add this
+};
 
     const newBug = await api.createBug(bugData);
     
@@ -699,65 +701,241 @@ const formatFileSize = (bytes) => {
       setLoading(false);
     }
   };
+// Replace the existing MediaDisplay component with:
 const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
+  const [showCarousel, setShowCarousel] = useState(false);
+  
   if (!mediaUrls || mediaUrls.length === 0) return null;
 
+  // Convert URLs to format expected by carousel
+  const mediaFiles = mediaUrls.map((media, index) => ({
+    url: typeof media === 'string' ? media : media.url,
+    type: typeof media === 'string' ? 
+      (media.includes('.mp4') || media.includes('.webm') ? 'video/mp4' : 'image/jpeg') : 
+      media.type,
+    stepDescription: typeof media === 'object' ? media.stepDescription : `Step ${index + 1}`,
+    stepNumber: index + 1
+  }));
+
+  if (showCarousel) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Bug Steps</h3>
+              <button
+                onClick={() => setShowCarousel(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <MediaCarousel 
+              mediaFiles={mediaFiles}
+              readOnly={true}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
-      {mediaUrls.slice(0, maxDisplay).map((media, index) => {
-        const isVideo = media.type && media.type.startsWith('video/');
-        const isImage = media.type && media.type.startsWith('image/');
-        
-        return (
-          <div key={index} className="relative group">
-            {isImage ? (
-              <img 
-                src={media.url} 
-                alt={`Bug media ${index + 1}`}
-                className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => window.open(media.url, '_blank')}
-              />
-            ) : isVideo ? (
-              <div className="relative">
-                <video 
-                  src={media.url}
-                  className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => window.open(media.url, '_blank')}
-                  muted
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-black bg-opacity-50 rounded-full p-2">
-                    <span className="text-white text-lg">▶️</span>
+    <div className="mb-3">
+      <div className="grid grid-cols-2 gap-2 max-w-md">
+        {mediaUrls.slice(0, maxDisplay).map((media, index) => {
+          const mediaUrl = typeof media === 'string' ? media : media.url;
+          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
+          
+          return (
+            <div key={index} className="relative group cursor-pointer" onClick={() => setShowCarousel(true)}>
+              {isVideo ? (
+                <div className="relative">
+                  <video 
+                    src={mediaUrl}
+                    className="w-full h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                    muted
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black bg-opacity-50 rounded-full p-2">
+                      <span className="text-white text-lg">▶️</span>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <img 
+                  src={mediaUrl} 
+                  alt={`Bug step ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                />
+              )}
+              
+              <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
+                Step {index + 1}
               </div>
-            ) : (
-              <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-300 transition-colors">
-                <span className="text-2xl">📎</span>
+              
+              <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
+                <span className="text-white text-xs">
+                  {isVideo ? '🎬' : '🖼️'}
+                </span>
               </div>
-            )}
-            
-            <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-              <span className="text-white text-xs">
-                {isImage ? '🖼️' : isVideo ? '🎬' : '📄'}
-              </span>
+            </div>
+          );
+        })}
+        
+        {mediaUrls.length > maxDisplay && (
+          <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setShowCarousel(true)}>
+            <div className="text-center">
+              <div className="text-lg font-bold text-gray-700">+{mediaUrls.length - maxDisplay}</div>
+              <div className="text-xs text-gray-500">more steps</div>
             </div>
           </div>
-        );
-      })}
+        )}
+      </div>
       
-      {mediaUrls.length > maxDisplay && (
-        <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-lg font-bold text-gray-700">+{mediaUrls.length - maxDisplay}</div>
-            <div className="text-xs text-gray-500">more files</div>
-          </div>
+      {mediaUrls.length > 0 && (
+        <button
+          onClick={() => setShowCarousel(true)}
+          className="mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+        >
+          📱 View Step-by-Step Guide →
+        </button>
+      )}
+    </div>
+  );
+};
+// Add this component after the MediaDisplay component
+const MediaCarousel = ({ mediaFiles, onUpdateDescription, onRemoveFile, readOnly = false }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  if (!mediaFiles || mediaFiles.length === 0) return null;
+
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev + 1) % mediaFiles.length);
+  };
+
+  const prevImage = () => {
+    setCurrentIndex((prev) => (prev - 1 + mediaFiles.length) % mediaFiles.length);
+  };
+
+  const currentFile = mediaFiles[currentIndex];
+  const isVideo = currentFile.type?.startsWith('video/') || currentFile.url?.includes('.mp4');
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-medium text-gray-700">
+          Media ({currentIndex + 1} of {mediaFiles.length})
+        </h4>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => onRemoveFile(currentIndex)}
+            className="text-red-500 hover:text-red-700 text-sm"
+          >
+            Remove
+          </button>
+        )}
+      </div>
+
+      {/* Main Image/Video Display */}
+      <div className="relative mb-4">
+        <div className="aspect-video bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+          {isVideo ? (
+            <video 
+              src={currentFile.preview || currentFile.url}
+              className="max-w-full max-h-full object-contain"
+              controls
+            />
+          ) : (
+            <img 
+              src={currentFile.preview || currentFile.url}
+              alt={`Step ${currentIndex + 1}`}
+              className="max-w-full max-h-full object-contain cursor-pointer"
+              onClick={() => window.open(currentFile.preview || currentFile.url, '_blank')}
+            />
+          )}
+        </div>
+
+        {/* Navigation Arrows */}
+        {mediaFiles.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={prevImage}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-opacity"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={nextImage}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-opacity"
+            >
+              →
+            </button>
+          </>
+        )}
+
+        {/* Step Indicator */}
+        <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-sm font-medium">
+          Step {currentFile.stepNumber || currentIndex + 1}
+        </div>
+      </div>
+
+      {/* Step Description Input */}
+      {!readOnly && (
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Step Description
+          </label>
+          <input
+            type="text"
+            value={currentFile.stepDescription || ''}
+            onChange={(e) => onUpdateDescription(currentIndex, e.target.value)}
+            placeholder={`Describe what happens in step ${currentIndex + 1}...`}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+          />
+        </div>
+      )}
+
+      {/* Thumbnail Navigation */}
+      {mediaFiles.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {mediaFiles.map((file, index) => {
+            const isVideoThumb = file.type?.startsWith('video/') || file.url?.includes('.mp4');
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setCurrentIndex(index)}
+                className={`flex-shrink-0 relative ${
+                  index === currentIndex ? 'ring-2 ring-purple-500' : ''
+                } rounded-lg overflow-hidden`}
+              >
+                {isVideoThumb ? (
+                  <div className="w-16 h-16 bg-gray-200 flex items-center justify-center">
+                    <span className="text-xs">🎬</span>
+                  </div>
+                ) : (
+                  <img 
+                    src={file.preview || file.url}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-16 h-16 object-cover"
+                  />
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 py-0.5 text-center">
+                  {index + 1}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
-	// PART 3: UI Components and Views (1-6)
 
   // UI Components
   const ErrorMessage = () => {
@@ -1243,56 +1421,10 @@ if (currentView === 'social-feed') {
                     </p>
                     
                     {/* Media Display - Show actual uploaded media */}
-                    {bug.media_urls && bug.media_urls.length > 0 && (
-                      <div className="mb-3 grid grid-cols-2 gap-2 max-w-md">
-                        {bug.media_urls.slice(0, 4).map((media, index) => {
-                          const mediaUrl = typeof media === 'string' ? media : media.url;
-                          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
-                          
-                          return (
-                            <div key={index} className="relative group">
-                              {isVideo ? (
-                                <div className="relative">
-                                  <video 
-                                    src={mediaUrl}
-                                    className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                    onClick={() => window.open(mediaUrl, '_blank')}
-                                    muted
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="bg-black bg-opacity-50 rounded-full p-2">
-                                      <span className="text-white text-lg">▶️</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <img 
-                                  src={mediaUrl} 
-                                  alt={`Bug media ${index + 1}`}
-                                  className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                  onClick={() => window.open(mediaUrl, '_blank')}
-                                />
-                              )}
-                              <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-                                <span className="text-white text-xs">
-                                  {isVideo ? '🎬' : '🖼️'}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        
-                        {bug.media_urls.length > 4 && (
-                          <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-gray-700">+{bug.media_urls.length - 4}</div>
-                              <div className="text-xs text-gray-500">more files</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
+                  {/* Media Display with Carousel */}
+{bug.media_urls && bug.media_urls.length > 0 && (
+  <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
+)}
                     {/* Bug Tags */}
                     <div className="flex gap-2 mb-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bug.status)}`}>
@@ -1755,73 +1887,47 @@ if (currentView === 'report') {
           </div>
 
           {/* NEW: Media Upload Section */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              📸 Screenshots/Videos <span className="text-gray-500">(Highly recommended!)</span>
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-              <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleMediaUpload}
-                className="hidden"
-                id="media-upload"
-                disabled={loading}
-              />
-              <label 
-                htmlFor="media-upload" 
-                className="cursor-pointer flex flex-col items-center"
-              >
-                <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                <div className="text-lg font-medium text-gray-900 mb-2">
-                  Upload Screenshots or Videos
-                </div>
-                <div className="text-sm text-gray-500 mb-4">
-                  Drag and drop files here, or click to browse
-                </div>
-                <div className="text-xs text-gray-400">
-                  Supported: JPG, PNG, GIF, MP4, MOV, WebM • Max 10MB per file
-                </div>
-              </label>
-            </div>
-
-            {/* Media Preview */}
-            {bugForm.mediaFiles && bugForm.mediaFiles.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Uploaded Media ({bugForm.mediaFiles.length} file{bugForm.mediaFiles.length !== 1 ? 's' : ''})
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {bugForm.mediaFiles.map((file, index) => (
-                    <div key={index} className="relative group">
-                      {file.type.startsWith('image/') ? (
-                        <img 
-                          src={file.preview} 
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border"
-                        />
-                      ) : (
-                        <div className="w-full h-24 bg-gray-100 rounded-lg border flex items-center justify-center">
-                          <div className="text-center">
-                            <span className="text-2xl">🎬</span>
-                            <div className="text-xs text-gray-600 mt-1">{file.name}</div>
-                          </div>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeMediaFile(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+<div className="mb-6">
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    📸 Screenshots/Videos with Step Descriptions <span className="text-gray-500">(Highly recommended!)</span>
+  </label>
+            {/* Upload Area */}
+  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+    <input
+      type="file"
+      accept="image/*,video/*"
+      multiple
+      onChange={handleMediaUpload}
+      className="hidden"
+      id="media-upload"
+      disabled={loading}
+    />
+    <label 
+      htmlFor="media-upload" 
+      className="cursor-pointer flex flex-col items-center"
+    >
+      <Upload className="w-12 h-12 text-gray-400 mb-4" />
+      <div className="text-lg font-medium text-gray-900 mb-2">
+        Upload Screenshots or Videos
+      </div>
+      <div className="text-sm text-gray-500 mb-4">
+        Upload images/videos for each step of your bug reproduction
+      </div>
+      <div className="text-xs text-gray-400">
+        Supported: JPG, PNG, GIF, MP4, MOV, WebM • Max 2MB per file • Up to 10 files
+      </div>
+    </label>
+  </div>
+ {/* Media Carousel */}
+  {bugForm.mediaFiles && bugForm.mediaFiles.length > 0 && (
+    <MediaCarousel 
+      mediaFiles={bugForm.mediaFiles}
+      onUpdateDescription={updateStepDescription}
+      onRemoveFile={removeMediaFile}
+      readOnly={false}
+    />
+  )}
+</div>
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
   <div>
@@ -2386,6 +2492,29 @@ if (currentView === 'report') {
       </div>
     );
   }
+
+if (currentView === 'verify-email') {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center">
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Email Verified!</h2>
+          <p className="text-gray-600 mb-6">Your email has been successfully verified. You now have full access to all features.</p>
+          <button
+            onClick={() => setCurrentView(user?.isAdmin ? 'admin' : 'social-feed')}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+          >
+            Continue to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Landing Page
 // Landing Page - Complete Fixed Code
 if (currentView === 'landing') {
