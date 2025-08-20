@@ -252,10 +252,34 @@ async function sendPasswordResetEmail(email, name, token) {
 }
 
 // Test database connection
+// Test database connection
 async function testDatabaseConnection() {
   let retries = 3;
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-await delay(2000);
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  for (let i = 0; i < retries; i++) {
+    try {
+      const client = new Client({
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        user: process.env.DB_USER || 'doadmin',
+        password: process.env.DB_PASSWORD || '',
+        database: process.env.DB_NAME || 'defaultdb'
+      });
+      
+      await client.connect();
+      console.log('✅ Database connected successfully');
+      await client.end();
+      return true;
+    } catch (error) {
+      console.log(`❌ Database connection attempt ${i + 1} failed: ${error.message}`);
+      if (i < retries - 1) {
+        console.log(`Retrying in 2 seconds...`);
+        await delay(2000);
+      }
+    }
+  }
+  
   console.log('❌ All database connection attempts failed');
   return false;
 }
