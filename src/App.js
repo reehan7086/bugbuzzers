@@ -1745,6 +1745,8 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
 };
 
 // Also ensure the copyToClipboard helper function is correct
+// Keep this version and remove the other one:
+
 const copyToClipboard = async (text) => {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -1775,22 +1777,7 @@ const copyToClipboard = async (text) => {
   }
 };
 
-// Helper function for clipboard operations
-const copyToClipboard = async (text) => {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch (err) {
-    // Fallback for older browsers
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.opacity = '0';
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
-  }
-};
+
   // VIEW 2: Social Feed
 // =================== COMPLETE SOCIAL FEED VIEW ===================
 // In src/App.js - Replace your entire social-feed view with this:
