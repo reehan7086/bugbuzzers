@@ -1650,12 +1650,16 @@ const handleBugComment = async (bugId, bugTitle) => {
 };
 
 // Helper function to handle sharing
+// Fixed handleBugShare function in App.js
+// Replace the existing handleBugShare function with this corrected version
+
 const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
   try {
     // Create shareable text
     const shareText = `🐛 Bug Report: "${bugTitle}" in ${appName}\n\n${bugDescription}\n\nFound on BugBuzzers - Join the bug hunting community!\n${window.location.origin}`;
     
-    let shareMethod = 'copy_link'; // Default fallback
+    let shareMethod = 'copy_link'; // Default fallback - VALID platform
+    let shareSuccessful = false;
     
     // Try native sharing first
     if (navigator.share) {
@@ -1665,52 +1669,110 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
           text: shareText,
           url: window.location.origin
         });
-        shareMethod = 'native_share';
+        shareMethod = 'internal'; // Change to valid platform name
+        shareSuccessful = true;
         console.log('Bug shared via native sharing');
       } catch (shareError) {
-        if (shareError.name !== 'AbortError') {
-          // User didn't cancel, so fallback to clipboard
-          await copyToClipboard(shareText);
-        } else {
-          return; // User cancelled sharing
+        if (shareError.name === 'AbortError') {
+          // User cancelled sharing
+          console.log('User cancelled sharing');
+          return;
         }
+        // Fall through to clipboard fallback
+        console.log('Native sharing failed, falling back to clipboard');
       }
-    } else {
-      // Fallback to clipboard
-      await copyToClipboard(shareText);
     }
     
-    // Log the share action to database
-    setLoading(true);
-    await api.shareBug(bugId, shareMethod);
-    
-    // Update the local state immediately
-    setBugs(prevBugs => prevBugs.map(bug => 
-      bug.id === bugId 
-        ? { 
-            ...bug, 
-            shares_count: (bug.shares_count || 0) + 1
-          } 
-        : bug
-    ));
-    
-    // Show success message
-    if (shareMethod === 'copy_link') {
-      alert('📤 Bug report copied to clipboard! Share it with your network.');
-    } else {
-      alert('📤 Bug report shared successfully!');
+    // Fallback to clipboard if native sharing failed or unavailable
+    if (!shareSuccessful) {
+      try {
+        await copyToClipboard(shareText);
+        shareMethod = 'copy_link'; // Valid platform name
+        shareSuccessful = true;
+        console.log('Text copied to clipboard');
+      } catch (clipboardError) {
+        console.error('Clipboard fallback failed:', clipboardError);
+        alert('❌ Unable to share. Please copy the bug report manually.');
+        return;
+      }
     }
     
-    // Refresh the feed to get fresh data
-    setTimeout(() => {
-      loadAllBugs();
-    }, 500);
+    // Only log the share action if we successfully shared
+    if (shareSuccessful) {
+      try {
+        setLoading(true);
+        await api.shareBug(bugId, shareMethod);
+        
+        // Update the local state immediately
+        setBugs(prevBugs => prevBugs.map(bug => 
+          bug.id === bugId 
+            ? { 
+                ...bug, 
+                shares_count: (bug.shares_count || 0) + 1
+              } 
+            : bug
+        ));
+        
+        // Show success message
+        if (shareMethod === 'copy_link') {
+          alert('📤 Bug report copied to clipboard! Share it with your network.');
+        } else {
+          alert('📤 Bug report shared successfully!');
+        }
+        
+        // Refresh the feed to get fresh data
+        setTimeout(() => {
+          loadAllBugs();
+        }, 500);
+        
+      } catch (apiError) {
+        console.error('API share logging failed:', apiError);
+        // Still show success to user since the actual sharing worked
+        if (shareMethod === 'copy_link') {
+          alert('📤 Bug report copied to clipboard! Share it with your network.');
+        } else {
+          alert('📤 Bug report shared successfully!');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
     
   } catch (error) {
     console.error('Share error:', error);
     alert('❌ Failed to share bug. Please try again.');
-  } finally {
     setLoading(false);
+  }
+};
+
+// Also ensure the copyToClipboard helper function is correct
+const copyToClipboard = async (text) => {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      // Use modern clipboard API
+      await navigator.clipboard.writeText(text);
+    } else {
+      // Fallback for older browsers or non-secure contexts
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+      } catch (err) {
+        throw new Error('Copy command failed');
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+  } catch (err) {
+    console.error('Clipboard operation failed:', err);
+    throw new Error('Failed to copy to clipboard');
   }
 };
 
