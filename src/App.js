@@ -464,39 +464,6 @@ const BugBuzzers = () => {
     };
   }, [user?.id, currentView, loadAllBugs]);
 
-// Add this useEffect after your existing ones
-useEffect(() => {
-  const checkAPIConnection = async () => {
-    try {
-      console.log('🔌 Testing API connection...');
-      const status = await api.testConnection();
-      
-      if (status.success) {
-        console.log('✅ API connection successful');
-        setError(''); // Clear any demo mode messages
-      } else {
-        console.warn('❌ API connection failed, running in demo mode');
-        setError('Demo mode: Using sample data (backend server not available)');
-      }
-    } catch (error) {
-      console.warn('❌ API test failed:', error.message);
-      setError('Demo mode: Using sample data - ' + error.message);
-    }
-  };
-
-  const shouldCheckConnection = user && 
-                               !['landing', 'login', 'signup', 'forgot-password', 'reset-password'].includes(currentView) &&
-                               !error.includes('Demo mode');
-  
-  if (shouldCheckConnection) {
-    checkAPIConnection();
-    
-    // Optional: Check periodically (every 2 minutes)
-    const intervalId = setInterval(checkAPIConnection, 120000);
-    return () => clearInterval(intervalId);
-  }
-}, [user, currentView, error]);
-
   // Helper functions
   const getEstimatedReviewTime = (severity) => {
     const times = { high: 6, medium: 4, low: 2 };
