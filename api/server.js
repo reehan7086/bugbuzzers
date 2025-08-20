@@ -1050,11 +1050,30 @@ app.get('/api/bugs', authenticateToken, async (req, res) => {
     const result = await pool.query(`
       SELECT 
         b.*,
-        u.name as reporter_name
+        u.name as reporter_name,
+        -- Check if current user supports this bug
+        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports,
+        -- Get recent supporters for preview
+        COALESCE(supporter_preview.supporters, '[]'::json) as recent_supporters
       FROM bugs b 
       LEFT JOIN users u ON b.user_id = u.id 
+      LEFT JOIN bug_supports bs ON b.id = bs.bug_id AND bs.user_id = $1
+      LEFT JOIN LATERAL (
+        SELECT json_agg(
+          json_build_object(
+            'name', su.name,
+            'username', su.username,
+            'avatar_url', su.avatar_url
+          )
+        ) as supporters
+        FROM bug_supports bsp
+        JOIN users su ON bsp.user_id = su.id
+        WHERE bsp.bug_id = b.id
+        ORDER BY bsp.created_at DESC
+        LIMIT 3
+      ) supporter_preview ON true
       ORDER BY b.submitted_at DESC
-    `);
+    `, [req.user.id]);
     
     // Process the results to parse media URLs
     const processedBugs = result.rows.map(bug => {
@@ -1073,7 +1092,7 @@ app.get('/api/bugs', authenticateToken, async (req, res) => {
         supports_count: bug.supports_count || 0,
         comments_count: bug.comments_count || 0,
         shares_count: bug.shares_count || 0,
-        views_count: bug.views_count || 0
+        recent_supporters: bug.recent_supporters || []
       };
     });
     
