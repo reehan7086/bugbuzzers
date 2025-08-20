@@ -1276,97 +1276,97 @@ if (currentView === 'social-feed') {
       <EmailVerificationBanner />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Stats Section */}
-<div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-      <div className="text-2xl lg:text-3xl font-bold text-purple-600 mb-1">{bugs.length}</div>
-      <div className="text-xs font-medium text-purple-700">Total Reports</div>
-    </div>
-    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-      <div className="text-2xl lg:text-3xl font-bold text-green-600 mb-1">{leaderboard.length}</div>
-      <div className="text-xs font-medium text-green-700">Active Users</div>
-    </div>
-    <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
-      <div className="text-2xl lg:text-3xl font-bold text-orange-600 mb-1">{bugs.filter(b => b.severity === 'high').length}</div>
-      <div className="text-xs font-medium text-orange-700">High Priority</div>
-    </div>
-    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-      <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-1">{bugs.filter(b => b.status === 'Verified').length}</div>
-      <div className="text-xs font-medium text-blue-700">Verified</div>
-    </div>
-  </div>
-</div>
-
-        {/* Category Selection */}
-<div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-6">
-  <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">🔥 Report Bug by Category</h3>
-  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-4 justify-items-center">
-    <div className="text-center">
-      <button 
-        onClick={() => setCurrentView('report')}
-        className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-110 transition-all duration-200 mx-auto shadow-lg"
-      >
-        <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
-          </svg>
-        </div>
-      </button>
-      <p className="text-xs mt-2 text-gray-600 font-medium">Report</p>
-    </div>
-    
-    {[
-      { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
-      { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
-      { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
-      { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
-      { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
-      { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
-      { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
-      { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
-    ].map((category, index) => (
-      <div key={index} className="text-center cursor-pointer hover:scale-110 transition-all duration-200">
-        <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5 mx-auto shadow-lg`}>
-          <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-            <span className="text-xl sm:text-2xl">{category.icon}</span>
+        {/* Stats Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+              <div className="text-2xl lg:text-3xl font-bold text-purple-600 mb-1">{bugs.length}</div>
+              <div className="text-xs font-medium text-purple-700">Total Reports</div>
+            </div>
+            <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+              <div className="text-2xl lg:text-3xl font-bold text-green-600 mb-1">{leaderboard.length}</div>
+              <div className="text-xs font-medium text-green-700">Active Users</div>
+            </div>
+            <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+              <div className="text-2xl lg:text-3xl font-bold text-orange-600 mb-1">{bugs.filter(b => b.severity === 'high').length}</div>
+              <div className="text-xs font-medium text-orange-700">High Priority</div>
+            </div>
+            <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+              <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-1">{bugs.filter(b => b.status === 'Verified').length}</div>
+              <div className="text-xs font-medium text-blue-700">Verified</div>
+            </div>
           </div>
         </div>
-        <p className="text-xs mt-2 text-gray-600 font-medium">{category.name}</p>
-      </div>
-    ))}
-  </div>
-</div>
 
-       {/* Filter Buttons */}
-<div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-  <div className="flex justify-center">
-    <div className="flex space-x-2 overflow-x-auto bg-gray-50 rounded-lg p-1">
-      {[
-        { key: 'all', label: '🔥 All Bugs', icon: '📈' },
-        { key: 'recent', label: '🕐 Recent', icon: '⏰' },
-        { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
-        { key: 'verified', label: '✅ Verified', icon: '🏆' }
-      ].map((filter) => (
-        <button
-          key={filter.key}
-          onClick={() => setFeedFilter(filter.key)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-            feedFilter === filter.key
-              ? 'bg-purple-600 text-white shadow-md transform scale-105'
-              : 'text-gray-600 hover:bg-white hover:text-purple-600 hover:shadow-sm'
-          }`}
-        >
-          <span>{filter.icon}</span>
-          <span className="hidden sm:inline">{filter.label}</span>
-          <span className="sm:hidden">{filter.key.charAt(0).toUpperCase() + filter.key.slice(1)}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
+        {/* Category Selection */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">🔥 Report Bug by Category</h3>
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-4 justify-items-center">
+            <div className="text-center">
+              <button 
+                onClick={() => setCurrentView('report')}
+                className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-110 transition-all duration-200 mx-auto shadow-lg"
+              >
+                <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                  </svg>
+                </div>
+              </button>
+              <p className="text-xs mt-2 text-gray-600 font-medium">Report</p>
+            </div>
+            
+            {[
+              { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
+              { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
+              { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
+              { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
+              { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
+              { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
+              { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
+              { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
+            ].map((category, index) => (
+              <div key={index} className="text-center cursor-pointer hover:scale-110 transition-all duration-200">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5 mx-auto shadow-lg`}>
+                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                    <span className="text-xl sm:text-2xl">{category.icon}</span>
+                  </div>
+                </div>
+                <p className="text-xs mt-2 text-gray-600 font-medium">{category.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* ===== HERE'S WHERE THE BUG LIST GOES ===== */}
+        {/* Filter Buttons */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex justify-center">
+            <div className="flex space-x-2 overflow-x-auto bg-gray-50 rounded-lg p-1">
+              {[
+                { key: 'all', label: '🔥 All Bugs', icon: '📈' },
+                { key: 'recent', label: '🕐 Recent', icon: '⏰' },
+                { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
+                { key: 'verified', label: '✅ Verified', icon: '🏆' }
+              ].map((filter) => (
+                <button
+                  key={filter.key}
+                  onClick={() => setFeedFilter(filter.key)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    feedFilter === filter.key
+                      ? 'bg-purple-600 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:bg-white hover:text-purple-600 hover:shadow-sm'
+                  }`}
+                >
+                  <span>{filter.icon}</span>
+                  <span className="hidden sm:inline">{filter.label}</span>
+                  <span className="sm:hidden">{filter.key.charAt(0).toUpperCase() + filter.key.slice(1)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bug List Section */}
         <div className="space-y-6">
           {bugs.length === 0 ? (
             // Empty state
@@ -1382,144 +1382,146 @@ if (currentView === 'social-feed') {
               </button>
             </div>
           ) : (
-            // ===== PASTE THE BUG LIST CODE HERE =====
-  bugs
-  .filter(bug => {
-    if (feedFilter === 'recent') return true;
-    if (feedFilter === 'high') return bug.severity === 'high';
-    if (feedFilter === 'verified') return bug.status === 'Verified';
-    return true; // 'all'
-  })
-  .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
-  .map((bug) => (
-    <div key={bug.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
-      {/* Bug Header */}
-      <div className="flex items-center p-6 border-b border-gray-50">
-        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-          {bug.reporter_name ? bug.reporter_name.charAt(0).toUpperCase() : 'A'}
-        </div>
-        <div className="ml-4 flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <span className="font-bold text-gray-900 text-lg">
-              {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Anonymous')}
-            </span>
-            <span className="text-purple-600 text-sm font-medium">
-              @{bug.anonymous ? 'anonymous' : (bug.reporter_name?.toLowerCase().replace(' ', '') || 'user')}
-            </span>
-            {bug.user_id === user?.id && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500 text-white">
-                YOUR BUG
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              📱 {bug.app_name}
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              📅 {new Date(bug.submitted_at).toLocaleDateString()}
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              💻 {bug.device}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(bug.status)}`}>
-            {bug.status}
-          </span>
-          <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-            bug.severity === 'high' ? 'bg-red-500 text-white' :
-            bug.severity === 'medium' ? 'bg-orange-500 text-white' :
-            'bg-green-500 text-white'
-          }`}>
-            {bug.severity.toUpperCase()}
-          </span>
-        </div>
-      </div>
+            <>
+              {bugs
+                .filter(bug => {
+                  if (feedFilter === 'recent') return true;
+                  if (feedFilter === 'high') return bug.severity === 'high';
+                  if (feedFilter === 'verified') return bug.status === 'Verified';
+                  return true; // 'all'
+                })
+                .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
+                .map((bug) => (
+                  <div key={bug.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    {/* Bug Header */}
+                    <div className="flex items-center p-6 border-b border-gray-50">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        {bug.reporter_name ? bug.reporter_name.charAt(0).toUpperCase() : 'A'}
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="font-bold text-gray-900 text-lg">
+                            {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Anonymous')}
+                          </span>
+                          <span className="text-purple-600 text-sm font-medium">
+                            @{bug.anonymous ? 'anonymous' : (bug.reporter_name?.toLowerCase().replace(' ', '') || 'user')}
+                          </span>
+                          {bug.user_id === user?.id && (
+                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500 text-white">
+                              YOUR BUG
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            📱 {bug.app_name}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            📅 {new Date(bug.submitted_at).toLocaleDateString()}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            💻 {bug.device}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(bug.status)}`}>
+                          {bug.status}
+                        </span>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                          bug.severity === 'high' ? 'bg-red-500 text-white' :
+                          bug.severity === 'medium' ? 'bg-orange-500 text-white' :
+                          'bg-green-500 text-white'
+                        }`}>
+                          {bug.severity.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
 
-      {/* Bug Content */}
-      <div className="px-6 py-4">
-        <h3 className="font-bold text-xl mb-3 text-gray-900 leading-tight">{bug.title}</h3>
-        <p className="text-gray-700 mb-3 leading-relaxed">{bug.description}</p>
-        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-          <p className="text-gray-700 text-sm">
-            <span className="font-semibold text-gray-900">🔍 Steps to reproduce:</span> {bug.steps}
-          </p>
-        </div>
-        
-        {/* Media Display */}
-        {bug.media_urls && bug.media_urls.length > 0 && (
-          <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
-        )}
+                    {/* Bug Content */}
+                    <div className="px-6 py-4">
+                      <h3 className="font-bold text-xl mb-3 text-gray-900 leading-tight">{bug.title}</h3>
+                      <p className="text-gray-700 mb-3 leading-relaxed">{bug.description}</p>
+                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                        <p className="text-gray-700 text-sm">
+                          <span className="font-semibold text-gray-900">🔍 Steps to reproduce:</span> {bug.steps}
+                        </p>
+                      </div>
+                      
+                      {/* Media Display */}
+                      {bug.media_urls && bug.media_urls.length > 0 && (
+                        <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
+                      )}
 
-        {/* Bug Tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            #{bug.category || 'general'}
-          </span>
-          {bug.severity === 'high' && (
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
-              🚨 Critical
-            </span>
+                      {/* Bug Tags */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          #{bug.category || 'general'}
+                        </span>
+                        {bug.severity === 'high' && (
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
+                            🚨 Critical
+                          </span>
+                        )}
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                          ID: {bug.id}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bug Actions */}
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                          <button className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors group">
+                            <div className="p-2 rounded-full group-hover:bg-purple-50 transition-colors">
+                              <span className="text-xl">🙋‍♀️</span>
+                            </div>
+                            <span className="text-sm font-medium">I got this too!</span>
+                          </button>
+
+                          <button className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group">
+                            <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
+                              <span className="text-xl">💬</span>
+                            </div>
+                            <span className="text-sm font-medium">Comment</span>
+                          </button>
+
+                          <button className="flex items-center gap-2 text-gray-500 hover:text-green-600 transition-colors group">
+                            <div className="p-2 rounded-full group-hover:bg-green-50 transition-colors">
+                              <span className="text-xl">📤</span>
+                            </div>
+                            <span className="text-sm font-medium">Share</span>
+                          </button>
+                        </div>
+
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
+                          <div className="text-xs text-gray-500 font-medium">
+                            {bug.status === 'Verified' ? '✅ Earned' : '⏳ Potential'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+              {/* Call to Action */}
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">🚀</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
+                <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn rewards!</p>
+                <button
+                  onClick={() => setCurrentView('report')}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+                >
+                  📸 Report Bug with Media
+                </button>
+              </div>
+            </>
           )}
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-            ID: {bug.id}
-          </span>
-        </div>
-      </div>
-
-      {/* Bug Actions */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors group">
-              <div className="p-2 rounded-full group-hover:bg-purple-50 transition-colors">
-                <span className="text-xl">🙋‍♀️</span>
-              </div>
-              <span className="text-sm font-medium">I got this too!</span>
-            </button>
-
-            <button className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group">
-              <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
-                <span className="text-xl">💬</span>
-              </div>
-              <span className="text-sm font-medium">Comment</span>
-            </button>
-
-            <button className="flex items-center gap-2 text-gray-500 hover:text-green-600 transition-colors group">
-              <div className="p-2 rounded-full group-hover:bg-green-50 transition-colors">
-                <span className="text-xl">📤</span>
-              </div>
-              <span className="text-sm font-medium">Share</span>
-            </button>
-          </div>
-
-          <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
-            <div className="text-xs text-gray-500 font-medium">
-              {bug.status === 'Verified' ? '✅ Earned' : '⏳ Potential'}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  ))
-
-          {/* Call to Action */}
-          <div className="text-center py-8">
-            <div className="text-4xl mb-4">🚀</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
-            <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn rewards!</p>
-            <button
-              onClick={() => setCurrentView('report')}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
-            >
-              📸 Report Bug with Media
-            </button>
-          </div>
         </div>
       </main>
     </div>
@@ -1813,17 +1815,7 @@ if (currentView === 'trending') {
                 disabled={loading}
               />
             </div>
-<div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                value={signupForm.password}
-                onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                disabled={loading}
-              />
-            </div>
+
             
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
