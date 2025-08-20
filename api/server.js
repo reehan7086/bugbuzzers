@@ -254,22 +254,8 @@ async function sendPasswordResetEmail(email, name, token) {
 // Test database connection
 async function testDatabaseConnection() {
   let retries = 3;
-  while (retries > 0) {
-    try {
-      const client = await pool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
-      console.log('✅ Database connection test successful');
-      return true;
-    } catch (error) {
-      retries--;
-      console.log(`❌ Database connection attempt failed (${3-retries}/3):`, error.code || error.message);
-      if (retries > 0) {
-        console.log('⏳ Retrying in 2 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-  }
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+await delay(2000);
   console.log('❌ All database connection attempts failed');
   return false;
 }
