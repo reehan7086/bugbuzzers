@@ -39,6 +39,7 @@ const upload = multer({
     }
   }
 });
+
 // Security middleware with CSP configured for blob URLs
 app.use(helmet({
   contentSecurityPolicy: {
@@ -98,7 +99,7 @@ try {
     throw new Error('EMAIL_USER and EMAIL_PASSWORD environment variables are required');
   }
 
-  emailTransporter = nodemailer.createTransport({
+  emailTransporter = nodemailer.createTransporter({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
@@ -274,9 +275,6 @@ async function testDatabaseConnection() {
 }
 
 // Initialize database tables
-// Enhanced Database Schema for Social Features
-// Replace the initDB function in your api/server.js with this enhanced version
-
 async function initDB() {
   try {
     console.log('🔄 Initializing database with social features...');
@@ -379,7 +377,7 @@ async function initDB() {
     `);
     console.log('✅ Enhanced bugs table ready');
 
-// Bug Supports table (like the "I got this too" feature)
+    // Bug Supports table (like the "I got this too" feature)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bug_supports (
         id SERIAL PRIMARY KEY,
@@ -395,7 +393,7 @@ async function initDB() {
     `);
     console.log('✅ Bug supports table ready');
 
-// Bug Comments table
+    // Bug Comments table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bug_comments (
         id SERIAL PRIMARY KEY,
@@ -430,7 +428,7 @@ async function initDB() {
     `);
     console.log('✅ User follows table ready');
 
-   // Bug Shares tracking
+    // Bug Shares tracking
     await pool.query(`
       CREATE TABLE IF NOT EXISTS bug_shares (
         id SERIAL PRIMARY KEY,
@@ -477,7 +475,7 @@ async function initDB() {
     `);
     console.log('✅ Notifications table ready');
 
-   // User activity feed
+    // User activity feed
     await pool.query(`
       CREATE TABLE IF NOT EXISTS user_activities (
         id SERIAL PRIMARY KEY,
@@ -521,33 +519,30 @@ async function initDB() {
       }
     }
 
-const bugColumns = [
-  'supports_count INTEGER DEFAULT 0',
-  'comments_count INTEGER DEFAULT 0',
-  'shares_count INTEGER DEFAULT 0',
-  'views_count INTEGER DEFAULT 0',
-  'caption TEXT',
-  'category VARCHAR(50) DEFAULT \'others\'',
-  // Temporarily removing array columns that cause issues
-  // 'hashtags TEXT[]',
-  // 'media_urls TEXT[]',
-  // 'tagged_users INTEGER[]',
-  'viral_score INTEGER DEFAULT 0',
-  'trending_rank INTEGER',
-  'viral_peak_supports INTEGER DEFAULT 0',
-  'viral_peak_date TIMESTAMP',
-  'estimated_reward INTEGER DEFAULT 0',
-  'social_multiplier DECIMAL(3,2) DEFAULT 1.0',
-  'reported_location VARCHAR(255)',
-  'user_agent TEXT',
-  'screen_resolution VARCHAR(50)',
-  'timezone VARCHAR(100)',
-  'sub_category VARCHAR(50)',
-  'impact_level VARCHAR(50) DEFAULT \'some-users\'',
-  'frequency VARCHAR(50) DEFAULT \'sometimes\'',
-  'environment VARCHAR(50) DEFAULT \'production\'',
-  'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-];
+    const bugColumns = [
+      'supports_count INTEGER DEFAULT 0',
+      'comments_count INTEGER DEFAULT 0',
+      'shares_count INTEGER DEFAULT 0',
+      'views_count INTEGER DEFAULT 0',
+      'caption TEXT',
+      'category VARCHAR(50) DEFAULT \'others\'',
+      'viral_score INTEGER DEFAULT 0',
+      'trending_rank INTEGER',
+      'viral_peak_supports INTEGER DEFAULT 0',
+      'viral_peak_date TIMESTAMP',
+      'estimated_reward INTEGER DEFAULT 0',
+      'social_multiplier DECIMAL(3,2) DEFAULT 1.0',
+      'reported_location VARCHAR(255)',
+      'user_agent TEXT',
+      'screen_resolution VARCHAR(50)',
+      'timezone VARCHAR(100)',
+      'sub_category VARCHAR(50)',
+      'impact_level VARCHAR(50) DEFAULT \'some-users\'',
+      'frequency VARCHAR(50) DEFAULT \'sometimes\'',
+      'environment VARCHAR(50) DEFAULT \'production\'',
+      'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+    ];
+    
     for (const column of bugColumns) {
       try {
         await pool.query(`ALTER TABLE bugs ADD COLUMN IF NOT EXISTS ${column}`);
@@ -574,78 +569,76 @@ const bugColumns = [
     `);
     console.log('✅ Performance indexes created');
 
-// Create triggers for automatic updates
-// Bug supports trigger
-async function setupBugTriggers() {
-  const sql = `
-    CREATE OR REPLACE FUNCTION update_bug_supports_count()
-    RETURNS TRIGGER AS $$
-    BEGIN
-      IF TG_OP = 'INSERT' THEN
-        UPDATE bugs 
-        SET supports_count = supports_count + 1 
-        WHERE id = NEW.bug_id;
+    // Create triggers for automatic updates
+    // Bug supports trigger
+    async function setupBugTriggers() {
+      const sql = `
+        CREATE OR REPLACE FUNCTION update_bug_supports_count()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          IF TG_OP = 'INSERT' THEN
+            UPDATE bugs 
+            SET supports_count = supports_count + 1 
+            WHERE id = NEW.bug_id;
 
-        UPDATE users 
-        SET total_supports_received = total_supports_received + 1 
-        WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
+            UPDATE users 
+            SET total_supports_received = total_supports_received + 1 
+            WHERE id = (SELECT user_id FROM bugs WHERE id = NEW.bug_id);
 
-      ELSIF TG_OP = 'DELETE' THEN
-        UPDATE bugs 
-        SET supports_count = supports_count - 1 
-        WHERE id = OLD.bug_id;
+          ELSIF TG_OP = 'DELETE' THEN
+            UPDATE bugs 
+            SET supports_count = supports_count - 1 
+            WHERE id = OLD.bug_id;
 
-        UPDATE users 
-        SET total_supports_received = total_supports_received - 1 
-        WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
-      END IF;
-      RETURN COALESCE(NEW, OLD);
-    END;
-    $$ LANGUAGE plpgsql;
+            UPDATE users 
+            SET total_supports_received = total_supports_received - 1 
+            WHERE id = (SELECT user_id FROM bugs WHERE id = OLD.bug_id);
+          END IF;
+          RETURN COALESCE(NEW, OLD);
+        END;
+        $$ LANGUAGE plpgsql;
 
-    DROP TRIGGER IF EXISTS bug_supports_trigger ON bug_supports;
+        DROP TRIGGER IF EXISTS bug_supports_trigger ON bug_supports;
 
-    CREATE TRIGGER bug_supports_trigger
-    AFTER INSERT OR DELETE ON bug_supports
-    FOR EACH ROW
-    EXECUTE FUNCTION update_bug_supports_count();
-  `;
+        CREATE TRIGGER bug_supports_trigger
+        AFTER INSERT OR DELETE ON bug_supports
+        FOR EACH ROW
+        EXECUTE FUNCTION update_bug_supports_count();
+      `;
 
-  await pool.query(sql);
-  console.log("✅ Bug triggers created");
-}
+      await pool.query(sql);
+      console.log("✅ Bug triggers created");
+    }
 
-// Follower triggers
-async function setupFollowerTriggers() {
-  const sql = `
-    CREATE OR REPLACE FUNCTION update_followers_count()
-    RETURNS TRIGGER AS $$
-    BEGIN
-      IF TG_OP = 'INSERT' THEN
-        UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
-        UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+    // Follower triggers
+    async function setupFollowerTriggers() {
+      const sql = `
+        CREATE OR REPLACE FUNCTION update_followers_count()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          IF TG_OP = 'INSERT' THEN
+            UPDATE users SET followers_count = followers_count + 1 WHERE id = NEW.following_id;
+            UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
 
-      ELSIF TG_OP = 'DELETE' THEN
-        UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
-        UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
-      END IF;
-      RETURN COALESCE(NEW, OLD);
-    END;
-    $$ LANGUAGE plpgsql;
+          ELSIF TG_OP = 'DELETE' THEN
+            UPDATE users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
+            UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+          END IF;
+          RETURN COALESCE(NEW, OLD);
+        END;
+        $$ LANGUAGE plpgsql;
 
-    DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
+        DROP TRIGGER IF EXISTS user_follows_count_trigger ON user_follows;
 
-    CREATE TRIGGER user_follows_count_trigger
-    AFTER INSERT OR DELETE ON user_follows
-    FOR EACH ROW
-    EXECUTE FUNCTION update_followers_count();
-  `;
+        CREATE TRIGGER user_follows_count_trigger
+        AFTER INSERT OR DELETE ON user_follows
+        FOR EACH ROW
+        EXECUTE FUNCTION update_followers_count();
+      `;
 
-  await pool.query(sql);
-  console.log("✅ Follower triggers created");
-}
-
-// Run them on startup
+      await pool.query(sql);
+      console.log("✅ Follower triggers created");
+    }
 
     // Setup database triggers
     try {
@@ -699,13 +692,6 @@ async function setupFollowerTriggers() {
       console.log('✅ Admin user updated with social features');
     }
 
-// Create sample trending categories for development - commented out for now
-// await pool.query(`
-//   INSERT INTO trending_bugs (bug_id, date, rank, supports_count, viral_score, category)
-//   SELECT 'SAMPLE-001', CURRENT_DATE, 1, 1000, 2500, 'Social Media'
-//   WHERE NOT EXISTS (SELECT 1 FROM trending_bugs WHERE bug_id = 'SAMPLE-001')
-// `);
-
     console.log('🎉 Database initialized successfully with social features!');
     console.log('🚀 Ready for social bug reporting revolution!');
   } catch (error) {
@@ -735,7 +721,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// FIXED: Database availability middleware
+// Database availability middleware
 const requireDatabase = (req, res, next) => {
   if (!pool || pool.query === undefined) {
     return res.status(503).json({ 
@@ -745,6 +731,7 @@ const requireDatabase = (req, res, next) => {
   }
   next();
 };
+
 // ===================== API ROUTES =====================
 
 // Auth Routes
@@ -1045,6 +1032,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
+// Bug Routes
 app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
     // Simple query without complex aggregations to avoid GROUP BY issues
@@ -1106,113 +1094,6 @@ app.get('/api/bugs', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/bugs-with-supporters', authenticateToken, async (req, res) => {
-  try {
-    // This endpoint provides full social features but is more complex
-    const result = await pool.query(`
-      SELECT DISTINCT
-        b.id,
-        b.title,
-        b.description,
-        b.steps,
-        b.device,
-        b.severity,
-        b.app_name,
-        b.status,
-        b.points,
-        b.user_id,
-        b.anonymous,
-        b.attachment_url,
-        b.submitted_at,
-        b.review_time,
-        b.supports_count,
-        b.comments_count,
-        b.shares_count,
-        b.views_count,
-        b.caption,
-        b.category,
-        b.viral_score,
-        b.media_urls_json,
-        u.name as reporter_name,
-        u.username as reporter_username,
-        u.avatar_url as reporter_avatar,
-        u.user_level as reporter_level,
-        -- Check if current user supports this bug
-        CASE WHEN user_support.id IS NOT NULL THEN true ELSE false END as user_supports
-      FROM bugs b 
-      LEFT JOIN users u ON b.user_id = u.id 
-      LEFT JOIN bug_supports user_support ON b.id = user_support.bug_id AND user_support.user_id = $1
-      ORDER BY b.submitted_at DESC
-    `, [req.user.id]);
-    
-    // Get recent supporters for each bug separately to avoid GROUP BY issues
-    const bugsWithSupporters = await Promise.all(
-      result.rows.map(async (bug) => {
-        try {
-          // Get recent supporters
-          const supportersResult = await pool.query(`
-            SELECT 
-              u.name,
-              u.username,
-              u.avatar_url,
-              bs.created_at
-            FROM bug_supports bs
-            JOIN users u ON bs.user_id = u.id
-            WHERE bs.bug_id = $1
-            ORDER BY bs.created_at DESC
-            LIMIT 3
-          `, [bug.id]);
-          
-          const recentSupporters = supportersResult.rows;
-          
-          // Parse media URLs
-          let mediaUrls = [];
-          if (bug.media_urls_json) {
-            try {
-              mediaUrls = JSON.parse(bug.media_urls_json);
-            } catch (e) {
-              console.error('Error parsing media URLs for bug', bug.id, e);
-            }
-          }
-          
-          return {
-            ...bug,
-            media_urls: mediaUrls,
-            supports_count: parseInt(bug.supports_count) || 0,
-            comments_count: parseInt(bug.comments_count) || 0,
-            shares_count: parseInt(bug.shares_count) || 0,
-            views_count: parseInt(bug.views_count) || 0,
-            viral_score: parseInt(bug.viral_score) || 0,
-            user_supports: bug.user_supports || false,
-            recent_supporters: recentSupporters
-          };
-        } catch (error) {
-          console.error('Error processing bug supporters for', bug.id, error);
-          return {
-            ...bug,
-            media_urls: [],
-            recent_supporters: [],
-            supports_count: 0,
-            comments_count: 0,
-            shares_count: 0,
-            views_count: 0,
-            viral_score: 0,
-            user_supports: false
-          };
-        }
-      })
-    );
-    
-    res.json(bugsWithSupporters);
-  } catch (error) {
-    console.error('Get bugs with supporters error:', error);
-    res.status(500).json({ 
-      error: 'Server error', 
-      details: error.message 
-    });
-  }
-});
-
 app.post('/api/bugs', authenticateToken, async (req, res) => {
   try {
     const { title, description, steps, device, severity, appName, anonymous, mediaUrls, category } = req.body;
@@ -1223,9 +1104,6 @@ app.post('/api/bugs', authenticateToken, async (req, res) => {
     
     const reviewTimes = { high: 6, medium: 4, low: 2 };
     const reviewTime = reviewTimes[severity] || 2;
-
-    // If mediaUrls were uploaded with temp folders, we could move them here
-    // but for simplicity, we'll use the bug ID during upload in the frontend
 
     const mediaJson = mediaUrls && mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : null;
 
@@ -1295,7 +1173,7 @@ app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async
 
     // Get user info from the authenticated user
     const userId = req.user.id;
-    const userName = req.user.name; // Get actual user name
+    const userName = req.user.name;
     const bugId = req.body.bugId || null;
 
     console.log(`📤 Uploading ${req.files.length} files for user ${userName} (ID: ${userId})...`);
@@ -1305,7 +1183,7 @@ app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async
       req.files, 
       userId, 
       bugId,
-      userName  // NEW: Pass the actual user name
+      userName
     );
 
     console.log(`✅ Successfully uploaded ${uploadedFiles.length} files to DigitalOcean Spaces`);
@@ -1331,7 +1209,6 @@ app.post('/api/upload-media', authenticateToken, upload.array('media', 5), async
   }
 });
 
-
 // Test Spaces connection (admin only)
 app.get('/api/test-spaces', authenticateToken, async (req, res) => {
   try {
@@ -1356,106 +1233,6 @@ app.get('/api/test-spaces', authenticateToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// Other Routes
-app.get('/api/leaderboard', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT id, name, points, 
-        (SELECT COUNT(*) FROM bugs WHERE user_id = users.id) as bugs_reported
-      FROM users 
-      WHERE is_admin = FALSE AND points > 0 
-      ORDER BY points DESC 
-      LIMIT 10
-    `);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Leaderboard error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// Test email endpoint for debugging
-app.get('/api/test-email', async (req, res) => {
-  try {
-    console.log('Testing email configuration...');
-    console.log('EMAIL_USER:', process.env.EMAIL_USER);
-    console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
-    
-    const testEmail = {
-      from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
-      to: 'test@example.com', // Replace with your email
-      subject: 'BugBuzzers Email Test',
-      html: `
-        <h2>Email Test</h2>
-        <p>If you receive this, email is working!</p>
-        <p>Time: ${new Date().toISOString()}</p>
-      `
-    };
-
-    const result = await emailTransporter.sendMail(testEmail);
-    console.log('✅ Test email sent:', result.messageId);
-    res.json({ success: true, messageId: result.messageId });
-  } catch (error) {
-    console.error('❌ Test email failed:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ===================== STATIC FILES (MUST BE LAST) =====================
-
-// Serve React app for all other routes
-app.use(express.static(path.join(__dirname, '../build')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
-});
-
-// ===================== START SERVER =====================
-
-// Initialize database and start server
-// FIXED: Proper server startup sequence
-async function startServer() {
-  try {
-    console.log('🔄 Starting BugBuzzers API...');
-    
-    // Only initialize database if connection exists
-    if (pool && pool.query) {
-      console.log('🔄 Initializing database...');
-      await initDB();
-    } else {
-      console.log('⚠️ Starting in development mode (no database)');
-    }
-    
-    const server = app.listen(port, () => {
-      console.log(`🚀 BugBuzzers API running on port ${port}`);
-      console.log(`📊 Database: ${pool ? 'Connected' : 'Disconnected (dev mode)'}`);
-    });
-
-    // Graceful shutdown
-    process.on('SIGTERM', () => {
-      console.log('🔄 Shutting down gracefully...');
-      server.close(() => {
-        if (pool && pool.end) pool.end();
-        process.exit(0);
-      });
-    });
-
-  } catch (error) {
-    console.error('❌ Server startup failed:', error);
-    process.exit(1);
-  }
-}
-
-startServer();
-
-// Social API Endpoints - Add these to your api/server.js after the existing routes
-
-// ===================== SOCIAL API ROUTES =====================
 
 // Support a bug (the main "I got this too" feature!)
 app.post('/api/bugs/:id/support', authenticateToken, async (req, res) => {
@@ -1591,7 +1368,7 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
     const queryParams = [req.user.id];
 
     if (category) {
-      whereClause += ` AND b.category = $${queryParams.length + 1}`;
+      whereClause += ` AND b.category = ${queryParams.length + 1}`;
       queryParams.push(category);
     }
 
@@ -1616,7 +1393,7 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
         orderClause = 'ORDER BY b.viral_score DESC, b.submitted_at DESC';
     }
 
-    const query = `${baseQuery} ${whereClause} ${orderClause} LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    const query = `${baseQuery} ${whereClause} ${orderClause} LIMIT ${queryParams.length + 1} OFFSET ${queryParams.length + 2}`;
     queryParams.push(limit, offset);
 
     const result = await pool.query(query, queryParams);
@@ -1654,7 +1431,6 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
   }
 });
 
-
 // Get trending bugs
 app.get('/api/trending', authenticateToken, async (req, res) => {
   try {
@@ -1676,7 +1452,7 @@ app.get('/api/trending', authenticateToken, async (req, res) => {
     let categoryFilter = '';
     let queryParams = [req.user.id];
     if (category) {
-      categoryFilter = `AND b.category = $${queryParams.length + 1}`;
+      categoryFilter = `AND b.category = ${queryParams.length + 1}`;
       queryParams.push(category);
     }
 
@@ -1762,7 +1538,6 @@ app.post('/api/users/:id/follow', authenticateToken, async (req, res) => {
 });
 
 // Add comment to bug
-// Replace the incomplete comment endpoint (starting around line 1056) with:
 app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
   try {
     const { id: bugId } = req.params;
@@ -1805,7 +1580,555 @@ app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
   }
 });
 
-// Add these helper functions BEFORE the "module.exports = app;" line:
+// ===================== NEW MISSING SOCIAL ENDPOINTS =====================
+
+// Share a bug endpoint
+app.post('/api/bugs/:id/share', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const { platform = 'copy_link' } = req.body;
+    const userId = req.user.id;
+
+    // Validate platform
+    const validPlatforms = ['twitter', 'facebook', 'linkedin', 'copy_link', 'internal'];
+    if (!validPlatforms.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid sharing platform' });
+    }
+
+    // Check if bug exists
+    const bug = await pool.query('SELECT id, title, app_name FROM bugs WHERE id = $1', [bugId]);
+    if (bug.rows.length === 0) {
+      return res.status(404).json({ error: 'Bug not found' });
+    }
+
+    // Record the share
+    await pool.query(
+      'INSERT INTO bug_shares (bug_id, user_id, platform) VALUES ($1, $2, $3)',
+      [bugId, userId, platform]
+    );
+
+    // Update shares count
+    await pool.query(
+      'UPDATE bugs SET shares_count = shares_count + 1 WHERE id = $1',
+      [bugId]
+    );
+
+    // Update viral score
+    await updateBugViralScore(bugId);
+
+    // Log user activity
+    await logUserActivity(userId, 'bug_shared', `Shared a bug report via ${platform}`, bugId);
+
+    // Generate share URL and text
+    const baseUrl = process.env.BASE_URL || 'https://app.bugbuzzers.com';
+    const shareUrl = `${baseUrl}/bugs/${bugId}`;
+    const bugData = bug.rows[0];
+    const shareText = `🐛 Found a bug in ${bugData.app_name}: "${bugData.title}" - Report bugs and earn rewards on BugBuzzers!`;
+
+    res.json({ 
+      success: true, 
+      message: 'Bug shared successfully!',
+      shareUrl,
+      shareText,
+      platform
+    });
+  } catch (error) {
+    console.error('Share bug error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get bug comments endpoint
+app.get('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const { limit = 50, offset = 0 } = req.query;
+
+    const result = await pool.query(`
+      SELECT 
+        bc.*,
+        u.name as commenter_name,
+        u.username as commenter_username,
+        u.avatar_url as commenter_avatar,
+        u.user_level as commenter_level,
+        u.is_admin as commenter_is_admin
+      FROM bug_comments bc
+      JOIN users u ON bc.user_id = u.id
+      WHERE bc.bug_id = $1
+      ORDER BY bc.created_at ASC
+      LIMIT $2 OFFSET $3
+    `, [bugId, limit, offset]);
+
+    const comments = result.rows.map(comment => ({
+      ...comment,
+      likes_count: parseInt(comment.likes_count) || 0,
+      media_urls: comment.media_urls || []
+    }));
+
+    res.json(comments);
+  } catch (error) {
+    console.error('Get comments error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get user profile endpoint
+app.get('/api/users/:username', authenticateToken, async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    const userResult = await pool.query(`
+      SELECT 
+        id, name, username, bio, avatar_url, location, website,
+        twitter_handle, github_handle, followers_count, following_count,
+        total_supports_received, user_level, badges, points,
+        created_at, last_active, streak_days
+      FROM users 
+      WHERE username = $1 OR id = $1
+    `, [username]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Get user's recent bugs
+    const bugsResult = await pool.query(`
+      SELECT id, title, status, severity, supports_count, submitted_at
+      FROM bugs 
+      WHERE user_id = $1 AND anonymous = FALSE
+      ORDER BY submitted_at DESC 
+      LIMIT 10
+    `, [user.id]);
+
+    // Check if current user follows this user
+    const followResult = await pool.query(`
+      SELECT id FROM user_follows 
+      WHERE follower_id = $1 AND following_id = $2
+    `, [req.user.id, user.id]);
+
+    const isFollowing = followResult.rows.length > 0;
+
+    res.json({
+      ...user,
+      recent_bugs: bugsResult.rows,
+      is_following: isFollowing,
+      badges: user.badges || []
+    });
+  } catch (error) {
+    console.error('Get user profile error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get notifications endpoint
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    const { limit = 20, offset = 0, unread_only = false } = req.query;
+    const userId = req.user.id;
+
+    let whereClause = 'WHERE user_id = $1';
+    if (unread_only === 'true') {
+      whereClause += ' AND is_read = FALSE';
+    }
+
+    const result = await pool.query(`
+      SELECT * FROM notifications 
+      ${whereClause}
+      ORDER BY created_at DESC 
+      LIMIT $2 OFFSET $3
+    `, [userId, limit, offset]);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Mark notifications as read endpoint
+app.put('/api/notifications/read', authenticateToken, async (req, res) => {
+  try {
+    const { notificationIds = [] } = req.body;
+    const userId = req.user.id;
+
+    if (notificationIds.length === 0) {
+      // Mark all as read
+      await pool.query(
+        'UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE',
+        [userId]
+      );
+    } else {
+      // Mark specific notifications as read
+      await pool.query(
+        'UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND id = ANY($2)',
+        [userId, notificationIds]
+      );
+    }
+
+    res.json({ success: true, message: 'Notifications marked as read' });
+  } catch (error) {
+    console.error('Mark notifications read error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Support bug reactions (like/unlike)
+app.post('/api/bugs/:id/react', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+    const { reaction = 'like' } = req.body;
+    const userId = req.user.id;
+
+    // Check if bug exists
+    const bugExists = await pool.query('SELECT id FROM bugs WHERE id = $1', [bugId]);
+    if (bugExists.rows.length === 0) {
+      return res.status(404).json({ error: 'Bug not found' });
+    }
+
+    // For now, treat all reactions as "support"
+    // Check if user already reacted
+    const existingReaction = await pool.query(
+      'SELECT id FROM bug_supports WHERE bug_id = $1 AND user_id = $2',
+      [bugId, userId]
+    );
+
+    if (existingReaction.rows.length > 0) {
+      return res.status(400).json({ error: 'You already reacted to this bug' });
+    }
+
+    // Add reaction as support
+    await pool.query(
+      'INSERT INTO bug_supports (bug_id, user_id, support_type) VALUES ($1, $2, $3)',
+      [bugId, userId, reaction]
+    );
+
+    // Update viral score
+    await updateBugViralScore(bugId);
+
+    res.json({ success: true, message: 'Reaction added successfully!' });
+  } catch (error) {
+    console.error('Add reaction error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get bug statistics
+app.get('/api/bugs/:id/stats', authenticateToken, async (req, res) => {
+  try {
+    const { id: bugId } = req.params;
+
+    const bugResult = await pool.query(`
+      SELECT 
+        supports_count, comments_count, shares_count, views_count,
+        viral_score, status, severity, submitted_at
+      FROM bugs WHERE id = $1
+    `, [bugId]);
+
+    if (bugResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Bug not found' });
+    }
+
+    const bug = bugResult.rows[0];
+
+    // Get support breakdown
+    const supportBreakdown = await pool.query(`
+      SELECT 
+        support_type,
+        COUNT(*) as count
+      FROM bug_supports 
+      WHERE bug_id = $1 
+      GROUP BY support_type
+    `, [bugId]);
+
+    // Get recent activity
+    const recentActivity = await pool.query(`
+      SELECT 
+        'support' as type,
+        bs.created_at,
+        u.name as user_name
+      FROM bug_supports bs
+      JOIN users u ON bs.user_id = u.id
+      WHERE bs.bug_id = $1
+      UNION ALL
+      SELECT 
+        'comment' as type,
+        bc.created_at,
+        u.name as user_name
+      FROM bug_comments bc
+      JOIN users u ON bc.user_id = u.id
+      WHERE bc.bug_id = $1
+      ORDER BY created_at DESC
+      LIMIT 10
+    `, [bugId]);
+
+    res.json({
+      ...bug,
+      support_breakdown: supportBreakdown.rows,
+      recent_activity: recentActivity.rows,
+      estimated_reward: calculateSocialReward(bug.supports_count, bug.severity, bug.viral_score)
+    });
+  } catch (error) {
+    console.error('Get bug stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get platform statistics
+app.get('/api/platform/stats', authenticateToken, async (req, res) => {
+  try {
+    // Get overall platform statistics
+    const stats = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM bugs) as total_bugs,
+        (SELECT COUNT(*) FROM users WHERE is_admin = FALSE) as total_users,
+        (SELECT COUNT(*) FROM bug_supports) as total_supports,
+        (SELECT COUNT(*) FROM bugs WHERE status = 'Verified') as verified_bugs,
+        (SELECT COUNT(*) FROM bugs WHERE submitted_at >= CURRENT_DATE) as bugs_today,
+        (SELECT COUNT(*) FROM bug_supports WHERE created_at >= CURRENT_DATE) as supports_today,
+        (SELECT SUM(points) FROM users WHERE is_admin = FALSE) as total_points_awarded
+    `);
+
+    // Get trending categories
+    const trendingCategories = await pool.query(`
+      SELECT 
+        category,
+        COUNT(*) as bug_count,
+        SUM(supports_count) as total_supports
+      FROM bugs 
+      WHERE submitted_at >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY category
+      ORDER BY total_supports DESC, bug_count DESC
+      LIMIT 10
+    `);
+
+    // Get top reporters this week
+    const topReporters = await pool.query(`
+      SELECT 
+        u.name,
+        u.username,
+        COUNT(b.id) as bugs_reported,
+        SUM(b.supports_count) as total_supports_received
+      FROM users u
+      JOIN bugs b ON u.id = b.user_id
+      WHERE b.submitted_at >= CURRENT_DATE - INTERVAL '7 days'
+        AND u.is_admin = FALSE
+      GROUP BY u.id, u.name, u.username
+      ORDER BY total_supports_received DESC
+      LIMIT 5
+    `);
+
+    res.json({
+      platform_stats: stats.rows[0],
+      trending_categories: trendingCategories.rows,
+      top_reporters: topReporters.rows
+    });
+  } catch (error) {
+    console.error('Get platform stats error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Search bugs endpoint
+app.get('/api/search', authenticateToken, async (req, res) => {
+  try {
+    const { q = '', category = null, severity = null, status = null, limit = 20, offset = 0 } = req.query;
+
+    if (!q.trim() && !category && !severity && !status) {
+      return res.status(400).json({ error: 'At least one search parameter is required' });
+    }
+
+    let whereClause = 'WHERE 1=1';
+    const queryParams = [req.user.id];
+
+    if (q.trim()) {
+      whereClause += ` AND (b.title ILIKE ${queryParams.length + 1} OR b.description ILIKE ${queryParams.length + 1})`;
+      queryParams.push(`%${q.trim()}%`);
+    }
+
+    if (category) {
+      whereClause += ` AND b.category = ${queryParams.length + 1}`;
+      queryParams.push(category);
+    }
+
+    if (severity) {
+      whereClause += ` AND b.severity = ${queryParams.length + 1}`;
+      queryParams.push(severity);
+    }
+
+    if (status) {
+      whereClause += ` AND b.status = ${queryParams.length + 1}`;
+      queryParams.push(status);
+    }
+
+    const result = await pool.query(`
+      SELECT 
+        b.*,
+        u.name as reporter_name,
+        u.username as reporter_username,
+        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports
+      FROM bugs b
+      LEFT JOIN users u ON b.user_id = u.id
+      LEFT JOIN bug_supports bs ON b.id = bs.bug_id AND bs.user_id = $1
+      ${whereClause}
+      ORDER BY b.viral_score DESC, b.submitted_at DESC
+      LIMIT ${queryParams.length + 1} OFFSET ${queryParams.length + 2}
+    `, [...queryParams, limit, offset]);
+
+    const searchResults = result.rows.map(bug => {
+      let mediaUrls = [];
+      if (bug.media_urls_json) {
+        try {
+          mediaUrls = JSON.parse(bug.media_urls_json);
+        } catch (e) {
+          console.error('Error parsing media URLs:', e);
+        }
+      }
+
+      return {
+        ...bug,
+        media_urls: mediaUrls,
+        supports_count: parseInt(bug.supports_count) || 0,
+        comments_count: parseInt(bug.comments_count) || 0,
+        shares_count: parseInt(bug.shares_count) || 0,
+        estimated_reward: calculateSocialReward(bug.supports_count, bug.severity, bug.viral_score)
+      };
+    });
+
+    res.json({
+      results: searchResults,
+      query: q,
+      filters: { category, severity, status },
+      total_results: searchResults.length
+    });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get user dashboard data
+app.get('/api/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's bug statistics
+    const userBugStats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_bugs,
+        COUNT(CASE WHEN status = 'Verified' THEN 1 END) as verified_bugs,
+        COUNT(CASE WHEN submitted_at >= CURRENT_DATE THEN 1 END) as bugs_today,
+        SUM(supports_count) as total_supports_received,
+        SUM(points) as total_points_earned
+      FROM bugs 
+      WHERE user_id = $1
+    `, [userId]);
+
+    // Get recent bugs by user
+    const recentBugs = await pool.query(`
+      SELECT id, title, status, severity, supports_count, submitted_at
+      FROM bugs 
+      WHERE user_id = $1
+      ORDER BY submitted_at DESC
+      LIMIT 5
+    `, [userId]);
+
+    // Get recent notifications
+    const recentNotifications = await pool.query(`
+      SELECT * FROM notifications 
+      WHERE user_id = $1 AND is_read = FALSE
+      ORDER BY created_at DESC
+      LIMIT 5
+    `, [userId]);
+
+    // Get user's rank on leaderboard
+    const userRank = await pool.query(`
+      SELECT rank FROM (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY points DESC) as rank
+        FROM users 
+        WHERE is_admin = FALSE AND points > 0
+      ) ranked
+      WHERE id = $1
+    `, [userId]);
+
+    res.json({
+      bug_stats: userBugStats.rows[0],
+      recent_bugs: recentBugs.rows,
+      recent_notifications: recentNotifications.rows,
+      user_rank: userRank.rows[0]?.rank || null,
+      user_info: {
+        id: req.user.id,
+        name: req.user.name,
+        email: req.user.email,
+        points: req.user.points
+      }
+    });
+  } catch (error) {
+    console.error('Get dashboard error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Other Routes
+app.get('/api/leaderboard', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, points, 
+        (SELECT COUNT(*) FROM bugs WHERE user_id = users.id) as bugs_reported
+      FROM users 
+      WHERE is_admin = FALSE AND points > 0 
+      ORDER BY points DESC 
+      LIMIT 10
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Leaderboard error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Test email endpoint for debugging
+app.get('/api/test-email', async (req, res) => {
+  try {
+    console.log('Testing email configuration...');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER);
+    console.log('EMAIL_PASSWORD exists:', !!process.env.EMAIL_PASSWORD);
+    
+    const testEmail = {
+      from: process.env.EMAIL_USER || 'noreply@bugbuzzers.com',
+      to: 'test@example.com',
+      subject: 'BugBuzzers Email Test',
+      html: `
+        <h2>Email Test</h2>
+        <p>If you receive this, email is working!</p>
+        <p>Time: ${new Date().toISOString()}</p>
+      `
+    };
+
+    const result = await emailTransporter.sendMail(testEmail);
+    console.log('✅ Test email sent:', result.messageId);
+    res.json({ success: true, messageId: result.messageId });
+  } catch (error) {
+    console.error('❌ Test email failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ===================== STATIC FILES (MUST BE LAST) =====================
+
+// Serve React app for all other routes
+app.use(express.static(path.join(__dirname, '../build')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+});
+
+// ===================== HELPER FUNCTIONS =====================
 
 // Helper function to update viral score
 async function updateBugViralScore(bugId) {
@@ -1817,9 +2140,9 @@ async function updateBugViralScore(bugId) {
     
     if (result.rows.length > 0) {
       const bug = result.rows[0];
-      const viralScore = (bug.supports_count * 10) + 
-                        (bug.comments_count * 5) + 
-                        (bug.shares_count * 3);
+      const viralScore = (parseInt(bug.supports_count) * 10) + 
+                        (parseInt(bug.comments_count) * 5) + 
+                        (parseInt(bug.shares_count) * 3);
       
       await pool.query(
         'UPDATE bugs SET viral_score = $1, is_trending = $2 WHERE id = $3',
@@ -1859,7 +2182,7 @@ async function logUserActivity(userId, activityType, description, relatedBugId =
 function calculateSocialReward(supportsCount, severity, viralScore = 0) {
   const basePoints = { high: 500, medium: 300, low: 150 };
   const base = basePoints[severity] || 150;
-  const supportMultiplier = Math.min(1 + (supportsCount * 0.1), 10);
+  const supportMultiplier = Math.min(1 + (parseInt(supportsCount) * 0.1), 10);
   const viralBonus = viralScore > 1000 ? 2 : viralScore > 500 ? 1.5 : 1;
   return Math.round(base * supportMultiplier * viralBonus);
 }
@@ -1875,22 +2198,42 @@ function getTimeAgo(date) {
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
   return `${Math.floor(diffInSeconds / 604800)}w ago`;
 }
-function calculateSocialReward(supportsCount, severity, viralScore = 0) {
-  const basePoints = { high: 500, medium: 300, low: 150 };
-  const base = basePoints[severity] || 150;
-  const supportMultiplier = Math.min(1 + (supportsCount * 0.1), 10);
-  const viralBonus = viralScore > 1000 ? 2 : viralScore > 500 ? 1.5 : 1;
-  return Math.round(base * supportMultiplier * viralBonus);
+
+// ===================== START SERVER =====================
+
+// Initialize database and start server
+async function startServer() {
+  try {
+    console.log('🔄 Starting BugBuzzers API...');
+    
+    // Only initialize database if connection exists
+    if (pool && pool.query) {
+      console.log('🔄 Initializing database...');
+      await initDB();
+    } else {
+      console.log('⚠️ Starting in development mode (no database)');
+    }
+    
+    const server = app.listen(port, () => {
+      console.log(`🚀 BugBuzzers API running on port ${port}`);
+      console.log(`📊 Database: ${pool ? 'Connected' : 'Disconnected (dev mode)'}`);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('🔄 Shutting down gracefully...');
+      server.close(() => {
+        if (pool && pool.end) pool.end();
+        process.exit(0);
+      });
+    });
+
+  } catch (error) {
+    console.error('❌ Server startup failed:', error);
+    process.exit(1);
+  }
 }
 
-function getTimeAgo(date) {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
-  
-  if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return `${Math.floor(diffInSeconds / 604800)}w ago`;
-}
+startServer();
+
 module.exports = app;
