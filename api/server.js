@@ -99,7 +99,7 @@ try {
     throw new Error('EMAIL_USER and EMAIL_PASSWORD environment variables are required');
   }
 
-  emailTransporter = nodemailer.createTransporter({
+  emailTransporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
