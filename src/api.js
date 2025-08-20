@@ -67,11 +67,6 @@ class BugBuzzersAPI {
             console.error('Could not parse error response');
           }
         }
-
-// Call this in useEffect when component mounts
-useEffect(() => {
-  checkAPIConnection();
-}, []);
         // Create enhanced error object
         const error = new Error(errorMessage);
         error.status = response.status;
