@@ -247,7 +247,7 @@ useEffect(() => {
     }
   };
   loadUserData();
-}, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);"
+}, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);
 
   useEffect(() => {
     if (user && currentView === 'dashboard') {
