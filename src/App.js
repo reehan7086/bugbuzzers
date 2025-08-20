@@ -1065,28 +1065,33 @@ const MediaCarousel = ({ mediaFiles, onUpdateDescription, onRemoveFile, readOnly
   };
 
 const SocialNavigation = () => (
-  <nav className="bg-white shadow-sm border-b">
+  <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center h-16">
         {/* Logo */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🐛</span>
             <span className="text-xl font-bold text-gray-900 hidden sm:block">
               BugBuzzers
             </span>
+            <span className="text-lg font-bold text-gray-900 sm:hidden">
+              BB
+            </span>
           </div>
         </div>
 
         {/* Navigation Links - Desktop */}
-        <div className="hidden md:flex items-center space-x-6">
+        <div className="hidden md:flex items-center space-x-2">
           <button
             onClick={() => {
               setCurrentView('social-feed');
               setTimeout(() => loadAllBugs(), 100);
             }}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              currentView === 'social-feed' 
+                ? 'text-purple-600 bg-purple-50 shadow-sm' 
+                : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
             }`}
           >
             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -1100,8 +1105,10 @@ const SocialNavigation = () => (
               setCurrentView('trending');
               setTimeout(() => loadAllBugs(), 100);
             }}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              currentView === 'trending' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              currentView === 'trending' 
+                ? 'text-purple-600 bg-purple-50 shadow-sm' 
+                : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
             }`}
           >
             <span className="w-4 h-4 mr-2">🔥</span>
@@ -1113,8 +1120,10 @@ const SocialNavigation = () => (
               setCurrentView('bugs');
               setTimeout(() => loadUserBugs(), 100);
             }}
-            className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-              currentView === 'bugs' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:text-purple-600'
+            className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+              currentView === 'bugs' 
+                ? 'text-purple-600 bg-purple-50 shadow-sm' 
+                : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
             }`}
           >
             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -1126,17 +1135,41 @@ const SocialNavigation = () => (
           
           <button
             onClick={() => setCurrentView('report')}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105"
           >
             + Report Bug
           </button>
         </div>
 
+        {/* User Menu - DESKTOP */}
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-2 rounded-lg">
+            <span className="text-gray-600">Hi,</span>
+            <span className="font-semibold text-gray-900 max-w-20 truncate">{user?.name}</span>
+            <div className="w-px h-4 bg-gray-300"></div>
+            <span className="text-purple-600 font-bold">{user?.points || 0}</span>
+            <span className="text-xs text-purple-500">pts</span>
+          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+            title="Logout"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 001-1h10.586l-2.293-2.293a1 1 0 10-1.414 1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 101.414 1.414L15.586 11H5a1 1 0 100 2h10.586l-2.293 2.293a1 1 0 101.414 1.414l4-4a1 1 0 000-1.414l-4-4A1 1 0 0015.586 9H5a1 1 0 010-2h10.586l-2.293-2.293a1 1 0 10-1.414 1.414L17.586 8H7a1 1 0 01-1-1V3z"/>
+            </svg>
+            <span className="hidden lg:inline">Logout</span>
+          </button>
+        </div>
+
         {/* Mobile Menu Button */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center gap-2">
+          <div className="text-sm bg-purple-50 px-2 py-1 rounded-lg">
+            <span className="text-purple-600 font-bold text-xs">{user?.points || 0}pts</span>
+          </div>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+            className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
           >
             {mobileMenuOpen ? (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -1149,42 +1182,24 @@ const SocialNavigation = () => (
             )}
           </button>
         </div>
-
-        {/* User Menu - DESKTOP */}
-        <div className="hidden md:flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-600">Welcome,</span>
-            <span className="font-medium text-gray-900">{user?.name}</span>
-            <span className="text-purple-600 font-bold">{user?.points || 0} pts</span>
-          </div>
-          <button
-            onClick={logout}
-            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Logout"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 001-1h10.586l-2.293-2.293a1 1 0 10-1.414 1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 101.414 1.414L15.586 11H5a1 1 0 100 2h10.586l-2.293 2.293a1 1 0 101.414 1.414l4-4a1 1 0 000-1.414l-4-4A1 1 0 0015.586 9H5a1 1 0 010-2h10.586l-2.293-2.293a1 1 0 10-1.414 1.414L17.586 8H7a1 1 0 01-1-1V3z"/>
-            </svg>
-            Logout
-          </button>
-        </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white">
-          <div className="py-4 space-y-2">
+        <div className="md:hidden border-t border-gray-200 bg-white shadow-lg">
+          <div className="py-4 space-y-1 px-2">
             <button
               onClick={() => {
                 setCurrentView('social-feed');
                 setMobileMenuOpen(false);
                 setTimeout(() => loadAllBugs(), 100);
               }}
-              className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg ${
+              className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-3 ${
                 currentView === 'social-feed' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              🏠 Feed
+              <span className="text-lg">🏠</span>
+              Feed
             </button>
             <button
               onClick={() => {
@@ -1192,11 +1207,12 @@ const SocialNavigation = () => (
                 setMobileMenuOpen(false);
                 setTimeout(() => loadAllBugs(), 100);
               }}
-              className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg ${
+              className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-3 ${
                 currentView === 'trending' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              🔥 Trending
+              <span className="text-lg">🔥</span>
+              Trending
             </button>
             <button
               onClick={() => {
@@ -1204,36 +1220,38 @@ const SocialNavigation = () => (
                 setMobileMenuOpen(false);
                 setTimeout(() => loadUserBugs(), 100);
               }}
-              className={`w-full text-left px-4 py-2 text-sm font-medium rounded-lg ${
+              className={`w-full text-left px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-3 ${
                 currentView === 'bugs' ? 'text-purple-600 bg-purple-50' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              📋 My Bugs
+              <span className="text-lg">📋</span>
+              My Bugs
             </button>
             <button
               onClick={() => {
                 setCurrentView('report');
                 setMobileMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700"
+              className="w-full text-left px-4 py-3 text-sm font-medium rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center gap-3"
             >
-              ➕ Report Bug
+              <span className="text-lg">➕</span>
+              Report Bug
             </button>
             
             {/* Mobile User Info & Logout */}
-            <div className="border-t border-gray-200 pt-2 mt-2">
-              <div className="px-4 py-2 text-sm">
-                <div className="font-medium text-gray-900">{user?.name}</div>
-                <div className="text-purple-600 font-bold">{user?.points || 0} points</div>
+            <div className="border-t border-gray-200 pt-3 mt-3">
+              <div className="px-4 py-2 text-sm bg-gray-50 rounded-lg mx-2 mb-2">
+                <div className="font-semibold text-gray-900">{user?.name}</div>
+                <div className="text-purple-600 font-bold text-lg">{user?.points || 0} points</div>
               </div>
               <button
                 onClick={() => {
                   logout();
                   setMobileMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2"
+                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-3 transition-all duration-200"
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 001-1h10.586l-2.293-2.293a1 1 0 10-1.414 1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 101.414 1.414L15.586 11H5a1 1 0 100 2h10.586l-2.293 2.293a1 1 0 101.414 1.414l4-4a1 1 0 000-1.414l-4-4A1 1 0 0015.586 9H5a1 1 0 010-2h10.586l-2.293-2.293a1 1 0 10-1.414 1.414L17.586 8H7a1 1 0 01-1-1V3z"/>
                 </svg>
                 Logout
@@ -1257,93 +1275,96 @@ if (currentView === 'social-feed') {
       <SocialNavigation />
       <EmailVerificationBanner />
       
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Stats Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-purple-600">{bugs.length}</div>
-              <div className="text-xs text-gray-500">Total Reports</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-green-600">{leaderboard.length}</div>
-              <div className="text-xs text-gray-500">Active Users</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-orange-600">{bugs.filter(b => b.severity === 'high').length}</div>
-              <div className="text-xs text-gray-500">High Priority</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{bugs.filter(b => b.status === 'Verified').length}</div>
-              <div className="text-xs text-gray-500">Verified</div>
-            </div>
-          </div>
-        </div>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Stats Section */}
+<div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+      <div className="text-2xl lg:text-3xl font-bold text-purple-600 mb-1">{bugs.length}</div>
+      <div className="text-xs font-medium text-purple-700">Total Reports</div>
+    </div>
+    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+      <div className="text-2xl lg:text-3xl font-bold text-green-600 mb-1">{leaderboard.length}</div>
+      <div className="text-xs font-medium text-green-700">Active Users</div>
+    </div>
+    <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+      <div className="text-2xl lg:text-3xl font-bold text-orange-600 mb-1">{bugs.filter(b => b.severity === 'high').length}</div>
+      <div className="text-xs font-medium text-orange-700">High Priority</div>
+    </div>
+    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+      <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-1">{bugs.filter(b => b.status === 'Verified').length}</div>
+      <div className="text-xs font-medium text-blue-700">Verified</div>
+    </div>
+  </div>
+</div>
 
         {/* Category Selection */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">🔥 Report Bug by Category</h3>
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9 gap-3">
-            <div className="text-center">
-              <button 
-                onClick={() => setCurrentView('report')}
-                className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-105 transition-transform mx-auto"
-              >
-                <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
-                  </svg>
-                </div>
-              </button>
-              <p className="text-xs mt-1 text-gray-600">Report</p>
-            </div>
-            
-            {[
-              { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
-              { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
-              { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
-              { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
-              { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
-              { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
-              { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
-              { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
-            ].map((category, index) => (
-              <div key={index} className="text-center cursor-pointer hover:scale-105 transition-transform">
-                <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5 mx-auto`}>
-                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
-                    <span className="text-lg sm:text-2xl">{category.icon}</span>
-                  </div>
-                </div>
-                <p className="text-xs mt-1 text-gray-600">{category.name}</p>
-              </div>
-            ))}
+<div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-6">
+  <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">🔥 Report Bug by Category</h3>
+  <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-4 justify-items-center">
+    <div className="text-center">
+      <button 
+        onClick={() => setCurrentView('report')}
+        className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-0.5 cursor-pointer hover:scale-110 transition-all duration-200 mx-auto shadow-lg"
+      >
+        <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+          </svg>
+        </div>
+      </button>
+      <p className="text-xs mt-2 text-gray-600 font-medium">Report</p>
+    </div>
+    
+    {[
+      { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
+      { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
+      { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
+      { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
+      { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
+      { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
+      { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
+      { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
+    ].map((category, index) => (
+      <div key={index} className="text-center cursor-pointer hover:scale-110 transition-all duration-200">
+        <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5 mx-auto shadow-lg`}>
+          <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+            <span className="text-xl sm:text-2xl">{category.icon}</span>
           </div>
         </div>
+        <p className="text-xs mt-2 text-gray-600 font-medium">{category.name}</p>
+      </div>
+    ))}
+  </div>
+</div>
 
-        {/* Filter Buttons */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-6">
-          <div className="flex space-x-1 overflow-x-auto">
-            {[
-              { key: 'all', label: '🔥 All Bugs', icon: '📈' },
-              { key: 'recent', label: '🕐 Recent', icon: '⏰' },
-              { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
-              { key: 'verified', label: '✅ Verified', icon: '🏆' }
-            ].map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => setFeedFilter(filter.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  feedFilter === filter.key
-                    ? 'bg-purple-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <span>{filter.icon}</span>
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        </div>
+       {/* Filter Buttons */}
+<div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+  <div className="flex justify-center">
+    <div className="flex space-x-2 overflow-x-auto bg-gray-50 rounded-lg p-1">
+      {[
+        { key: 'all', label: '🔥 All Bugs', icon: '📈' },
+        { key: 'recent', label: '🕐 Recent', icon: '⏰' },
+        { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
+        { key: 'verified', label: '✅ Verified', icon: '🏆' }
+      ].map((filter) => (
+        <button
+          key={filter.key}
+          onClick={() => setFeedFilter(filter.key)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+            feedFilter === filter.key
+              ? 'bg-purple-600 text-white shadow-md transform scale-105'
+              : 'text-gray-600 hover:bg-white hover:text-purple-600 hover:shadow-sm'
+          }`}
+        >
+          <span>{filter.icon}</span>
+          <span className="hidden sm:inline">{filter.label}</span>
+          <span className="sm:hidden">{filter.key.charAt(0).toUpperCase() + filter.key.slice(1)}</span>
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
 
         {/* ===== HERE'S WHERE THE BUG LIST GOES ===== */}
         <div className="space-y-6">
@@ -1362,116 +1383,130 @@ if (currentView === 'social-feed') {
             </div>
           ) : (
             // ===== PASTE THE BUG LIST CODE HERE =====
-            bugs
-              .filter(bug => {
-                if (feedFilter === 'recent') return true;
-                if (feedFilter === 'high') return bug.severity === 'high';
-                if (feedFilter === 'verified') return bug.status === 'Verified';
-                return true; // 'all'
-              })
-              .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
-              .map((bug) => (
-                <div key={bug.id} className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-                  {/* Bug Header */}
-                  <div className="flex items-center p-4 border-b border-gray-100">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {bug.reporter_name ? bug.reporter_name.charAt(0).toUpperCase() : 'A'}
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">
-                          {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Anonymous')}
-                        </span>
-                        <span className="text-purple-600 text-sm">
-                          @{bug.anonymous ? 'anonymous' : (bug.reporter_name?.toLowerCase().replace(' ', '') || 'user')}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          bug.severity === 'high' ? 'bg-red-100 text-red-800' :
-                          bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {bug.severity.toUpperCase()}
-                        </span>
-                        {/* Show if this is the current user's bug */}
-                        {bug.user_id === user?.id && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            YOUR BUG
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
-                        <span>{bug.app_name}</span>
-                        <span>•</span>
-                        <span>{new Date(bug.submitted_at).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span>{bug.device}</span>
-                      </div>
-                    </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
-                      {bug.status}
-                    </span>
-                  </div>
+  bugs
+  .filter(bug => {
+    if (feedFilter === 'recent') return true;
+    if (feedFilter === 'high') return bug.severity === 'high';
+    if (feedFilter === 'verified') return bug.status === 'Verified';
+    return true; // 'all'
+  })
+  .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
+  .map((bug) => (
+    <div key={bug.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+      {/* Bug Header */}
+      <div className="flex items-center p-6 border-b border-gray-50">
+        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+          {bug.reporter_name ? bug.reporter_name.charAt(0).toUpperCase() : 'A'}
+        </div>
+        <div className="ml-4 flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="font-bold text-gray-900 text-lg">
+              {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Anonymous')}
+            </span>
+            <span className="text-purple-600 text-sm font-medium">
+              @{bug.anonymous ? 'anonymous' : (bug.reporter_name?.toLowerCase().replace(' ', '') || 'user')}
+            </span>
+            {bug.user_id === user?.id && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500 text-white">
+                YOUR BUG
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              📱 {bug.app_name}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              📅 {new Date(bug.submitted_at).toLocaleDateString()}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              💻 {bug.device}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(bug.status)}`}>
+            {bug.status}
+          </span>
+          <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+            bug.severity === 'high' ? 'bg-red-500 text-white' :
+            bug.severity === 'medium' ? 'bg-orange-500 text-white' :
+            'bg-green-500 text-white'
+          }`}>
+            {bug.severity.toUpperCase()}
+          </span>
+        </div>
+      </div>
 
-                  {/* Bug Content */}
-                  <div className="px-4 pb-3">
-                    <h3 className="font-bold text-lg mb-2 text-gray-900">{bug.title}</h3>
-                    <p className="text-gray-700 mb-2">{bug.description}</p>
-                    <p className="text-gray-600 text-sm mb-3">
-                      <strong>Steps:</strong> {bug.steps}
-                    </p>
-                    
-                    {/* Media Display - Show actual uploaded media */}
-                  {/* Media Display with Carousel */}
-{bug.media_urls && bug.media_urls.length > 0 && (
-  <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
-)}
-                    {/* Bug Tags */}
-                    <div className="flex gap-2 mb-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bug.status)}`}>
-                        {bug.status}
-                      </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {bug.category || 'general'}
-                      </span>
-                      {bug.severity === 'high' && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
-                          🔥 High Priority
-                        </span>
-                      )}
-                    </div>
-                  </div>
+      {/* Bug Content */}
+      <div className="px-6 py-4">
+        <h3 className="font-bold text-xl mb-3 text-gray-900 leading-tight">{bug.title}</h3>
+        <p className="text-gray-700 mb-3 leading-relaxed">{bug.description}</p>
+        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+          <p className="text-gray-700 text-sm">
+            <span className="font-semibold text-gray-900">🔍 Steps to reproduce:</span> {bug.steps}
+          </p>
+        </div>
+        
+        {/* Media Display */}
+        {bug.media_urls && bug.media_urls.length > 0 && (
+          <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
+        )}
 
-                  {/* Bug Actions */}
-                  <div className="p-4 border-t border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <button className="flex items-center gap-2 text-gray-400 hover:text-purple-600 transition-colors">
-                          <span className="text-xl">🙋‍♀️</span>
-                          <span className="text-sm text-gray-600">I got this too!</span>
-                        </button>
-
-                        <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                          <span className="text-xl">💬</span>
-                          <span className="text-sm text-gray-600">Comment</span>
-                        </button>
-
-                        <button className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors">
-                          <span className="text-xl">📤</span>
-                          <span className="text-sm text-gray-600">Share</span>
-                        </button>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
-                        <div className="text-xs text-gray-500">
-                          {bug.status === 'Verified' ? 'Earned' : 'Potential'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
+        {/* Bug Tags */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            #{bug.category || 'general'}
+          </span>
+          {bug.severity === 'high' && (
+            <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
+              🚨 Critical
+            </span>
           )}
+          <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            ID: {bug.id}
+          </span>
+        </div>
+      </div>
+
+      {/* Bug Actions */}
+      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button className="flex items-center gap-2 text-gray-500 hover:text-purple-600 transition-colors group">
+              <div className="p-2 rounded-full group-hover:bg-purple-50 transition-colors">
+                <span className="text-xl">🙋‍♀️</span>
+              </div>
+              <span className="text-sm font-medium">I got this too!</span>
+            </button>
+
+            <button className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group">
+              <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
+                <span className="text-xl">💬</span>
+              </div>
+              <span className="text-sm font-medium">Comment</span>
+            </button>
+
+            <button className="flex items-center gap-2 text-gray-500 hover:text-green-600 transition-colors group">
+              <div className="p-2 rounded-full group-hover:bg-green-50 transition-colors">
+                <span className="text-xl">📤</span>
+              </div>
+              <span className="text-sm font-medium">Share</span>
+            </button>
+          </div>
+
+          <div className="text-right">
+            <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
+            <div className="text-xs text-gray-500 font-medium">
+              {bug.status === 'Verified' ? '✅ Earned' : '⏳ Potential'}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ))
 
           {/* Call to Action */}
           <div className="text-center py-8">
@@ -1494,14 +1529,14 @@ if (currentView === 'social-feed') {
 // PART 4: Views 3-12 and Component Closing
 
   // VIEW 3: Trending Page
-  if (currentView === 'trending') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-        <SocialNavigation />
-        <EmailVerificationBanner />
-        
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+if (currentView === 'trending') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner />
+      
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               🔥 Trending Bugs
@@ -1512,82 +1547,101 @@ if (currentView === 'social-feed') {
             <p className="text-gray-600 mt-2">Most supported bugs trending right now</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-lg p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">1,247</div>
-                  <div className="text-red-100">Supports in last hour</div>
-                </div>
-                <div className="text-4xl">🔥</div>
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">23</div>
-                  <div className="text-purple-100">Bugs trending today</div>
-                </div>
-                <div className="text-4xl">📈</div>
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">$48.6K</div>
-                  <div className="text-green-100">Total rewards today</div>
-                </div>
-                <div className="text-4xl">💰</div>
-              </div>
-            </div>
-          </div>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="text-3xl font-bold">{bugs.filter(b => b.supports_count > 0).length || bugs.filter(b => b.severity === 'high' || b.status === 'Verified').length}</div>
+        <div className="text-red-100 text-sm font-medium">Active bug reports</div>
+      </div>
+      <div className="text-5xl opacity-80">🔥</div>
+    </div>
+  </div>
+  <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="text-3xl font-bold">{bugs.filter(b => b.severity === 'high').length}</div>
+        <div className="text-purple-100 text-sm font-medium">Critical priority</div>
+      </div>
+      <div className="text-5xl opacity-80">⚠️</div>
+    </div>
+  </div>
+  <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="text-3xl font-bold">{bugs.filter(b => b.status === 'Verified').length * 300 || (bugs.length * 200)}</div>
+        <div className="text-green-100 text-sm font-medium">Points available</div>
+      </div>
+      <div className="text-5xl opacity-80">🏆</div>
+    </div>
+  </div>
+</div>
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">🏆 Top Trending Bugs</h2>
             </div>
             
-            <div className="divide-y divide-gray-200">
-              {[
-                { rank: 1, title: 'Instagram crashes when uploading stories', app: 'Instagram', supports: 1247, reward: 1850, trend: '+127%' },
-                { rank: 2, title: 'TikTok video upload stuck at 99%', app: 'TikTok', supports: 856, reward: 856, trend: '+89%' },
-                { rank: 3, title: 'WhatsApp messages not sending', app: 'WhatsApp', supports: 634, reward: 634, trend: '+67%' },
-                { rank: 4, title: 'Uber app crashes on payment', app: 'Uber', supports: 523, reward: 1569, trend: '+45%' },
-                { rank: 5, title: 'Netflix video quality issues', app: 'Netflix', supports: 456, reward: 456, trend: '+34%' }
-              ].map((bug) => (
-                <div key={bug.rank} className="px-6 py-4 hover:bg-gray-50 cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                        bug.rank === 1 ? 'bg-yellow-500' :
-                        bug.rank === 2 ? 'bg-gray-400' :
-                        bug.rank === 3 ? 'bg-orange-600' :
-                        'bg-purple-500'
-                      }`}>
-                        {bug.rank}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{bug.title}</h3>
-                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                          <span>{bug.app}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            🙋‍♀️ {bug.supports.toLocaleString()} supports
-                          </span>
-                          <span>•</span>
-                          <span className="text-green-600 font-medium">{bug.trend}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-green-600">${bug.reward.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Potential</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+         <div className="divide-y divide-gray-200">
+  {bugs
+    .filter(bug => bug.severity === 'high' || bug.status === 'Verified')
+    .sort((a, b) => {
+      if (a.severity === 'high' && b.severity !== 'high') return -1;
+      if (b.severity === 'high' && a.severity !== 'high') return 1;
+      if (a.status === 'Verified' && b.status !== 'Verified') return -1;
+      if (b.status === 'Verified' && a.status !== 'Verified') return 1;
+      return new Date(b.submitted_at) - new Date(a.submitted_at);
+    })
+    .slice(0, 5)
+    .map((bug, index) => (
+      <div key={bug.id} className="px-6 py-5 hover:bg-gray-50 cursor-pointer transition-colors duration-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 flex-1 min-w-0">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg ${
+              index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
+              index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+              index === 2 ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
+              'bg-gradient-to-r from-purple-500 to-purple-600'
+            }`}>
+              {index + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 truncate text-lg">{bug.title}</h3>
+              <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                <span className="flex items-center gap-1 font-medium">
+                  📱 {bug.app_name}
+                </span>
+                <span className="flex items-center gap-1">
+                  👥 {bug.supports_count || Math.floor(Math.random() * 50) + 10}
+                </span>
+                <span className={`font-semibold px-2 py-1 rounded-full text-xs ${
+                  bug.severity === 'high' ? 'bg-red-100 text-red-700' : 
+                  bug.status === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {bug.severity === 'high' ? '🚨 Critical' : 
+                   bug.status === 'Verified' ? '✅ Verified' : '📈 Rising'}
+                </span>
+              </div>
             </div>
           </div>
+          <div className="text-right ml-4 flex-shrink-0">
+            <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)}</div>
+            <div className="text-xs text-gray-500 font-medium">
+              {bug.status === 'Verified' ? 'Earned' : 'Potential'} pts
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  
+  {bugs.filter(bug => bug.severity === 'high' || bug.status === 'Verified').length === 0 && (
+    <div className="px-6 py-12 text-center text-gray-500">
+      <div className="text-6xl mb-4">🔍</div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">No trending bugs yet</h3>
+      <p className="text-gray-600">Be the first to report a critical issue and start trending!</p>
+    </div>
+  )}
+</div>
 
           <div className="mt-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-8 text-white text-center">
             <h3 className="text-2xl font-bold mb-2">🚀 Want to Go Viral?</h3>
@@ -1611,13 +1665,13 @@ if (currentView === 'social-feed') {
         <LoadingSpinner />
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Megaphone className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
-            <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
-          </div>
+  <div className="flex items-center justify-center gap-2 mb-4">
+    <span className="text-3xl">🐛</span>
+    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+  </div>
+  <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
+  <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
+</div>
 
           <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-sm p-8">
             <ErrorMessage />
@@ -1672,24 +1726,24 @@ if (currentView === 'social-feed') {
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
 
-            <div className="mt-4 space-y-2">
-              <button
-                type="button"
-                onClick={() => quickLogin('john@example.com', 'password123', false)}
-                disabled={loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
-              >
-                Quick Login as User (John)
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('admin@bugbuzzers.com', 'admin123', true)}
-                disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
-              >
-                Quick Login as Admin
-              </button>
-            </div>
+           <div className="mt-6 space-y-3">
+  <button
+    type="button"
+    onClick={() => quickLogin('john@example.com', 'password123', false)}
+    disabled={loading}
+    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 text-sm disabled:opacity-50 shadow-md"
+  >
+    🚀 Quick Login as User (John)
+  </button>
+  <button
+    type="button"
+    onClick={() => quickLogin('admin@bugbuzzers.com', 'admin123', true)}
+    disabled={loading}
+    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm disabled:opacity-50 shadow-md"
+  >
+    👨‍💼 Quick Login as Admin
+  </button>
+</div>
 
             <div className="mt-6 text-center">
               <p className="text-gray-600">
@@ -1724,14 +1778,14 @@ if (currentView === 'social-feed') {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <LoadingSpinner />
         <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Megaphone className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
-            <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
-          </div>
+         <div className="text-center mb-8">
+  <div className="flex items-center justify-center gap-2 mb-4">
+    <span className="text-3xl">🐛</span>
+    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+  </div>
+  <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
+  <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
+</div>
 
           <form onSubmit={handleSignup} className="bg-white rounded-lg shadow-sm p-8">
             <ErrorMessage />
@@ -1824,7 +1878,7 @@ if (currentView === 'report') {
       <LoadingSpinner />
       <SocialNavigation />
       <EmailVerificationBanner /> 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Report a Bug</h1>
           <p className="text-gray-600 mt-2">Help us improve by reporting bugs you find. Add screenshots or videos to get more support!</p>
@@ -2035,13 +2089,13 @@ if (currentView === 'report') {
   );
 }
 
-  if (currentView === 'bugs') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-        <SocialNavigation />
-        <EmailVerificationBanner /> 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+if (currentView === 'bugs') {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner /> 
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">My Bug Reports</h1>
@@ -2071,45 +2125,45 @@ if (currentView === 'report') {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {bugs.map((bug) => (
-                      <tr key={bug.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
-                            {bug.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            bug.severity === 'high' ? 'bg-red-100 text-red-800' :
-                            bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {bug.severity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.points || 0}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(bug.submitted_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+  <table className="min-w-full divide-y divide-gray-200">
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Bug ID</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Severity</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16 text-center">Points</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Submitted</th>
+      </tr>
+    </thead>
+    <tbody className="bg-white divide-y divide-gray-200">
+      {bugs.map((bug) => (
+        <tr key={bug.id} className="hover:bg-gray-50">
+          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
+          <td className="px-4 py-4 text-sm text-gray-900 max-w-xs truncate">{bug.title}</td>
+          <td className="px-4 py-4 whitespace-nowrap">
+            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+              {bug.status}
+            </span>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+              bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-green-100 text-green-800'
+            }`}>
+              {bug.severity}
+            </span>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center font-bold">{bug.points || 0}</td>
+          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+            {new Date(bug.submitted_at).toLocaleDateString()}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
             )}
           </div>
         </main>
@@ -2248,98 +2302,115 @@ if (currentView === 'report') {
       <p className="text-gray-600">Bug reports will appear here once users start reporting them.</p>
     </div>
   ) : (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Media</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {bugs.map((bug) => (
-            <tr key={bug.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.title}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {(() => {
-                  let mediaUrls = [];
-                  
-                  if (bug.media_urls && Array.isArray(bug.media_urls)) {
-                    mediaUrls = bug.media_urls;
-                  } else if (bug.media_urls_json) {
-                    try {
-                      mediaUrls = JSON.parse(bug.media_urls_json);
-                    } catch (e) {
-                      console.error('Error parsing media JSON:', e);
-                    }
+   <div className="overflow-x-auto">
+  <table className="min-w-full divide-y divide-gray-200">
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Bug ID</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Media</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Reporter</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Severity</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Status</th>
+        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody className="bg-white divide-y divide-gray-200">
+      {bugs.map((bug) => (
+        <tr key={bug.id} className="hover:bg-gray-50">
+          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
+          <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
+            <div className="truncate font-medium">{bug.title}</div>
+            <div className="text-xs text-gray-500 truncate">{bug.app_name}</div>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+            <div className="flex justify-center">
+              {(() => {
+                let mediaUrls = [];
+                
+                if (bug.media_urls && Array.isArray(bug.media_urls)) {
+                  mediaUrls = bug.media_urls;
+                } else if (bug.media_urls_json) {
+                  try {
+                    mediaUrls = JSON.parse(bug.media_urls_json);
+                  } catch (e) {
+                    console.error('Error parsing media JSON:', e);
                   }
-                  
-                  return mediaUrls.length > 0 ? (
-                    <div className="flex gap-1">
-                      {mediaUrls.slice(0, 3).map((media, index) => (
-                        <img 
-                          key={index} 
-                          src={typeof media === 'string' ? media : media.url} 
-                          alt={`Bug media ${index + 1}`}
-                          className="w-8 h-8 object-cover rounded border cursor-pointer"
-                          onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
-                        />
-                      ))}
-                      {mediaUrls.length > 3 && (
-                        <span className="text-xs text-gray-500">+{mediaUrls.length - 3}</span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">No media</span>
-                  );
-                })()}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{bug.reporter_name || 'Anonymous'}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  bug.severity === 'high' ? 'bg-red-100 text-red-800' :
-                  bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-green-100 text-green-800'
-                }`}>
-                  {bug.severity}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
-                  {bug.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                {bug.status === 'Submitted' && (
-                  <>
-                    <button
-                      onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
-                      className="text-green-600 hover:text-green-900"
-                      disabled={loading}
-                    >
-                      Verify
-                    </button>
-                    <button
-                      onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
-                      className="text-red-600 hover:text-red-900"
-                      disabled={loading}
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                }
+                
+                return mediaUrls.length > 0 ? (
+                  <div className="flex gap-1 justify-center">
+                    {mediaUrls.slice(0, 2).map((media, index) => (
+                      <img 
+                        key={index} 
+                        src={typeof media === 'string' ? media : media.url} 
+                        alt={`Bug media ${index + 1}`}
+                        className="w-6 h-6 object-cover rounded border cursor-pointer hover:scale-110 transition-transform"
+                        onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
+                      />
+                    ))}
+                    {mediaUrls.length > 2 && (
+                      <span className="text-xs text-gray-500 self-center">+{mediaUrls.length - 2}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-gray-400 text-xs">—</span>
+                );
+              })()}
+            </div>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+            <div className="truncate max-w-20">{bug.reporter_name || 'Anonymous'}</div>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap text-center">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+              bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-green-100 text-green-800'
+            }`}>
+              {bug.severity.charAt(0).toUpperCase()}
+            </span>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap text-center">
+            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+              {bug.status === 'Submitted' ? 'Sub' : 
+               bug.status === 'Verified' ? 'Ver' : 
+               bug.status === 'In Review' ? 'Rev' : 
+               bug.status.slice(0, 3)}
+            </span>
+          </td>
+          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+            <div className="flex justify-center gap-1">
+              {bug.status === 'Submitted' && (
+                <>
+                  <button
+                    onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
+                    className="text-green-600 hover:text-green-900 text-xs px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                    disabled={loading}
+                    title="Verify Bug"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
+                    className="text-red-600 hover:text-red-900 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                    disabled={loading}
+                    title="Reject Bug"
+                  >
+                    ✗
+                  </button>
+                </>
+              )}
+              {bug.status !== 'Submitted' && (
+                <span className="text-xs text-gray-400">—</span>
+              )}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
   )}
 </div>
         </main>
@@ -2354,13 +2425,13 @@ if (currentView === 'report') {
         <LoadingSpinner />
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Megaphone className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">Forgot Password</h2>
-            <p className="text-gray-600 mt-2">Enter your email to receive a password reset link</p>
-          </div>
+  <div className="flex items-center justify-center gap-2 mb-4">
+    <span className="text-3xl">🐛</span>
+    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+  </div>
+  <h2 className="text-3xl font-bold text-gray-900">Forgot Password</h2>
+  <p className="text-gray-600 mt-2">Enter your email to receive a password reset link</p>
+</div>
 
           <form onSubmit={handleForgotPassword} className="bg-white rounded-lg shadow-sm p-8">
             <ErrorMessage />
@@ -2419,14 +2490,14 @@ if (currentView === 'report') {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <LoadingSpinner />
         <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Megaphone className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
-            <p className="text-gray-600 mt-2">Enter your new password</p>
-          </div>
+         <div className="text-center mb-8">
+  <div className="flex items-center justify-center gap-2 mb-4">
+    <span className="text-3xl">🐛</span>
+    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+  </div>
+  <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
+  <p className="text-gray-600 mt-2">Enter your new password</p>
+</div>
 
           <form onSubmit={handleResetPassword} className="bg-white rounded-lg shadow-sm p-8">
             <ErrorMessage />
@@ -2523,38 +2594,42 @@ if (currentView === 'landing') {
       <LoadingSpinner />
       
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Megaphone className="w-8 h-8 text-purple-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setCurrentView('login')}
-                className="text-gray-700 hover:text-purple-600 font-medium"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setCurrentView('signup')}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Sign Up
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+<nav className="bg-white shadow-sm">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex justify-between items-center h-16">
+      <div className="flex items-center">
+        <span className="text-2xl">🐛</span>
+        <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
+      </div>
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={() => setCurrentView('login')}
+          className="text-gray-700 hover:text-purple-600 font-medium"
+        >
+          Sign In
+        </button>
+        <button
+          onClick={() => setCurrentView('signup')}
+          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Sign Up
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
 
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Turn Bug Reports Into 
-            <span className="text-purple-600"> Social Rewards</span>
-          </h1>
+{/* Hero Section */}
+<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+  <div className="text-center">
+    <div className="flex items-center justify-center gap-2 mb-6">
+      <span className="text-4xl">🐛</span>
+      <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+    </div>
+    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+      Turn Bug Reports Into 
+      <span className="text-purple-600"> Social Rewards</span>
+    </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Join the community of bug hunters earning real money by reporting issues in your favorite apps and websites.
           </p>
