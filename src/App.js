@@ -29,7 +29,14 @@ const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, rea
   };
 
   const mediaUrl = currentMedia.url || currentMedia.preview;
-
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const size = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
+    return `${size} ${sizes[i]}`;
+  };
   return (
     <div className="mt-4 bg-gray-50 rounded-lg p-4">
       <div className="flex items-center justify-between mb-3">
@@ -185,171 +192,6 @@ const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, rea
           </span>
         )}
       </div>
-    </div>
-  );
-};
-
-// AdminMediaDisplay component
-const AdminMediaDisplay = ({ mediaUrls, bugId, bugTitle, bugDescription, bugSteps }) => {
-  const [showCarousel, setShowCarousel] = useState(false);
-  
-  if (!mediaUrls || mediaUrls.length === 0) {
-    return (
-      <span className="text-gray-400 text-sm">No media</span>
-    );
-  }
-
-  // Convert URLs to format expected by carousel
-  const mediaFiles = mediaUrls.map((media, index) => ({
-    url: typeof media === 'string' ? media : media.url,
-    type: typeof media === 'string' ? 
-      (media.includes('.mp4') || media.includes('.webm') ? 'video/mp4' : 'image/jpeg') : 
-      media.type,
-    stepDescription: typeof media === 'object' ? media.stepDescription : `Step ${index + 1}`,
-    stepNumber: index + 1
-  }));
-
-  if (showCarousel) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg max-w-6xl w-full max-h-full overflow-auto">
-          <div className="p-6">
-            {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex-1 mr-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-semibold text-gray-900">Bug Media Review</h3>
-                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
-                    Admin Mode
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Bug ID:</span> {bugId}
-                  </p>
-                  <p className="text-sm text-gray-900 font-medium">{bugTitle}</p>
-                  {bugDescription && (
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                      <span className="font-medium">Description:</span> {bugDescription}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setShowCarousel(false)}
-                className="flex-shrink-0 text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Media Carousel */}
-            <MediaCarousel 
-              mediaFiles={mediaFiles}
-              readOnly={true}
-            />
-
-            {/* Bug Steps */}
-            {bugSteps && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">📝 Reproduction Steps:</h4>
-                <p className="text-sm text-gray-700 whitespace-pre-line">{bugSteps}</p>
-              </div>
-            )}
-
-            {/* Admin Actions Footer */}
-            <div className="mt-6 flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
-              <div className="text-sm text-gray-600">
-                <p className="font-medium text-gray-900 mb-1">📋 Review Checklist:</p>
-                <p>✓ Media clearly shows the bug occurring</p>
-                <p>✓ Steps match what's demonstrated in media</p>
-                <p>✓ Issue affects app functionality</p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowCarousel(false);
-                    // Add any verification logic here if needed
-                  }}
-                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  ✓ Looks Good to Verify
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCarousel(false);
-                    // Add any rejection logic here if needed
-                  }}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  ✗ Issues Found
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      {/* Thumbnail Preview */}
-      <div className="flex gap-1 justify-center">
-        {mediaUrls.slice(0, 2).map((media, index) => {
-          const mediaUrl = typeof media === 'string' ? media : media.url;
-          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
-          
-          return (
-            <div key={index} className="relative group cursor-pointer" onClick={() => setShowCarousel(true)}>
-              {isVideo ? (
-                <div className="relative">
-                  <video 
-                    src={mediaUrl}
-                    className="w-10 h-10 object-cover rounded border hover:scale-110 transition-transform shadow-sm"
-                    muted
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-black bg-opacity-50 rounded-full p-1">
-                      <span className="text-white text-xs">▶</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <img 
-                  src={mediaUrl} 
-                  alt={`Bug step ${index + 1}`}
-                  className="w-10 h-10 object-cover rounded border hover:scale-110 transition-transform shadow-sm"
-                />
-              )}
-              {/* Step indicator */}
-              <div className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {index + 1}
-              </div>
-            </div>
-          );
-        })}
-        
-        {mediaUrls.length > 2 && (
-          <div 
-            className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-            onClick={() => setShowCarousel(true)}
-          >
-            <span className="text-xs text-gray-600 font-bold">+{mediaUrls.length - 2}</span>
-          </div>
-        )}
-      </div>
-      
-      {/* View Steps Button */}
-      <button
-        onClick={() => setShowCarousel(true)}
-        className="text-xs text-purple-600 hover:text-purple-700 font-medium px-2 py-1 rounded hover:bg-purple-50 transition-colors flex items-center gap-1"
-        title={`View ${mediaUrls.length} step${mediaUrls.length > 1 ? 's' : ''} in detail`}
-      >
-        <span>📱</span>
-        <span>{mediaUrls.length} Step{mediaUrls.length > 1 ? 's' : ''}</span>
-      </button>
     </div>
   );
 };
@@ -645,14 +487,7 @@ const BugBuzzers = () => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    const size = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
-    return `${size} ${sizes[i]}`;
-  };
+
 
   // PART 2: Event Handlers and Form Functions
   
@@ -1063,7 +898,14 @@ const handleBugSubmit = async (e) => {
     }
   };
 // MediaDisplay component - simplified version that uses the MediaCarousel
-const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
+const MediaDisplay = ({ 
+  mediaUrls, 
+  maxDisplay = 1, 
+  bugId = '', 
+  bugTitle = '', 
+  bugDescription = '', 
+  bugSteps = '' 
+}) => {
   const [showCarousel, setShowCarousel] = useState(false);
   
   if (!mediaUrls || mediaUrls.length === 0) return null;
@@ -1078,40 +920,45 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
     stepNumber: index + 1
   }));
 
+  // Check if we're in admin mode (has bug details)
+  const isAdminMode = bugId && bugTitle;
+
   if (showCarousel) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg max-w-6xl w-full max-h-full overflow-auto">
           <div className="p-6">
-            {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex-1 mr-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-semibold text-gray-900">Bug Media Review</h3>
-                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
-                    Admin Mode
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Bug ID:</span> {bugId}
-                  </p>
-                  <p className="text-sm text-gray-900 font-medium">{bugTitle}</p>
-                  {bugDescription && (
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                      <span className="font-medium">Description:</span> {bugDescription}
+            {/* Header - Only show in admin mode */}
+            {isAdminMode && (
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex-1 mr-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-semibold text-gray-900">Bug Media Review</h3>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                      Admin Mode
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Bug ID:</span> {bugId}
                     </p>
-                  )}
+                    <p className="text-sm text-gray-900 font-medium">{bugTitle}</p>
+                    {bugDescription && (
+                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                        <span className="font-medium">Description:</span> {bugDescription}
+                      </p>
+                    )}
+                  </div>
                 </div>
+                <button
+                  onClick={() => setShowCarousel(false)}
+                  className="flex-shrink-0 text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Close"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                onClick={() => setShowCarousel(false)}
-                className="flex-shrink-0 text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
-                title="Close"
-              >
-                ✕
-              </button>
-            </div>
+            )}
 
             {/* Media Carousel */}
             <MediaCarousel 
@@ -1119,43 +966,45 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
               readOnly={true}
             />
 
-            {/* Bug Steps */}
-            {bugSteps && (
+            {/* Bug Steps - Only show in admin mode */}
+            {isAdminMode && bugSteps && (
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-2">📝 Reproduction Steps:</h4>
                 <p className="text-sm text-gray-700 whitespace-pre-line">{bugSteps}</p>
               </div>
             )}
 
-            {/* Admin Actions Footer */}
-            <div className="mt-6 flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
-              <div className="text-sm text-gray-600">
-                <p className="font-medium text-gray-900 mb-1">📋 Review Checklist:</p>
-                <p>✓ Media clearly shows the bug occurring</p>
-                <p>✓ Steps match what's demonstrated in media</p>
-                <p>✓ Issue affects app functionality</p>
+            {/* Admin Actions Footer - Only show in admin mode */}
+            {isAdminMode && (
+              <div className="mt-6 flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium text-gray-900 mb-1">📋 Review Checklist:</p>
+                  <p>✓ Media clearly shows the bug occurring</p>
+                  <p>✓ Steps match what's demonstrated in media</p>
+                  <p>✓ Issue affects app functionality</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowCarousel(false);
+                      // Add any verification logic here if needed
+                    }}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    ✓ Looks Good to Verify
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCarousel(false);
+                      // Add any rejection logic here if needed
+                    }}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    ✗ Issues Found
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowCarousel(false);
-                    // Add any verification logic here if needed
-                  }}
-                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  ✓ Looks Good to Verify
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCarousel(false);
-                    // Add any rejection logic here if needed
-                  }}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-                >
-                  ✗ Issues Found
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -1221,7 +1070,8 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
       </button>
     </div>
   );
-};  // UI Components
+};
+// UI Components
   const ErrorMessage = () => {
     if (!error) return null;
     return (
@@ -2078,9 +1928,9 @@ if (currentView === 'social-feed') {
                       </div>
                       
                       {/* Media Display */}
-                      {bug.media_urls && bug.media_urls.length > 0 && (
-                        <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
-                      )}
+{bug.media_urls && bug.media_urls.length > 0 && (
+  <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
+)}
 
                       {/* Bug Tags */}
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -3284,29 +3134,30 @@ if (currentView === 'admin' && user?.isAdmin) {
                           {new Date(bug.submitted_at).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-center">
-                        <AdminMediaDisplay 
-                          mediaUrls={(() => {
-                            let mediaUrls = [];
-                            
-                            if (bug.media_urls && Array.isArray(bug.media_urls)) {
-                              mediaUrls = bug.media_urls;
-                            } else if (bug.media_urls_json) {
-                              try {
-                                mediaUrls = JSON.parse(bug.media_urls_json);
-                              } catch (e) {
-                                console.error('Error parsing media JSON:', e);
-                              }
-                            }
-                            
-                            return mediaUrls;
-                          })()} 
-                          bugId={bug.id}
-                          bugTitle={bug.title}
-                          bugDescription={bug.description}
-                          bugSteps={bug.steps}
-                        />
-                      </td>
+<td className="px-4 py-4 whitespace-nowrap text-center">
+  <MediaDisplay 
+    mediaUrls={(() => {
+      let mediaUrls = [];
+      
+      if (bug.media_urls && Array.isArray(bug.media_urls)) {
+        mediaUrls = bug.media_urls;
+      } else if (bug.media_urls_json) {
+        try {
+          mediaUrls = JSON.parse(bug.media_urls_json);
+        } catch (e) {
+          console.error('Error parsing media JSON:', e);
+        }
+      }
+      
+      return mediaUrls;
+    })()} 
+    bugId={bug.id}
+    bugTitle={bug.title}
+    bugDescription={bug.description}
+    bugSteps={bug.steps}
+    maxDisplay={4}
+  />
+</td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 truncate max-w-24">
                           {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Unknown')}
