@@ -1,5 +1,6 @@
 /* eslint-disable import/no-anonymous-default-export */
-const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+                     (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 class BugBuzzersAPI {
   constructor() {
@@ -66,7 +67,11 @@ class BugBuzzersAPI {
             console.error('Could not parse error response');
           }
         }
-        
+
+// Call this in useEffect when component mounts
+useEffect(() => {
+  checkAPIConnection();
+}, []);
         // Create enhanced error object
         const error = new Error(errorMessage);
         error.status = response.status;
@@ -150,32 +155,36 @@ class BugBuzzersAPI {
   }
 
   // ===================== BUG MANAGEMENT METHODS =====================
-  async getBugs() {
-    try {
-      console.log('Fetching bugs from:', `${API_BASE_URL}/api/bugs`);
-      console.log('Auth token present:', !!this.token);
-      
-      const response = await this.request('/bugs');
-      console.log('Bugs fetched successfully:', response);
-      return response;
-    } catch (error) {
-      console.error('Failed to fetch bugs:', {
-        message: error.message,
-        stack: error.stack,
-        token: !!this.token
-      });
-      
-      // Provide helpful error context
-      if (error.message.includes('500') || error.message.includes('Server error')) {
-        console.log('Server error detected. Check:');
-        console.log('1. Backend server is running');
-        console.log('2. Database connections are working');
-        console.log('3. Server logs for detailed error info');
-      }
-      
-      throw error;
+async getBugs() {
+  try {
+    console.log('Fetching bugs from:', `${API_BASE_URL}/api/bugs`);
+    
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await this.request('/bugs', {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    console.log('Bugs fetched successfully:', response);
+    return response;
+  } catch (error) {
+    console.error('Failed to fetch bugs:', error.message);
+    
+    // Provide specific error messages
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - server may be down or unresponsive');
     }
+    
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      throw new Error('Cannot connect to server. Please check if the backend is running.');
+    }
+    
+    throw error;
   }
+}
 
   async getBugsWithFallback() {
     try {
