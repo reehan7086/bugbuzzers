@@ -251,7 +251,40 @@ class BugBuzzersAPI {
 
   async healthCheck() {
     return await this.request('/health');
-  }
+async supportBug(bugId, supportData = {}) {
+  return await this.request(`/bugs/${bugId}/support`, {
+    method: 'POST',
+    body: JSON.stringify({
+      supportType: supportData.supportType || 'experienced',
+      deviceInfo: supportData.deviceInfo || '',
+      additionalContext: supportData.additionalContext || ''
+    }),
+  });
+}
+
+async removeBugSupport(bugId) {
+  return await this.request(`/bugs/${bugId}/support`, {
+    method: 'DELETE',
+  });
+}
+
+async addComment(bugId, comment, parentId = null) {
+  return await this.request(`/bugs/${bugId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ comment, parentId }),
+  });
+}
+
+async getBugComments(bugId, limit = 50, offset = 0) {
+  return await this.request(`/bugs/${bugId}/comments?limit=${limit}&offset=${offset}`);
+}
+
+async shareBug(bugId, platform = 'copy_link') {
+  return await this.request(`/bugs/${bugId}/share`, {
+    method: 'POST',
+    body: JSON.stringify({ platform }),
+  });
+}  }
 
   // ===================== UTILITY METHODS FOR SOCIAL FEATURES =====================
 
