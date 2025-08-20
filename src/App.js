@@ -95,16 +95,24 @@ const loadUserBugs = useCallback(async () => {
   }
 }, [user?.id]);
 
-	const loadAllBugs = useCallback(async () => {
+const loadAllBugs = useCallback(async () => {
   try {
     const bugsData = await api.getBugs();
-    setBugs(bugsData); // Show ALL bugs, not filtered by user
+    
+    // Process bugs to ensure all social counts exist
+    const processedBugs = bugsData.map(bug => ({
+      ...bug,
+      supports_count: bug.supports_count || 0,
+      comments_count: bug.comments_count || 0,
+      shares_count: bug.shares_count || 0,
+      user_supports: bug.user_supports || false,
+      recent_supporters: bug.recent_supporters || []
+    }));
+    
+    setBugs(processedBugs);
   } catch (error) {
-    setBugs([
-      { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z', reporter_name: 'John Doe', user_id: 1 },
-      { id: 'BUG-002', title: 'Typo in welcome message', status: 'In Review', severity: 'low', points: 0, submitted_at: '2025-01-14T15:45:00Z', reporter_name: 'Jane Smith', user_id: 2 },
-      { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z', reporter_name: 'Mike Johnson', user_id: 3 }
-    ]);
+    console.error('Error loading bugs:', error);
+    // Your existing fallback data...
   }
 }, []);
   const loadBugs = useCallback(async () => {
@@ -1937,10 +1945,10 @@ if (currentView === 'social-feed') {
                     {/* BEAUTIFUL BUG ACTIONS */}
                     <div className="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-100">
                       <div className="flex items-center justify-between">
-                        {/* Action Buttons */}
+                       {/* Action Buttons - COMPLETE UPDATED VERSION */}
                         <div className="flex items-center gap-3 sm:gap-6">
                           
-                          {/* Support Button */}
+                          {/* Support Button - UPDATED WITH FULL FUNCTIONALITY */}
                           <button 
                             onClick={async (e) => {
                               try {
@@ -1949,24 +1957,34 @@ if (currentView === 'social-feed') {
                                 button.style.transform = 'scale(0.95)';
                                 setTimeout(() => button.style.transform = '', 150);
                                 
-                                // Simulate API call or implement real functionality
-                                console.log(`Supporting bug ${bug.id}`);
-                                alert(`✅ You supported "${bug.title}"! Thanks for helping the community identify this issue.`);
+                                // Check if user already supports this bug
+                                if (bug.user_supports) {
+                                  alert('ℹ️ You have already supported this bug!');
+                                  return;
+                                }
                                 
-                                // You can implement real API call here:
-                                // await api.supportBug(bug.id);
-                                // loadAllBugs(); // Refresh the feed
+                                // Call the support handler
+                                await handleBugSupport(bug.id, bug.title);
+                                
                               } catch (error) {
-                                alert('❌ Failed to support bug. Please try again.');
-                                console.error('Support error:', error);
+                                console.error('Support button error:', error);
                               }
                             }}
-                            className="group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-purple-600 transition-all duration-300 transform hover:scale-105"
+                            disabled={loading || bug.user_supports}
+                            className={`group flex items-center gap-2 sm:gap-3 transition-all duration-300 transform hover:scale-105 ${
+                              bug.user_supports 
+                                ? 'text-purple-600 cursor-not-allowed' 
+                                : 'text-gray-600 hover:text-purple-600'
+                            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <div className="relative">
-                              <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-purple-300 group-hover:bg-purple-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
+                              <div className={`w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 flex items-center justify-center shadow-sm transition-all duration-300 ${
+                                bug.user_supports 
+                                  ? 'border-purple-400 bg-purple-50' 
+                                  : 'border-gray-200 group-hover:border-purple-300 group-hover:bg-purple-50 group-hover:shadow-md'
+                              }`}>
                                 <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
-                                  🙋‍♀️
+                                  {bug.user_supports ? '✅' : '🙋‍♀️'}
                                 </div>
                               </div>
                               {/* Support count badge - only show if > 0 */}
@@ -1977,37 +1995,45 @@ if (currentView === 'social-feed') {
                               )}
                             </div>
                             <div className="hidden sm:flex flex-col items-start">
-                              <span className="text-sm font-semibold group-hover:text-purple-600 transition-colors">
-                                I got this too!
+                              <span className={`text-sm font-semibold transition-colors ${
+                                bug.user_supports 
+                                  ? 'text-purple-600' 
+                                  : 'group-hover:text-purple-600'
+                              }`}>
+                                {bug.user_supports ? 'You support this!' : 'I got this too!'}
                               </span>
                               {(bug.supports_count || 0) > 0 && (
-                                <span className="text-xs text-gray-500 group-hover:text-purple-500">
+                                <span className={`text-xs transition-colors ${
+                                  bug.user_supports 
+                                    ? 'text-purple-500' 
+                                    : 'text-gray-500 group-hover:text-purple-500'
+                                }`}>
                                   {bug.supports_count} {bug.supports_count === 1 ? 'person' : 'people'}
                                 </span>
                               )}
                             </div>
                           </button>
 
-                          {/* Comment Button */}
+                          {/* Comment Button - UPDATED WITH FULL FUNCTIONALITY */}
                           <button 
-                            onClick={(e) => {
-                              // Show immediate feedback
-                              const button = e.currentTarget;
-                              button.style.transform = 'scale(0.95)';
-                              setTimeout(() => button.style.transform = '', 150);
-                              
-                              // For now, show a simple prompt
-                              const comment = prompt(`💬 Add a comment about "${bug.title}":`);
-                              if (comment && comment.trim()) {
-                                console.log(`Comment on bug ${bug.id}:`, comment);
-                                alert(`✅ Comment added: "${comment}"`);
+                            onClick={async (e) => {
+                              try {
+                                // Show immediate feedback
+                                const button = e.currentTarget;
+                                button.style.transform = 'scale(0.95)';
+                                setTimeout(() => button.style.transform = '', 150);
                                 
-                                // You can implement real API call here:
-                                // await api.addComment(bug.id, comment);
-                                // loadAllBugs(); // Refresh the feed
+                                // Call the comment handler
+                                await handleBugComment(bug.id, bug.title);
+                                
+                              } catch (error) {
+                                console.error('Comment button error:', error);
                               }
                             }}
-                            className="group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-blue-600 transition-all duration-300 transform hover:scale-105"
+                            disabled={loading}
+                            className={`group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 ${
+                              loading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
                           >
                             <div className="relative">
                               <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-blue-300 group-hover:bg-blue-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
@@ -2034,51 +2060,26 @@ if (currentView === 'social-feed') {
                             </div>
                           </button>
 
-                          {/* Share Button */}
+                          {/* Share Button - UPDATED WITH FULL FUNCTIONALITY */}
                           <button 
-                            onClick={(e) => {
-                              // Show immediate feedback
-                              const button = e.currentTarget;
-                              button.style.transform = 'scale(0.95)';
-                              setTimeout(() => button.style.transform = '', 150);
-                              
-                              // Create shareable text
-                              const shareText = `🐛 Bug Report: "${bug.title}" in ${bug.app_name}\n\n${bug.description}\n\nFound on BugBuzzers - Join the bug hunting community!`;
-                              
-                              // Try native sharing first, fallback to clipboard
-                              if (navigator.share) {
-                                navigator.share({
-                                  title: `Bug Report: ${bug.title}`,
-                                  text: shareText,
-                                  url: window.location.origin
-                                }).then(() => {
-                                  console.log('Bug shared successfully');
-                                }).catch((error) => {
-                                  console.log('Share failed:', error);
-                                  // Fallback to clipboard
-                                  copyToClipboard(shareText);
-                                });
-                              } else {
-                                // Fallback to clipboard
-                                copyToClipboard(shareText);
-                              }
-                              
-                              function copyToClipboard(text) {
-                                navigator.clipboard.writeText(text).then(() => {
-                                  alert('📤 Bug report copied to clipboard! Share it with your network.');
-                                }).catch(() => {
-                                  // Final fallback
-                                  const textArea = document.createElement('textarea');
-                                  textArea.value = text;
-                                  document.body.appendChild(textArea);
-                                  textArea.select();
-                                  document.execCommand('copy');
-                                  document.body.removeChild(textArea);
-                                  alert('📤 Bug report copied to clipboard!');
-                                });
+                            onClick={async (e) => {
+                              try {
+                                // Show immediate feedback
+                                const button = e.currentTarget;
+                                button.style.transform = 'scale(0.95)';
+                                setTimeout(() => button.style.transform = '', 150);
+                                
+                                // Call the share handler
+                                await handleBugShare(bug.id, bug.title, bug.description, bug.app_name);
+                                
+                              } catch (error) {
+                                console.error('Share button error:', error);
                               }
                             }}
-                            className="group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-emerald-600 transition-all duration-300 transform hover:scale-105"
+                            disabled={loading}
+                            className={`group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-emerald-600 transition-all duration-300 transform hover:scale-105 ${
+                              loading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
                           >
                             <div className="relative">
                               <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-emerald-300 group-hover:bg-emerald-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
@@ -2086,6 +2087,12 @@ if (currentView === 'social-feed') {
                                   📤
                                 </div>
                               </div>
+                              {/* Share count badge - only show if > 0 */}
+                              {(bug.shares_count || 0) > 0 && (
+                                <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
+                                  {bug.shares_count || 0}
+                                </div>
+                              )}
                               {/* Share animation on click */}
                               <div className="absolute inset-0 rounded-full border-2 border-emerald-400 opacity-0 group-active:opacity-100 group-active:animate-ping"></div>
                             </div>
