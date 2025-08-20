@@ -712,8 +712,9 @@ const formatFileSize = (bytes) => {
       setLoading(false);
     }
   };
-// Replace the existing MediaDisplay component with:
-const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
+// Replace the existing MediaDisplay component with this simplified version
+
+const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
   const [showCarousel, setShowCarousel] = useState(false);
   
   if (!mediaUrls || mediaUrls.length === 0) return null;
@@ -752,203 +753,73 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 4 }) => {
     );
   }
 
+  const firstMedia = mediaUrls[0];
+  const mediaUrl = typeof firstMedia === 'string' ? firstMedia : firstMedia.url;
+  const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
+  const remainingCount = mediaUrls.length - 1;
+
   return (
-    <div className="mb-3">
-      <div className="grid grid-cols-2 gap-2 max-w-md">
-        {mediaUrls.slice(0, maxDisplay).map((media, index) => {
-          const mediaUrl = typeof media === 'string' ? media : media.url;
-          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
-          
-          return (
-            <div key={index} className="relative group cursor-pointer" onClick={() => setShowCarousel(true)}>
-              {isVideo ? (
-                <div className="relative">
-                  <video 
-                    src={mediaUrl}
-                    className="w-full h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
-                    muted
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-black bg-opacity-50 rounded-full p-2">
-                      <span className="text-white text-lg">▶️</span>
-                    </div>
-                  </div>
+    <div className="mb-4">
+      <div 
+        className="relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors"
+        onClick={() => setShowCarousel(true)}
+      >
+        {isVideo ? (
+          <div className="relative w-full h-64">
+            <video 
+              src={mediaUrl}
+              className="w-full h-full object-cover"
+              muted
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+              <div className="bg-white bg-opacity-90 rounded-full p-3">
+                <span className="text-purple-600 text-xl">▶️</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="relative w-full h-64">
+            <img 
+              src={mediaUrl} 
+              alt="Bug reproduction step"
+              className="w-full h-full object-cover"
+            />
+            {remainingCount > 0 && (
+              <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                <div className="absolute bottom-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  +{remainingCount} more
                 </div>
-              ) : (
-                <img 
-                  src={mediaUrl} 
-                  alt={`Bug step ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg hover:opacity-90 transition-opacity"
-                />
-              )}
-              
-              <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
-                Step {index + 1}
               </div>
-              
-              <div className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1">
-                <span className="text-white text-xs">
-                  {isVideo ? '🎬' : '🖼️'}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+            )}
+          </div>
+        )}
         
-        {mediaUrls.length > maxDisplay && (
-          <div className="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setShowCarousel(true)}>
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-700">+{mediaUrls.length - maxDisplay}</div>
-              <div className="text-xs text-gray-500">more steps</div>
-            </div>
+        {/* Step indicator */}
+        <div className="absolute top-3 left-3 bg-purple-600 text-white px-2 py-1 rounded text-sm font-medium">
+          Step 1 of {mediaUrls.length}
+        </div>
+        
+        {/* Video indicator */}
+        {isVideo && (
+          <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm font-medium">
+            🎬 Video
           </div>
         )}
       </div>
       
-      {mediaUrls.length > 0 && (
+      {mediaUrls.length > 1 && (
         <button
           onClick={() => setShowCarousel(true)}
-          className="mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium"
+          className="mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
         >
-          📱 View Step-by-Step Guide →
+          <span>📱</span>
+          <span>View all {mediaUrls.length} steps</span>
+          <span>→</span>
         </button>
       )}
     </div>
   );
 };
-// Add this component after the MediaDisplay component
-const MediaCarousel = ({ mediaFiles, onUpdateDescription, onRemoveFile, readOnly = false }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  if (!mediaFiles || mediaFiles.length === 0) return null;
-
-  const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % mediaFiles.length);
-  };
-
-  const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + mediaFiles.length) % mediaFiles.length);
-  };
-
-  const currentFile = mediaFiles[currentIndex];
-  const isVideo = currentFile.type?.startsWith('video/') || currentFile.url?.includes('.mp4');
-
-  return (
-    <div className="bg-gray-50 rounded-lg p-4 mb-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-medium text-gray-700">
-          Media ({currentIndex + 1} of {mediaFiles.length})
-        </h4>
-        {!readOnly && (
-          <button
-            type="button"
-            onClick={() => onRemoveFile(currentIndex)}
-            className="text-red-500 hover:text-red-700 text-sm"
-          >
-            Remove
-          </button>
-        )}
-      </div>
-
-      {/* Main Image/Video Display */}
-      <div className="relative mb-4">
-        <div className="aspect-video bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
-          {isVideo ? (
-            <video 
-              src={currentFile.preview || currentFile.url}
-              className="max-w-full max-h-full object-contain"
-              controls
-            />
-          ) : (
-            <img 
-              src={currentFile.preview || currentFile.url}
-              alt={`Step ${currentIndex + 1}`}
-              className="max-w-full max-h-full object-contain cursor-pointer"
-              onClick={() => window.open(currentFile.preview || currentFile.url, '_blank')}
-            />
-          )}
-        </div>
-
-        {/* Navigation Arrows */}
-        {mediaFiles.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={prevImage}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-opacity"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              onClick={nextImage}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-70 transition-opacity"
-            >
-              →
-            </button>
-          </>
-        )}
-
-        {/* Step Indicator */}
-        <div className="absolute top-2 left-2 bg-purple-600 text-white px-2 py-1 rounded text-sm font-medium">
-          Step {currentFile.stepNumber || currentIndex + 1}
-        </div>
-      </div>
-
-      {/* Step Description Input */}
-      {!readOnly && (
-        <div className="mb-3">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Step Description
-          </label>
-          <input
-            type="text"
-            value={currentFile.stepDescription || ''}
-            onChange={(e) => onUpdateDescription(currentIndex, e.target.value)}
-            placeholder={`Describe what happens in step ${currentIndex + 1}...`}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
-          />
-        </div>
-      )}
-
-      {/* Thumbnail Navigation */}
-      {mediaFiles.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {mediaFiles.map((file, index) => {
-            const isVideoThumb = file.type?.startsWith('video/') || file.url?.includes('.mp4');
-            return (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setCurrentIndex(index)}
-                className={`flex-shrink-0 relative ${
-                  index === currentIndex ? 'ring-2 ring-purple-500' : ''
-                } rounded-lg overflow-hidden`}
-              >
-                {isVideoThumb ? (
-                  <div className="w-16 h-16 bg-gray-200 flex items-center justify-center">
-                    <span className="text-xs">🎬</span>
-                  </div>
-                ) : (
-                  <img 
-                    src={file.preview || file.url}
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-16 h-16 object-cover"
-                  />
-                )}
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 py-0.5 text-center">
-                  {index + 1}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
-// Move this BEFORE the admin view (around line 1800-1900 in your code)
-// Place it right after the MediaCarousel component definition
 
 const AdminMediaDisplay = ({ mediaUrls, bugId, bugTitle, bugDescription, bugSteps }) => {
   const [showCarousel, setShowCarousel] = useState(false);
@@ -1777,13 +1648,6 @@ const copyToClipboard = async (text) => {
   }
 };
 
-
-  // VIEW 2: Social Feed
-// =================== COMPLETE SOCIAL FEED VIEW ===================
-// In src/App.js - Replace your entire social-feed view with this:
-
-// FIXED SOCIAL FEED VIEW - Replace the social-feed view in your App.js with this:
-
 if (currentView === 'social-feed') {
   // Define categories BEFORE the JSX to prevent initialization errors
   const categories = [
@@ -1914,7 +1778,7 @@ if (currentView === 'social-feed') {
                 })
                 .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
                 .map((bug) => (
-                  <div key={bug.id} className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
+                  <div key={bug.id} className="bug-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
                     {/* Bug Header */}
                     <div className="flex items-center p-6 border-b border-gray-50">
                       <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -1996,133 +1860,100 @@ if (currentView === 'social-feed') {
                     {/* BEAUTIFUL BUG ACTIONS */}
                     <div className="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-100">
                       <div className="flex items-center justify-between">
-                       {/* Action Buttons - COMPLETE UPDATED VERSION */}
+                        {/* Action Buttons */}
                         <div className="flex items-center gap-3 sm:gap-6">
                           
-                          {/* Support Button - UPDATED WITH FULL FUNCTIONALITY */}
+                          {/* PROFESSIONAL SUPPORT BUTTON */}
                           <button 
                             onClick={async (e) => {
                               try {
-                                // Show immediate feedback
                                 const button = e.currentTarget;
                                 button.style.transform = 'scale(0.95)';
                                 setTimeout(() => button.style.transform = '', 150);
                                 
-                                // Check if user already supports this bug
                                 if (bug.user_supports) {
                                   alert('ℹ️ You have already supported this bug!');
                                   return;
                                 }
                                 
-                                // Call the support handler
                                 await handleBugSupport(bug.id, bug.title);
-                                
                               } catch (error) {
                                 console.error('Support button error:', error);
                               }
                             }}
                             disabled={loading || bug.user_supports}
-                            className={`group flex items-center gap-2 sm:gap-3 transition-all duration-300 transform hover:scale-105 ${
+                            className={`flex items-center gap-2 transition-all duration-200 ${
                               bug.user_supports 
-                                ? 'text-purple-600 cursor-not-allowed' 
+                                ? 'text-purple-600' 
                                 : 'text-gray-600 hover:text-purple-600'
-                            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
-                            <div className="relative">
-                              <div className={`w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 flex items-center justify-center shadow-sm transition-all duration-300 ${
-                                bug.user_supports 
-                                  ? 'border-purple-400 bg-purple-50' 
-                                  : 'border-gray-200 group-hover:border-purple-300 group-hover:bg-purple-50 group-hover:shadow-md'
+                            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all duration-200 ${
+                              bug.user_supports 
+                                ? 'bg-purple-50 border-purple-200 text-purple-700' 
+                                : 'bg-gray-50 border-gray-200 hover:bg-purple-50 hover:border-purple-200'
+                            }`}>
+                              <span className={`text-lg transition-transform duration-200 ${
+                                bug.user_supports ? 'scale-110' : ''
                               }`}>
-                                <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
-                                  {bug.user_supports ? '✅' : '🙋‍♀️'}
-                                </div>
-                              </div>
-                              {/* Support count badge - only show if > 0 */}
-                              {(bug.supports_count || 0) > 0 && (
-                                <div className="absolute -top-2 -right-2 bg-purple-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
-                                  {bug.supports_count || 0}
-                                </div>
-                              )}
-                            </div>
-                            <div className="hidden sm:flex flex-col items-start">
-                              <span className={`text-sm font-semibold transition-colors ${
-                                bug.user_supports 
-                                  ? 'text-purple-600' 
-                                  : 'group-hover:text-purple-600'
-                              }`}>
-                                {bug.user_supports ? 'You support this!' : 'I got this too!'}
+                                {bug.user_supports ? '✅' : '👍'}
+                              </span>
+                              <span className="text-sm font-medium">
+                                {bug.user_supports ? 'Supported' : 'Support'}
                               </span>
                               {(bug.supports_count || 0) > 0 && (
-                                <span className={`text-xs transition-colors ${
-                                  bug.user_supports 
-                                    ? 'text-purple-500' 
-                                    : 'text-gray-500 group-hover:text-purple-500'
+                                <span className={`text-sm font-semibold ${
+                                  bug.user_supports ? 'text-purple-700' : 'text-gray-700'
                                 }`}>
-                                  {bug.supports_count} {bug.supports_count === 1 ? 'person' : 'people'}
+                                  • {bug.supports_count}
                                 </span>
                               )}
                             </div>
                           </button>
 
-                          {/* Comment Button - UPDATED WITH FULL FUNCTIONALITY */}
+                          {/* PROFESSIONAL COMMENT BUTTON */}
                           <button 
                             onClick={async (e) => {
                               try {
-                                // Show immediate feedback
                                 const button = e.currentTarget;
                                 button.style.transform = 'scale(0.95)';
                                 setTimeout(() => button.style.transform = '', 150);
                                 
-                                // Call the comment handler
-                                await handleBugComment(bug.id, bug.title);
-                                
+                                // Toggle comment visibility instead of showing prompt
+                                const bugElement = button.closest('.bug-card');
+                                const commentsSection = bugElement?.querySelector('.comments-section');
+                                if (commentsSection) {
+                                  commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
+                                }
                               } catch (error) {
                                 console.error('Comment button error:', error);
                               }
                             }}
                             disabled={loading}
-                            className={`group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-blue-600 transition-all duration-300 transform hover:scale-105 ${
+                            className={`flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-all duration-200 cursor-pointer ${
                               loading ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                           >
-                            <div className="relative">
-                              <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-blue-300 group-hover:bg-blue-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
-                                <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
-                                  💬
-                                </div>
-                              </div>
-                              {/* Comment count badge */}
+                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full border bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-all duration-200">
+                              <span className="text-lg">💬</span>
+                              <span className="text-sm font-medium">Comment</span>
                               {(bug.comments_count || 0) > 0 && (
-                                <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
-                                  {bug.comments_count || 0}
-                                </div>
-                              )}
-                            </div>
-                            <div className="hidden sm:flex flex-col items-start">
-                              <span className="text-sm font-semibold group-hover:text-blue-600 transition-colors">
-                                Comment
-                              </span>
-                              {(bug.comments_count || 0) > 0 && (
-                                <span className="text-xs text-gray-500 group-hover:text-blue-500">
-                                  {bug.comments_count} {bug.comments_count === 1 ? 'comment' : 'comments'}
+                                <span className="text-sm font-semibold text-gray-700">
+                                  • {bug.comments_count}
                                 </span>
                               )}
                             </div>
                           </button>
 
-                          {/* Share Button - UPDATED WITH FULL FUNCTIONALITY */}
+                          {/* Share Button */}
                           <button 
                             onClick={async (e) => {
                               try {
-                                // Show immediate feedback
                                 const button = e.currentTarget;
                                 button.style.transform = 'scale(0.95)';
                                 setTimeout(() => button.style.transform = '', 150);
                                 
-                                // Call the share handler
                                 await handleBugShare(bug.id, bug.title, bug.description, bug.app_name);
-                                
                               } catch (error) {
                                 console.error('Share button error:', error);
                               }
@@ -2138,14 +1969,11 @@ if (currentView === 'social-feed') {
                                   📤
                                 </div>
                               </div>
-                              {/* Share count badge - only show if > 0 */}
                               {(bug.shares_count || 0) > 0 && (
                                 <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
                                   {bug.shares_count || 0}
                                 </div>
                               )}
-                              {/* Share animation on click */}
-                              <div className="absolute inset-0 rounded-full border-2 border-emerald-400 opacity-0 group-active:opacity-100 group-active:animate-ping"></div>
                             </div>
                             <div className="hidden sm:flex flex-col items-start">
                               <span className="text-sm font-semibold group-hover:text-emerald-600 transition-colors">
@@ -2223,6 +2051,15 @@ if (currentView === 'social-feed') {
                         </span>
                       </div>
                     </div>
+
+                    {/* Comment Section */}
+                    <CommentSection 
+                      bugId={bug.id}
+                      bugTitle={bug.title}
+                      comments={bug.comments || []}
+                      onAddComment={handleBugComment}
+                      currentUser={user}
+                    />
                   </div>
                 ))}
 
@@ -2245,9 +2082,6 @@ if (currentView === 'social-feed') {
     </div>
   );
 }
-// PART 4: Views 3-12 and Component Closing
-
-  // VIEW 3: Trending Page
 // VIEW 3: Trending Page - FIXED
 if (currentView === 'trending') {
   return (
@@ -2694,15 +2528,17 @@ if (currentView === 'report') {
       </div>
     </label>
   </div>
- {/* Media Carousel */}
-  {bugForm.mediaFiles && bugForm.mediaFiles.length > 0 && (
-    <MediaCarousel 
-      mediaFiles={bugForm.mediaFiles}
-      onUpdateDescription={updateStepDescription}
-      onRemoveFile={removeMediaFile}
-      readOnly={false}
-    />
-  )}
+// Add this RIGHT AFTER the MediaCarousel code you found:
+
+{/* Media Carousel */}
+{bugForm.mediaFiles && bugForm.mediaFiles.length > 0 && (
+  <MediaCarousel 
+    mediaFiles={bugForm.mediaFiles}
+    onUpdateDescription={updateStepDescription}
+    onRemoveFile={removeMediaFile}
+    readOnly={false}
+  />
+)}
 </div>
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -2810,6 +2646,138 @@ if (currentView === 'report') {
     </div>
   );
 }
+
+// Add this RIGHT AFTER your existing MediaCarousel component ends:
+
+const CommentSection = ({ bugId, bugTitle, comments = [], onAddComment, currentUser }) => {
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmitComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await onAddComment(bugId, newComment.trim());
+      setNewComment('');
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formatTimeAgo = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  return (
+    <div className="comments-section border-t border-gray-100 pt-3 mt-3" style={{ display: 'none' }}>
+      {/* Comment Input */}
+      <div className="mb-4">
+        <form onSubmit={handleSubmitComment} className="flex gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div className="flex-1">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder={`Add a comment about "${bugTitle}"...`}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              rows="2"
+              disabled={isSubmitting}
+            />
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs text-gray-400">
+                {newComment.length}/500 characters
+              </span>
+              <button
+                type="submit"
+                disabled={!newComment.trim() || isSubmitting}
+                className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSubmitting ? 'Posting...' : 'Post'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Comments List */}
+      <div className="space-y-3">
+        {comments.length === 0 ? (
+          <div className="text-center py-6 text-gray-500">
+            <div className="text-2xl mb-2">💬</div>
+            <p className="text-sm">No comments yet. Be the first to comment!</p>
+          </div>
+        ) : (
+          comments.map((comment, index) => (
+            <div key={comment.id || index} className="flex gap-3">
+              {/* Commenter Avatar */}
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {comment.commenter_name?.charAt(0).toUpperCase() || '?'}
+              </div>
+              
+              {/* Comment Content */}
+              <div className="flex-1 min-w-0">
+                <div className="bg-gray-50 rounded-2xl px-4 py-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-gray-900 text-sm">
+                      {comment.commenter_name || 'Anonymous'}
+                    </span>
+                    {comment.commenter_is_admin && (
+                      <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                        ADMIN
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {formatTimeAgo(comment.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-gray-800 text-sm leading-relaxed">
+                    {comment.comment}
+                  </p>
+                </div>
+                
+                {/* Comment Actions */}
+                <div className="flex items-center gap-4 mt-1 ml-4">
+                  <button className="text-xs text-gray-500 hover:text-blue-600 font-medium">
+                    Like
+                  </button>
+                  <button className="text-xs text-gray-500 hover:text-blue-600 font-medium">
+                    Reply
+                  </button>
+                  {comment.likes_count > 0 && (
+                    <span className="text-xs text-gray-500">
+                      {comment.likes_count} {comment.likes_count === 1 ? 'like' : 'likes'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* View More Comments */}
+      {comments.length > 3 && (
+        <button className="w-full text-center py-3 text-sm text-gray-600 hover:text-gray-800 font-medium">
+          View all {comments.length} comments
+        </button>
+      )}
+    </div>
+  );
+};
 
 if (currentView === 'bugs') {
   return (
