@@ -1047,59 +1047,169 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/bugs', authenticateToken, async (req, res) => {
   try {
+    // Simple query without complex aggregations to avoid GROUP BY issues
     const result = await pool.query(`
       SELECT 
         b.*,
         u.name as reporter_name,
+        u.username as reporter_username,
+        u.avatar_url as reporter_avatar,
+        u.user_level as reporter_level,
         -- Check if current user supports this bug
-        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports,
-        -- Get recent supporters for preview
-        COALESCE(supporter_preview.supporters, '[]'::json) as recent_supporters
+        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports
       FROM bugs b 
       LEFT JOIN users u ON b.user_id = u.id 
       LEFT JOIN bug_supports bs ON b.id = bs.bug_id AND bs.user_id = $1
-      LEFT JOIN LATERAL (
-        SELECT json_agg(
-          json_build_object(
-            'name', su.name,
-            'username', su.username,
-            'avatar_url', su.avatar_url
-          )
-        ) as supporters
-        FROM bug_supports bsp
-        JOIN users su ON bsp.user_id = su.id
-        WHERE bsp.bug_id = b.id
-        ORDER BY bsp.created_at DESC
-        LIMIT 3
-      ) supporter_preview ON true
       ORDER BY b.submitted_at DESC
     `, [req.user.id]);
     
-    // Process the results to parse media URLs
+    // Process the results to parse media URLs and ensure proper data structure
     const processedBugs = result.rows.map(bug => {
       let mediaUrls = [];
-      try {
-        if (bug.media_urls_json) {
+      
+      // Handle different media URL storage formats
+      if (bug.media_urls_json) {
+        try {
           mediaUrls = JSON.parse(bug.media_urls_json);
+        } catch (e) {
+          console.error('Error parsing media URLs for bug', bug.id, e);
+          mediaUrls = [];
         }
-      } catch (e) {
-        console.error('Error parsing media URLs for bug', bug.id, e);
+      } else if (bug.media_urls && Array.isArray(bug.media_urls)) {
+        mediaUrls = bug.media_urls;
+      } else if (bug.attachment_url) {
+        // Legacy attachment support
+        mediaUrls = [{ url: bug.attachment_url, type: 'image' }];
       }
       
       return {
         ...bug,
         media_urls: mediaUrls,
-        supports_count: bug.supports_count || 0,
-        comments_count: bug.comments_count || 0,
-        shares_count: bug.shares_count || 0,
-        recent_supporters: bug.recent_supporters || []
+        supports_count: parseInt(bug.supports_count) || 0,
+        comments_count: parseInt(bug.comments_count) || 0,
+        shares_count: parseInt(bug.shares_count) || 0,
+        views_count: parseInt(bug.views_count) || 0,
+        viral_score: parseInt(bug.viral_score) || 0,
+        user_supports: bug.user_supports || false,
+        recent_supporters: [] // We'll populate this separately if needed
       };
     });
     
     res.json(processedBugs);
   } catch (error) {
     console.error('Get bugs error:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    res.status(500).json({ 
+      error: 'Server error', 
+      details: error.message,
+      code: error.code 
+    });
+  }
+});
+
+app.get('/api/bugs-with-supporters', authenticateToken, async (req, res) => {
+  try {
+    // This endpoint provides full social features but is more complex
+    const result = await pool.query(`
+      SELECT DISTINCT
+        b.id,
+        b.title,
+        b.description,
+        b.steps,
+        b.device,
+        b.severity,
+        b.app_name,
+        b.status,
+        b.points,
+        b.user_id,
+        b.anonymous,
+        b.attachment_url,
+        b.submitted_at,
+        b.review_time,
+        b.supports_count,
+        b.comments_count,
+        b.shares_count,
+        b.views_count,
+        b.caption,
+        b.category,
+        b.viral_score,
+        b.media_urls_json,
+        u.name as reporter_name,
+        u.username as reporter_username,
+        u.avatar_url as reporter_avatar,
+        u.user_level as reporter_level,
+        -- Check if current user supports this bug
+        CASE WHEN user_support.id IS NOT NULL THEN true ELSE false END as user_supports
+      FROM bugs b 
+      LEFT JOIN users u ON b.user_id = u.id 
+      LEFT JOIN bug_supports user_support ON b.id = user_support.bug_id AND user_support.user_id = $1
+      ORDER BY b.submitted_at DESC
+    `, [req.user.id]);
+    
+    // Get recent supporters for each bug separately to avoid GROUP BY issues
+    const bugsWithSupporters = await Promise.all(
+      result.rows.map(async (bug) => {
+        try {
+          // Get recent supporters
+          const supportersResult = await pool.query(`
+            SELECT 
+              u.name,
+              u.username,
+              u.avatar_url,
+              bs.created_at
+            FROM bug_supports bs
+            JOIN users u ON bs.user_id = u.id
+            WHERE bs.bug_id = $1
+            ORDER BY bs.created_at DESC
+            LIMIT 3
+          `, [bug.id]);
+          
+          const recentSupporters = supportersResult.rows;
+          
+          // Parse media URLs
+          let mediaUrls = [];
+          if (bug.media_urls_json) {
+            try {
+              mediaUrls = JSON.parse(bug.media_urls_json);
+            } catch (e) {
+              console.error('Error parsing media URLs for bug', bug.id, e);
+            }
+          }
+          
+          return {
+            ...bug,
+            media_urls: mediaUrls,
+            supports_count: parseInt(bug.supports_count) || 0,
+            comments_count: parseInt(bug.comments_count) || 0,
+            shares_count: parseInt(bug.shares_count) || 0,
+            views_count: parseInt(bug.views_count) || 0,
+            viral_score: parseInt(bug.viral_score) || 0,
+            user_supports: bug.user_supports || false,
+            recent_supporters: recentSupporters
+          };
+        } catch (error) {
+          console.error('Error processing bug supporters for', bug.id, error);
+          return {
+            ...bug,
+            media_urls: [],
+            recent_supporters: [],
+            supports_count: 0,
+            comments_count: 0,
+            shares_count: 0,
+            views_count: 0,
+            viral_score: 0,
+            user_supports: false
+          };
+        }
+      })
+    );
+    
+    res.json(bugsWithSupporters);
+  } catch (error) {
+    console.error('Get bugs with supporters error:', error);
+    res.status(500).json({ 
+      error: 'Server error', 
+      details: error.message 
+    });
   }
 });
 
@@ -1456,13 +1566,13 @@ app.get('/api/bugs/:id/supporters', authenticateToken, async (req, res) => {
 app.get('/api/feed', authenticateToken, async (req, res) => {
   try {
     const { 
-      filter = 'trending', // trending, recent, following, category
+      filter = 'trending',
       category = null,
       limit = 20, 
       offset = 0 
     } = req.query;
     
-    let query = `
+    let baseQuery = `
       SELECT 
         b.*,
         u.name as reporter_name,
@@ -1470,31 +1580,14 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
         u.avatar_url as reporter_avatar,
         u.user_level as reporter_level,
         u.followers_count as reporter_followers,
-        -- Check if current user supports this bug
-        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports,
-        -- Get recent supporters for preview
-        COALESCE(supporter_preview.supporters, '[]'::json) as recent_supporters
+        CASE WHEN bs.id IS NOT NULL THEN true ELSE false END as user_supports
       FROM bugs b
       JOIN users u ON b.user_id = u.id
       LEFT JOIN bug_supports bs ON b.id = bs.bug_id AND bs.user_id = $1
-      LEFT JOIN LATERAL (
-        SELECT json_agg(
-          json_build_object(
-            'name', su.name,
-            'username', su.username,
-            'avatar_url', su.avatar_url
-          )
-        ) as supporters
-        FROM bug_supports bsp
-        JOIN users su ON bsp.user_id = su.id
-        WHERE bsp.bug_id = b.id
-        ORDER BY bsp.created_at DESC
-        LIMIT 3
-      ) supporter_preview ON true
     `;
 
+    let whereClause = 'WHERE 1=1';
     let orderClause = '';
-    let whereClause = 'WHERE 1=1'; // Show all bugs including newly submitted ones
     const queryParams = [req.user.id];
 
     if (category) {
@@ -1523,20 +1616,36 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
         orderClause = 'ORDER BY b.viral_score DESC, b.submitted_at DESC';
     }
 
-    query += ` ${whereClause} ${orderClause} LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    const query = `${baseQuery} ${whereClause} ${orderClause} LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
     queryParams.push(limit, offset);
 
     const result = await pool.query(query, queryParams);
 
-    // Calculate estimated rewards based on social validation
-    const enhancedBugs = result.rows.map(bug => ({
-      ...bug,
-      estimated_reward: calculateSocialReward(bug.supports_count, bug.severity, bug.viral_score),
-      time_ago: getTimeAgo(bug.submitted_at),
-      hashtags: bug.hashtags || [],
-      media_urls: bug.media_urls || [],
-      recent_supporters: bug.recent_supporters || []
-    }));
+    // Process results
+    const enhancedBugs = result.rows.map(bug => {
+      let mediaUrls = [];
+      if (bug.media_urls_json) {
+        try {
+          mediaUrls = JSON.parse(bug.media_urls_json);
+        } catch (e) {
+          console.error('Error parsing media URLs for bug', bug.id, e);
+        }
+      }
+
+      return {
+        ...bug,
+        media_urls: mediaUrls,
+        supports_count: parseInt(bug.supports_count) || 0,
+        comments_count: parseInt(bug.comments_count) || 0,
+        shares_count: parseInt(bug.shares_count) || 0,
+        views_count: parseInt(bug.views_count) || 0,
+        viral_score: parseInt(bug.viral_score) || 0,
+        estimated_reward: calculateSocialReward(bug.supports_count, bug.severity, bug.viral_score),
+        time_ago: getTimeAgo(bug.submitted_at),
+        hashtags: bug.hashtags || [],
+        recent_supporters: [] // Populate separately if needed
+      };
+    });
 
     res.json(enhancedBugs);
   } catch (error) {
@@ -1544,6 +1653,7 @@ app.get('/api/feed', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 // Get trending bugs
 app.get('/api/trending', authenticateToken, async (req, res) => {
@@ -1765,5 +1875,22 @@ function getTimeAgo(date) {
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
   return `${Math.floor(diffInSeconds / 604800)}w ago`;
 }
+function calculateSocialReward(supportsCount, severity, viralScore = 0) {
+  const basePoints = { high: 500, medium: 300, low: 150 };
+  const base = basePoints[severity] || 150;
+  const supportMultiplier = Math.min(1 + (supportsCount * 0.1), 10);
+  const viralBonus = viralScore > 1000 ? 2 : viralScore > 500 ? 1.5 : 1;
+  return Math.round(base * supportMultiplier * viralBonus);
+}
 
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+  
+  if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return `${Math.floor(diffInSeconds / 604800)}w ago`;
+}
 module.exports = app;
