@@ -728,7 +728,7 @@ const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
     stepNumber: index + 1
   }));
 
-// MediaCarousel Component - Add this before the other helper functions
+// MediaCarousel Component - Define at top level so it can be used everywhere
 const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, readOnly = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
@@ -910,105 +910,12 @@ const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, rea
     </div>
   );
 };
- 
-  if (showCarousel) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
-          <div className="p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Bug Steps</h3>
-              <button
-                onClick={() => setShowCarousel(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <MediaCarousel 
-              mediaFiles={mediaFiles}
-              readOnly={true}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  const firstMedia = mediaUrls[0];
-  const mediaUrl = typeof firstMedia === 'string' ? firstMedia : firstMedia.url;
-  const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
-  const remainingCount = mediaUrls.length - 1;
-
-  return (
-    <div className="mb-4">
-      <div 
-        className="relative cursor-pointer rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors"
-        onClick={() => setShowCarousel(true)}
-      >
-        {isVideo ? (
-          <div className="relative w-full h-64">
-            <video 
-              src={mediaUrl}
-              className="w-full h-full object-cover"
-              muted
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-              <div className="bg-white bg-opacity-90 rounded-full p-3">
-                <span className="text-purple-600 text-xl">▶️</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="relative w-full h-64">
-            <img 
-              src={mediaUrl} 
-              alt="Bug reproduction step"
-              className="w-full h-full object-cover"
-            />
-            {remainingCount > 0 && (
-              <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                <div className="absolute bottom-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  +{remainingCount} more
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Step indicator */}
-        <div className="absolute top-3 left-3 bg-purple-600 text-white px-2 py-1 rounded text-sm font-medium">
-          Step 1 of {mediaUrls.length}
-        </div>
-        
-        {/* Video indicator */}
-        {isVideo && (
-          <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm font-medium">
-            🎬 Video
-          </div>
-        )}
-      </div>
-      
-      {mediaUrls.length > 1 && (
-        <button
-          onClick={() => setShowCarousel(true)}
-          className="mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
-        >
-          <span>📱</span>
-          <span>View all {mediaUrls.length} steps</span>
-          <span>→</span>
-        </button>
-      )}
-    </div>
-  );
-};
-
-const AdminMediaDisplay = ({ mediaUrls, bugId, bugTitle, bugDescription, bugSteps }) => {
+// MediaDisplay component - simplified version that uses the MediaCarousel
+const MediaDisplay = ({ mediaUrls, maxDisplay = 1 }) => {
   const [showCarousel, setShowCarousel] = useState(false);
   
-  if (!mediaUrls || mediaUrls.length === 0) {
-    return <span className="text-gray-400 text-xs">No media</span>;
-  }
+  if (!mediaUrls || mediaUrls.length === 0) return null;
 
   // Convert URLs to format expected by carousel
   const mediaFiles = mediaUrls.map((media, index) => ({
