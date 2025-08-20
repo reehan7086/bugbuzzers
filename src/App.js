@@ -1531,6 +1531,7 @@ if (currentView === 'social-feed') {
 // PART 4: Views 3-12 and Component Closing
 
   // VIEW 3: Trending Page
+// VIEW 3: Trending Page - FIXED
 if (currentView === 'trending') {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1539,127 +1540,127 @@ if (currentView === 'trending') {
       <EmailVerificationBanner />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              🔥 Trending Bugs
-              <span className="text-lg bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-medium">
-                LIVE
-              </span>
-            </h1>
-            <p className="text-gray-600 mt-2">Most supported bugs trending right now</p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            🔥 Trending Bugs
+            <span className="text-lg bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-medium">
+              LIVE
+            </span>
+          </h1>
+          <p className="text-gray-600 mt-2">Most supported bugs trending right now</p>
+        </div>
 
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-  <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-3xl font-bold">{bugs.filter(b => b.supports_count > 0).length || bugs.filter(b => b.severity === 'high' || b.status === 'Verified').length}</div>
-        <div className="text-red-100 text-sm font-medium">Active bug reports</div>
-      </div>
-      <div className="text-5xl opacity-80">🔥</div>
-    </div>
-  </div>
-  <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-3xl font-bold">{bugs.filter(b => b.severity === 'high').length}</div>
-        <div className="text-purple-100 text-sm font-medium">Critical priority</div>
-      </div>
-      <div className="text-5xl opacity-80">⚠️</div>
-    </div>
-  </div>
-  <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-3xl font-bold">{bugs.filter(b => b.status === 'Verified').length * 300 || (bugs.length * 200)}</div>
-        <div className="text-green-100 text-sm font-medium">Points available</div>
-      </div>
-      <div className="text-5xl opacity-80">🏆</div>
-    </div>
-  </div>
-</div>
-
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">🏆 Top Trending Bugs</h2>
-            </div>
-            
-         <div className="divide-y divide-gray-200">
-  {bugs
-    .filter(bug => bug.severity === 'high' || bug.status === 'Verified')
-    .sort((a, b) => {
-      if (a.severity === 'high' && b.severity !== 'high') return -1;
-      if (b.severity === 'high' && a.severity !== 'high') return 1;
-      if (a.status === 'Verified' && b.status !== 'Verified') return -1;
-      if (b.status === 'Verified' && a.status !== 'Verified') return 1;
-      return new Date(b.submitted_at) - new Date(a.submitted_at);
-    })
-    .slice(0, 5)
-    .map((bug, index) => (
-      <div key={bug.id} className="px-6 py-5 hover:bg-gray-50 cursor-pointer transition-colors duration-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 flex-1 min-w-0">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg ${
-              index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
-              index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
-              index === 2 ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
-              'bg-gradient-to-r from-purple-500 to-purple-600'
-            }`}>
-              {index + 1}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 truncate text-lg">{bug.title}</h3>
-              <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                <span className="flex items-center gap-1 font-medium">
-                  📱 {bug.app_name}
-                </span>
-                <span className="flex items-center gap-1">
-                  👥 {bug.supports_count || Math.floor(Math.random() * 50) + 10}
-                </span>
-                <span className={`font-semibold px-2 py-1 rounded-full text-xs ${
-                  bug.severity === 'high' ? 'bg-red-100 text-red-700' : 
-                  bug.status === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {bug.severity === 'high' ? '🚨 Critical' : 
-                   bug.status === 'Verified' ? '✅ Verified' : '📈 Rising'}
-                </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold">{bugs.filter(b => b.supports_count > 0).length || bugs.filter(b => b.severity === 'high' || b.status === 'Verified').length}</div>
+                <div className="text-red-100 text-sm font-medium">Active bug reports</div>
               </div>
+              <div className="text-5xl opacity-80">🔥</div>
             </div>
           </div>
-          <div className="text-right ml-4 flex-shrink-0">
-            <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)}</div>
-            <div className="text-xs text-gray-500 font-medium">
-              {bug.status === 'Verified' ? 'Earned' : 'Potential'} pts
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold">{bugs.filter(b => b.severity === 'high').length}</div>
+                <div className="text-purple-100 text-sm font-medium">Critical priority</div>
+              </div>
+              <div className="text-5xl opacity-80">⚠️</div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-bold">{bugs.filter(b => b.status === 'Verified').length * 300 || (bugs.length * 200)}</div>
+                <div className="text-green-100 text-sm font-medium">Points available</div>
+              </div>
+              <div className="text-5xl opacity-80">🏆</div>
             </div>
           </div>
         </div>
-      </div>
-    ))}
-  
-  {bugs.filter(bug => bug.severity === 'high' || bug.status === 'Verified').length === 0 && (
-    <div className="px-6 py-12 text-center text-gray-500">
-      <div className="text-6xl mb-4">🔍</div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">No trending bugs yet</h3>
-      <p className="text-gray-600">Be the first to report a critical issue and start trending!</p>
-    </div>
-  )}
-</div>
 
-          <div className="mt-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-8 text-white text-center">
-            <h3 className="text-2xl font-bold mb-2">🚀 Want to Go Viral?</h3>
-            <p className="mb-6 text-purple-100">Report bugs that thousands of people experience and earn massive rewards!</p>
-            <button
-              onClick={() => setCurrentView('report')}
-              className="bg-white text-purple-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all transform hover:scale-105"
-            >
-              Report a Trending Bug
-            </button>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">🏆 Top Trending Bugs</h2>
           </div>
-        </main>
-      </div>
-    );
-  }
+          
+          <div className="divide-y divide-gray-200">
+            {bugs
+              .filter(bug => bug.severity === 'high' || bug.status === 'Verified')
+              .sort((a, b) => {
+                if (a.severity === 'high' && b.severity !== 'high') return -1;
+                if (b.severity === 'high' && a.severity !== 'high') return 1;
+                if (a.status === 'Verified' && b.status !== 'Verified') return -1;
+                if (b.status === 'Verified' && a.status !== 'Verified') return 1;
+                return new Date(b.submitted_at) - new Date(a.submitted_at);
+              })
+              .slice(0, 5)
+              .map((bug, index) => (
+                <div key={bug.id} className="px-6 py-5 hover:bg-gray-50 cursor-pointer transition-colors duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 flex-1 min-w-0">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg ${
+                        index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' :
+                        index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
+                        index === 2 ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
+                        'bg-gradient-to-r from-purple-500 to-purple-600'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 truncate text-lg">{bug.title}</h3>
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                          <span className="flex items-center gap-1 font-medium">
+                            📱 {bug.app_name}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            👥 {bug.supports_count || Math.floor(Math.random() * 50) + 10}
+                          </span>
+                          <span className={`font-semibold px-2 py-1 rounded-full text-xs ${
+                            bug.severity === 'high' ? 'bg-red-100 text-red-700' : 
+                            bug.status === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {bug.severity === 'high' ? '🚨 Critical' : 
+                             bug.status === 'Verified' ? '✅ Verified' : '📈 Rising'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4 flex-shrink-0">
+                      <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)}</div>
+                      <div className="text-xs text-gray-500 font-medium">
+                        {bug.status === 'Verified' ? 'Earned' : 'Potential'} pts
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            
+            {bugs.filter(bug => bug.severity === 'high' || bug.status === 'Verified').length === 0 && (
+              <div className="px-6 py-12 text-center text-gray-500">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No trending bugs yet</h3>
+                <p className="text-gray-600">Be the first to report a critical issue and start trending!</p>
+              </div>
+            )}
+          </div>
+        </div>
 
+        <div className="mt-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-8 text-white text-center">
+          <h3 className="text-2xl font-bold mb-2">🚀 Want to Go Viral?</h3>
+          <p className="mb-6 text-purple-100">Report bugs that thousands of people experience and earn massive rewards!</p>
+          <button
+            onClick={() => setCurrentView('report')}
+            className="bg-white text-purple-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all transform hover:scale-105"
+          >
+            Report a Trending Bug
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
   // VIEW 4: Login Page
   if (currentView === 'login') {
     return (
@@ -2241,187 +2242,187 @@ if (currentView === 'bugs') {
     );
   }
 
-  if (currentView === 'admin' && user?.isAdmin) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-        <SocialNavigation />
-        <EmailVerificationBanner /> 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-2">Manage and review bug reports</p>
-          </div>
+// Admin Dashboard View - FIXED
+if (currentView === 'admin' && user?.isAdmin) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <LoadingSpinner />
+      <SocialNavigation />
+      <EmailVerificationBanner /> 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2">Manage and review bug reports</p>
+        </div>
 
-          {/* Admin Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <FileText className="w-8 h-8 text-blue-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Reports</p>
-                  <p className="text-2xl font-bold text-gray-900">{bugs.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <Clock className="w-8 h-8 text-yellow-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Submitted').length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <CheckCircle className="w-8 h-8 text-green-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Verified</p>
-                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Verified').length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center">
-                <XCircle className="w-8 h-8 text-red-500" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Rejected</p>
-                  <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Rejected').length}</p>
-                </div>
+        {/* Admin Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <FileText className="w-8 h-8 text-blue-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Reports</p>
+                <p className="text-2xl font-bold text-gray-900">{bugs.length}</p>
               </div>
             </div>
           </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <Clock className="w-8 h-8 text-yellow-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Submitted').length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <CheckCircle className="w-8 h-8 text-green-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Verified</p>
+                <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Verified').length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <XCircle className="w-8 h-8 text-red-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Rejected</p>
+                <p className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.status === 'Rejected').length}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Bug Reports Table */}
-<div className="bg-white rounded-lg shadow-sm overflow-hidden">
-  <div className="px-6 py-4 border-b border-gray-200">
-    <h2 className="text-lg font-semibold text-gray-900">Bug Reports</h2>
-  </div>
-  
-  {bugs.length === 0 ? (
-    <div className="text-center py-12">
-      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 mb-2">No bug reports yet</h3>
-      <p className="text-gray-600">Bug reports will appear here once users start reporting them.</p>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Bug Reports</h2>
+          </div>
+          
+          {bugs.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No bug reports yet</h3>
+              <p className="text-gray-600">Bug reports will appear here once users start reporting them.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Bug ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Media</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Reporter</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Severity</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {bugs.map((bug) => (
+                    <tr key={bug.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
+                        <div className="truncate font-medium">{bug.title}</div>
+                        <div className="text-xs text-gray-500 truncate">{bug.app_name}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex justify-center">
+                          {(() => {
+                            let mediaUrls = [];
+                            
+                            if (bug.media_urls && Array.isArray(bug.media_urls)) {
+                              mediaUrls = bug.media_urls;
+                            } else if (bug.media_urls_json) {
+                              try {
+                                mediaUrls = JSON.parse(bug.media_urls_json);
+                              } catch (e) {
+                                console.error('Error parsing media JSON:', e);
+                              }
+                            }
+                            
+                            return mediaUrls.length > 0 ? (
+                              <div className="flex gap-1 justify-center">
+                                {mediaUrls.slice(0, 2).map((media, index) => (
+                                  <img 
+                                    key={index} 
+                                    src={typeof media === 'string' ? media : media.url} 
+                                    alt={`Bug media ${index + 1}`}
+                                    className="w-6 h-6 object-cover rounded border cursor-pointer hover:scale-110 transition-transform"
+                                    onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
+                                  />
+                                ))}
+                                {mediaUrls.length > 2 && (
+                                  <span className="text-xs text-gray-500 self-center">+{mediaUrls.length - 2}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="truncate max-w-20">{bug.reporter_name || 'Anonymous'}</div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          bug.severity === 'high' ? 'bg-red-100 text-red-800' :
+                          bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {bug.severity.charAt(0).toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
+                          {bug.status === 'Submitted' ? 'Sub' : 
+                           bug.status === 'Verified' ? 'Ver' : 
+                           bug.status === 'In Review' ? 'Rev' : 
+                           bug.status.slice(0, 3)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex justify-center gap-1">
+                          {bug.status === 'Submitted' && (
+                            <>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
+                                className="text-green-600 hover:text-green-900 text-xs px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                                disabled={loading}
+                                title="Verify Bug"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
+                                className="text-red-600 hover:text-red-900 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                disabled={loading}
+                                title="Reject Bug"
+                              >
+                                ✗
+                              </button>
+                            </>
+                          )}
+                          {bug.status !== 'Submitted' && (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
-  ) : (
-   <div className="overflow-x-auto">
-  <table className="min-w-full divide-y divide-gray-200">
-    <thead className="bg-gray-50">
-      <tr>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Bug ID</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Media</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Reporter</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Severity</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Status</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 text-center">Actions</th>
-      </tr>
-    </thead>
-    <tbody className="bg-white divide-y divide-gray-200">
-      {bugs.map((bug) => (
-        <tr key={bug.id} className="hover:bg-gray-50">
-          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
-          <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
-            <div className="truncate font-medium">{bug.title}</div>
-            <div className="text-xs text-gray-500 truncate">{bug.app_name}</div>
-          </td>
-          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-            <div className="flex justify-center">
-              {(() => {
-                let mediaUrls = [];
-                
-                if (bug.media_urls && Array.isArray(bug.media_urls)) {
-                  mediaUrls = bug.media_urls;
-                } else if (bug.media_urls_json) {
-                  try {
-                    mediaUrls = JSON.parse(bug.media_urls_json);
-                  } catch (e) {
-                    console.error('Error parsing media JSON:', e);
-                  }
-                }
-                
-                return mediaUrls.length > 0 ? (
-                  <div className="flex gap-1 justify-center">
-                    {mediaUrls.slice(0, 2).map((media, index) => (
-                      <img 
-                        key={index} 
-                        src={typeof media === 'string' ? media : media.url} 
-                        alt={`Bug media ${index + 1}`}
-                        className="w-6 h-6 object-cover rounded border cursor-pointer hover:scale-110 transition-transform"
-                        onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
-                      />
-                    ))}
-                    {mediaUrls.length > 2 && (
-                      <span className="text-xs text-gray-500 self-center">+{mediaUrls.length - 2}</span>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-gray-400 text-xs">—</span>
-                );
-              })()}
-            </div>
-          </td>
-          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-            <div className="truncate max-w-20">{bug.reporter_name || 'Anonymous'}</div>
-          </td>
-          <td className="px-4 py-4 whitespace-nowrap text-center">
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              bug.severity === 'high' ? 'bg-red-100 text-red-800' :
-              bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {bug.severity.charAt(0).toUpperCase()}
-            </span>
-          </td>
-          <td className="px-4 py-4 whitespace-nowrap text-center">
-            <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
-              {bug.status === 'Submitted' ? 'Sub' : 
-               bug.status === 'Verified' ? 'Ver' : 
-               bug.status === 'In Review' ? 'Rev' : 
-               bug.status.slice(0, 3)}
-            </span>
-          </td>
-          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-            <div className="flex justify-center gap-1">
-              {bug.status === 'Submitted' && (
-                <>
-                  <button
-                    onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
-                    className="text-green-600 hover:text-green-900 text-xs px-2 py-1 rounded hover:bg-green-50 transition-colors"
-                    disabled={loading}
-                    title="Verify Bug"
-                  >
-                    ✓
-                  </button>
-                  <button
-                    onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
-                    className="text-red-600 hover:text-red-900 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                    disabled={loading}
-                    title="Reject Bug"
-                  >
-                    ✗
-                  </button>
-                </>
-              )}
-              {bug.status !== 'Submitted' && (
-                <span className="text-xs text-gray-400">—</span>
-              )}
-            </div>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-  )}
-</div>
-        </main>
-      </div>
-    );
-  }
-
+  );
+}
   // Forgot Password Page
   if (currentView === 'forgot-password') {
     return (
@@ -2680,7 +2681,7 @@ if (currentView === 'landing') {
     </div>
   );
 }
-  // Default fallback
+// Default fallback - ENSURE THIS IS THE LAST RETURN STATEMENT
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
@@ -2696,6 +2697,6 @@ if (currentView === 'landing') {
       </div>
     </div>
   );
-};
+}; // <-- CLOSING BRACE FOR BugBuzzers COMPONENT
 
-export default BugBuzzers;
+export default BugBuzzers; // <-- EXPORT STATEMENT
