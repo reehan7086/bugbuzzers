@@ -2242,13 +2242,14 @@ if (currentView === 'bugs') {
     );
   }
 
-// Admin Dashboard View - FIXED
+// COMPLETE ADMIN VIEW WITH APPROVAL BUTTONS
 if (currentView === 'admin' && user?.isAdmin) {
   return (
     <div className="min-h-screen bg-gray-50">
       <LoadingSpinner />
       <SocialNavigation />
       <EmailVerificationBanner /> 
+      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
@@ -2298,7 +2299,7 @@ if (currentView === 'admin' && user?.isAdmin) {
         {/* Bug Reports Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Bug Reports</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Bug Reports Management</h2>
           </div>
           
           {bugs.length === 0 ? (
@@ -2312,103 +2313,123 @@ if (currentView === 'admin' && user?.isAdmin) {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Bug ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Media</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Reporter</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Severity</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 text-center">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bug ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title & App</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Media</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Severity</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {bugs.map((bug) => (
-                    <tr key={bug.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{bug.id}</td>
-                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
-                        <div className="truncate font-medium">{bug.title}</div>
-                        <div className="text-xs text-gray-500 truncate">{bug.app_name}</div>
+                    <tr key={bug.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="text-sm font-mono font-medium text-purple-600">{bug.id}</span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex justify-center">
-                          {(() => {
-                            let mediaUrls = [];
-                            
-                            if (bug.media_urls && Array.isArray(bug.media_urls)) {
-                              mediaUrls = bug.media_urls;
-                            } else if (bug.media_urls_json) {
-                              try {
-                                mediaUrls = JSON.parse(bug.media_urls_json);
-                              } catch (e) {
-                                console.error('Error parsing media JSON:', e);
-                              }
-                            }
-                            
-                            return mediaUrls.length > 0 ? (
-                              <div className="flex gap-1 justify-center">
-                                {mediaUrls.slice(0, 2).map((media, index) => (
-                                  <img 
-                                    key={index} 
-                                    src={typeof media === 'string' ? media : media.url} 
-                                    alt={`Bug media ${index + 1}`}
-                                    className="w-6 h-6 object-cover rounded border cursor-pointer hover:scale-110 transition-transform"
-                                    onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
-                                  />
-                                ))}
-                                {mediaUrls.length > 2 && (
-                                  <span className="text-xs text-gray-500 self-center">+{mediaUrls.length - 2}</span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-xs">—</span>
-                            );
-                          })()}
+                      <td className="px-4 py-4 max-w-xs">
+                        <div className="font-medium text-gray-900 truncate">{bug.title}</div>
+                        <div className="text-sm text-gray-500 truncate">📱 {bug.app_name}</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(bug.submitted_at).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="truncate max-w-20">{bug.reporter_name || 'Anonymous'}</div>
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        {(() => {
+                          let mediaUrls = [];
+                          
+                          if (bug.media_urls && Array.isArray(bug.media_urls)) {
+                            mediaUrls = bug.media_urls;
+                          } else if (bug.media_urls_json) {
+                            try {
+                              mediaUrls = JSON.parse(bug.media_urls_json);
+                            } catch (e) {
+                              console.error('Error parsing media JSON:', e);
+                            }
+                          }
+                          
+                          return mediaUrls.length > 0 ? (
+                            <div className="flex gap-1 justify-center">
+                              {mediaUrls.slice(0, 2).map((media, index) => (
+                                <img 
+                                  key={index} 
+                                  src={typeof media === 'string' ? media : media.url} 
+                                  alt={`Bug media ${index + 1}`}
+                                  className="w-8 h-8 object-cover rounded border cursor-pointer hover:scale-110 transition-transform"
+                                  onClick={() => window.open(typeof media === 'string' ? media : media.url, '_blank')}
+                                />
+                              ))}
+                              {mediaUrls.length > 2 && (
+                                <span className="text-xs text-gray-500 self-center ml-1">+{mediaUrls.length - 2}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 truncate max-w-24">
+                          {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Unknown')}
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
                           bug.severity === 'high' ? 'bg-red-100 text-red-800' :
                           bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-green-100 text-green-800'
                         }`}>
-                          {bug.severity.charAt(0).toUpperCase()}
+                          {bug.severity === 'high' ? '🚨 HIGH' : 
+                           bug.severity === 'medium' ? '⚠️ MED' : 
+                           '✅ LOW'}
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center">
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(bug.status)}`}>
-                          {bug.status === 'Submitted' ? 'Sub' : 
-                           bug.status === 'Verified' ? 'Ver' : 
-                           bug.status === 'In Review' ? 'Rev' : 
-                           bug.status.slice(0, 3)}
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(bug.status)}`}>
+                          {bug.status}
                         </span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex justify-center gap-1">
-                          {bug.status === 'Submitted' && (
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <div className="flex justify-center gap-2">
+                          {bug.status === 'Submitted' ? (
                             <>
                               <button
                                 onClick={() => updateBugStatus(bug.id, 'Verified', getPointsForSeverity(bug.severity))}
-                                className="text-green-600 hover:text-green-900 text-xs px-2 py-1 rounded hover:bg-green-50 transition-colors"
+                                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50"
                                 disabled={loading}
-                                title="Verify Bug"
+                                title={`Verify & Award ${getPointsForSeverity(bug.severity)} points`}
                               >
-                                ✓
+                                ✓ Verify
                               </button>
                               <button
                                 onClick={() => updateBugStatus(bug.id, 'Rejected', 0)}
-                                className="text-red-600 hover:text-red-900 text-xs px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50"
                                 disabled={loading}
-                                title="Reject Bug"
+                                title="Reject this bug report"
                               >
-                                ✗
+                                ✗ Reject
                               </button>
                             </>
-                          )}
-                          {bug.status !== 'Submitted' && (
-                            <span className="text-xs text-gray-400">—</span>
+                          ) : bug.status === 'Verified' ? (
+                            <div className="text-center">
+                              <div className="text-green-600 text-xs font-bold">✅ Verified</div>
+                              <div className="text-xs text-gray-500">{bug.points || getPointsForSeverity(bug.severity)} pts</div>
+                            </div>
+                          ) : bug.status === 'Rejected' ? (
+                            <div className="text-center">
+                              <div className="text-red-600 text-xs font-bold">❌ Rejected</div>
+                              <button
+                                onClick={() => updateBugStatus(bug.id, 'Submitted', 0)}
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                disabled={loading}
+                                title="Move back to review"
+                              >
+                                Reopen
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">No actions</span>
                           )}
                         </div>
                       </td>
@@ -2418,6 +2439,31 @@ if (currentView === 'admin' && user?.isAdmin) {
               </table>
             </div>
           )}
+        </div>
+
+        {/* Quick Actions Panel */}
+        <div className="mt-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+          <h3 className="text-xl font-bold mb-4">Quick Admin Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white bg-opacity-20 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">🔍 Pending Reviews</h4>
+              <p className="text-sm opacity-90">
+                {bugs.filter(b => b.status === 'Submitted').length} bugs awaiting your review
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">💰 Points Awarded</h4>
+              <p className="text-sm opacity-90">
+                {bugs.filter(b => b.status === 'Verified').reduce((sum, bug) => sum + (bug.points || getPointsForSeverity(bug.severity)), 0)} total points distributed
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">📊 Success Rate</h4>
+              <p className="text-sm opacity-90">
+                {bugs.length > 0 ? Math.round((bugs.filter(b => b.status === 'Verified').length / bugs.length) * 100) : 0}% verification rate
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     </div>
