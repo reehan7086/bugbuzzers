@@ -1776,10 +1776,10 @@ if (currentView === 'social-feed') {
                           
                           {/* Support Button */}
                           <button 
-                            onClick={async () => {
+                            onClick={async (e) => {
                               try {
                                 // Show immediate feedback
-                                const button = event.currentTarget;
+                                const button = e.currentTarget;
                                 button.style.transform = 'scale(0.95)';
                                 setTimeout(() => button.style.transform = '', 150);
                                 
@@ -1824,9 +1824,9 @@ if (currentView === 'social-feed') {
 
                           {/* Comment Button */}
                           <button 
-                            onClick={() => {
+                            onClick={(e) => {
                               // Show immediate feedback
-                              const button = event.currentTarget;
+                              const button = e.currentTarget;
                               button.style.transform = 'scale(0.95)';
                               setTimeout(() => button.style.transform = '', 150);
                               
@@ -1870,9 +1870,9 @@ if (currentView === 'social-feed') {
 
                           {/* Share Button */}
                           <button 
-                            onClick={() => {
+                            onClick={(e) => {
                               // Show immediate feedback
-                              const button = event.currentTarget;
+                              const button = e.currentTarget;
                               button.style.transform = 'scale(0.95)';
                               setTimeout(() => button.style.transform = '', 150);
                               
