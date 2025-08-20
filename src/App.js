@@ -1268,7 +1268,29 @@ const SocialNavigation = () => (
 // =================== COMPLETE SOCIAL FEED VIEW ===================
 // In src/App.js - Replace your entire social-feed view with this:
 
+// FIXED SOCIAL FEED VIEW - Replace the social-feed view in your App.js with this:
+
 if (currentView === 'social-feed') {
+  // Define categories BEFORE the JSX to prevent initialization errors
+  const categories = [
+    { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
+    { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
+    { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
+    { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
+    { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
+    { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
+    { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
+    { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
+  ];
+
+  // Define filter options to prevent initialization errors
+  const filterOptions = [
+    { key: 'all', label: '🔥 All Bugs', icon: '📈' },
+    { key: 'recent', label: '🕐 Recent', icon: '⏰' },
+    { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
+    { key: 'verified', label: '✅ Verified', icon: '🏆' }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <LoadingSpinner />
@@ -1316,16 +1338,7 @@ if (currentView === 'social-feed') {
               <p className="text-xs mt-2 text-gray-600 font-medium">Report</p>
             </div>
             
-            {[
-              { name: 'Social', icon: '📱', gradient: 'from-purple-500 to-pink-500' },
-              { name: 'Finance', icon: '💰', gradient: 'from-green-500 to-emerald-500' },
-              { name: 'Education', icon: '🎓', gradient: 'from-blue-500 to-indigo-500' },
-              { name: 'Shopping', icon: '🛒', gradient: 'from-orange-500 to-red-500' },
-              { name: 'Entertainment', icon: '🎬', gradient: 'from-red-600 to-pink-600' },
-              { name: 'Transport', icon: '🚗', gradient: 'from-gray-600 to-gray-800' },
-              { name: 'Health', icon: '🏥', gradient: 'from-teal-500 to-cyan-500' },
-              { name: 'Others', icon: '📋', gradient: 'from-indigo-500 to-purple-600' }
-            ].map((category, index) => (
+            {categories.map((category, index) => (
               <div key={index} className="text-center cursor-pointer hover:scale-110 transition-all duration-200">
                 <div className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br ${category.gradient} rounded-full p-0.5 mx-auto shadow-lg`}>
                   <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
@@ -1342,12 +1355,7 @@ if (currentView === 'social-feed') {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex justify-center">
             <div className="flex space-x-2 overflow-x-auto bg-gray-50 rounded-lg p-1">
-              {[
-                { key: 'all', label: '🔥 All Bugs', icon: '📈' },
-                { key: 'recent', label: '🕐 Recent', icon: '⏰' },
-                { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
-                { key: 'verified', label: '✅ Verified', icon: '🏆' }
-              ].map((filter) => (
+              {filterOptions.map((filter) => (
                 <button
                   key={filter.key}
                   onClick={() => setFeedFilter(filter.key)}
@@ -1527,7 +1535,6 @@ if (currentView === 'social-feed') {
     </div>
   );
 }
-
 // PART 4: Views 3-12 and Component Closing
 
   // VIEW 3: Trending Page
