@@ -283,12 +283,21 @@ class BugBuzzersAPI {
   }
 
   // ===================== SHARE METHODS =====================
-  async shareBug(bugId, platform = 'copy_link') {
-    return await this.request(`/bugs/${bugId}/share`, {
-      method: 'POST',
-      body: JSON.stringify({ platform }),
-    });
-  }
+// Fixed shareBug method in api.js
+// Replace the existing shareBug method with this corrected version
+
+async shareBug(bugId, platform = 'copy_link') {
+  // Ensure we're using a valid platform name that matches backend validation
+  const validPlatforms = ['twitter', 'facebook', 'linkedin', 'copy_link', 'internal'];
+  const normalizedPlatform = validPlatforms.includes(platform) ? platform : 'copy_link';
+  
+  console.log('Sharing bug with platform:', normalizedPlatform);
+  
+  return await this.request(`/bugs/${bugId}/share`, {
+    method: 'POST',
+    body: JSON.stringify({ platform: normalizedPlatform }),
+  });
+}
 
   // ===================== USER SOCIAL METHODS =====================
   async followUser(userId) {
