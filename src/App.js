@@ -222,33 +222,7 @@ const loadAllBugs = useCallback(async () => {
     initializeAuth();
   }, []);
 
-useEffect(() => {
-  const loadUserData = async () => {
-    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
-      try {
-        if (user.isAdmin) {
-          // Admin sees all bugs
-          await loadAllBugs();
-        } else if (currentView === 'social-feed' || currentView === 'trending') {
-          // Social feed shows all bugs for everyone
-          await loadAllBugs();
-        } else if (currentView === 'bugs') {
-          // "My Bugs" view shows only user's own bugs
-          await loadUserBugs();
-        } else {
-          // Default: show all bugs
-          await loadAllBugs();
-        }
-        await loadLeaderboard();
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        setError('Failed to load data. Please refresh the page.');
-      }
-    }
-  };
 
-  loadUserData();
-}, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);
 
   useEffect(() => {
     if (user && currentView === 'dashboard') {
@@ -1618,189 +1592,6 @@ const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, rea
   );
 };
 
-// MediaCarousel Component - Add this before the other helper functions
-const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, readOnly = false }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  if (!mediaFiles || mediaFiles.length === 0) {
-    return null;
-  }
-
-  const currentMedia = mediaFiles[currentIndex];
-  const isVideo = currentMedia.type?.startsWith('video/') || 
-                 currentMedia.file?.type?.startsWith('video/') ||
-                 currentMedia.url?.includes('.mp4') ||
-                 currentMedia.url?.includes('.webm');
-
-  const nextMedia = () => {
-    setCurrentIndex((prev) => (prev + 1) % mediaFiles.length);
-  };
-
-  const prevMedia = () => {
-    setCurrentIndex((prev) => (prev - 1 + mediaFiles.length) % mediaFiles.length);
-  };
-
-  const mediaUrl = currentMedia.url || currentMedia.preview;
-
-  return (
-    <div className="mt-4 bg-gray-50 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-semibold text-gray-900 flex items-center gap-2">
-          <span>📱</span>
-          Bug Reproduction Steps
-        </h4>
-        <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
-          {currentIndex + 1} of {mediaFiles.length}
-        </span>
-      </div>
-
-      <div className="relative bg-white rounded-lg overflow-hidden border border-gray-200">
-        {/* Media Display */}
-        <div className="relative w-full h-64 sm:h-80">
-          {isVideo ? (
-            <video 
-              src={mediaUrl}
-              className="w-full h-full object-contain bg-black"
-              controls
-              muted
-            />
-          ) : (
-            <img 
-              src={mediaUrl} 
-              alt={`Step ${currentIndex + 1}`}
-              className="w-full h-full object-contain bg-gray-100"
-            />
-          )}
-          
-          {/* Navigation Arrows */}
-          {mediaFiles.length > 1 && (
-            <>
-              <button
-                onClick={prevMedia}
-                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-all"
-              >
-                ←
-              </button>
-              <button
-                onClick={nextMedia}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-all"
-              >
-                →
-              </button>
-            </>
-          )}
-          
-          {/* Step Indicator */}
-          <div className="absolute top-2 left-2 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-            Step {currentIndex + 1}
-          </div>
-          
-          {/* File Type Indicator */}
-          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-            {isVideo ? '🎬 Video' : '📷 Image'}
-          </div>
-
-          {/* Remove File Button (only in edit mode) */}
-          {!readOnly && onRemoveFile && (
-            <button
-              onClick={() => onRemoveFile(currentIndex)}
-              className="absolute top-2 right-12 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 text-xs transition-colors"
-              title="Remove this file"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Step Description */}
-        <div className="p-4 border-t border-gray-200">
-          {!readOnly && onUpdateDescription ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Step {currentIndex + 1} Description:
-              </label>
-              <textarea
-                value={currentMedia.stepDescription || ''}
-                onChange={(e) => onUpdateDescription(currentIndex, e.target.value)}
-                placeholder={`Describe what happens in step ${currentIndex + 1}...`}
-                className="w-full p-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                rows="2"
-              />
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                Step {currentIndex + 1}:
-              </p>
-              <p className="text-sm text-gray-600">
-                {currentMedia.stepDescription || 'No description provided'}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Thumbnail Navigation */}
-      {mediaFiles.length > 1 && (
-        <div className="flex gap-2 mt-3 overflow-x-auto">
-          {mediaFiles.map((media, index) => {
-            const thumbUrl = media.url || media.preview;
-            const isThumbVideo = media.type?.startsWith('video/') || 
-                                media.file?.type?.startsWith('video/') ||
-                                thumbUrl?.includes('.mp4');
-            
-            return (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                  index === currentIndex ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                {isThumbVideo ? (
-                  <div className="relative w-full h-full">
-                    <video 
-                      src={thumbUrl}
-                      className="w-full h-full object-cover"
-                      muted
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                      <span className="text-white text-xs">▶</span>
-                    </div>
-                  </div>
-                ) : (
-                  <img 
-                    src={thumbUrl} 
-                    alt={`Step ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 text-center">
-                  {index + 1}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* File Info */}
-      <div className="mt-3 text-xs text-gray-500 text-center">
-        {currentMedia.name && (
-          <span className="bg-gray-200 px-2 py-1 rounded mr-2">
-            {currentMedia.name}
-          </span>
-        )}
-        {currentMedia.size && (
-          <span className="bg-gray-200 px-2 py-1 rounded">
-            {formatFileSize(currentMedia.size)}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // Helper function to handle comments
 const handleBugComment = async (bugId, bugTitle) => {
   try {
@@ -1881,47 +1672,6 @@ const handleBugSupport = async (bugId, bugTitle) => {
     } else {
       alert('❌ Failed to support bug. Please try again.');
     }
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Helper function to handle comments
-const handleBugComment = async (bugId, bugTitle) => {
-  try {
-    // Get comment from user
-    const comment = prompt(`💬 Add a comment about "${bugTitle}":`);
-    
-    if (!comment || !comment.trim()) {
-      return; // User cancelled or empty comment
-    }
-    
-    setLoading(true);
-    
-    // Call API to add comment
-    await api.addComment(bugId, comment.trim());
-    
-    // Update the local state immediately
-    setBugs(prevBugs => prevBugs.map(bug => 
-      bug.id === bugId 
-        ? { 
-            ...bug, 
-            comments_count: (bug.comments_count || 0) + 1
-          } 
-        : bug
-    ));
-    
-    // Show success message
-    alert(`✅ Comment added: "${comment.trim()}"`);
-    
-    // Refresh the feed to get fresh data
-    setTimeout(() => {
-      loadAllBugs();
-    }, 1000);
-    
-  } catch (error) {
-    console.error('Comment error:', error);
-    alert('❌ Failed to add comment. Please try again.');
   } finally {
     setLoading(false);
   }
@@ -2935,8 +2685,6 @@ if (currentView === 'report') {
       </div>
     </label>
   </div>
-// Add this RIGHT AFTER the MediaCarousel code you found:
-
 {/* Media Carousel */}
 {bugForm.mediaFiles && bugForm.mediaFiles.length > 0 && (
   <MediaCarousel 
