@@ -1775,94 +1775,106 @@ if (currentView === 'trending') {
   }
 
   // VIEW 5: Signup Page
-  if (currentView === 'signup') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <LoadingSpinner />
-        <div className="max-w-md w-full">
-         <div className="text-center mb-8">
-  <div className="flex items-center justify-center gap-2 mb-4">
-    <span className="text-3xl">🐛</span>
-    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-  </div>
-  <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
-  <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
-</div>
-
-          <form onSubmit={handleSignup} className="bg-white rounded-lg shadow-sm p-8">
-            <ErrorMessage />
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-              <input
-                type="text"
-                value={signupForm.name}
-                onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                disabled={loading}
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                value={signupForm.email}
-                onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-              <input
-                type="password"
-                value={signupForm.confirmPassword}
-                onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-600">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => setCurrentView('login')}
-                  className="text-purple-600 font-medium hover:text-purple-700"
-                >
-                  Sign in here
-                </button>
-              </p>
-            </div>
-          </form>
-
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => setCurrentView('landing')}
-              className="text-purple-600 hover:text-purple-700"
-            >
-              ← Back to home
-            </button>
+// VIEW 5: Signup Page - FIXED
+if (currentView === 'signup') {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <LoadingSpinner />
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <span className="text-3xl">🐛</span>
+            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
           </div>
+          <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
+          <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
+        </div>
+
+        <form onSubmit={handleSignup} className="bg-white rounded-lg shadow-sm p-8">
+          <ErrorMessage />
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+            <input
+              type="text"
+              value={signupForm.name}
+              onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={signupForm.email}
+              onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={signupForm.password}
+              onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+            <input
+              type="password"
+              value={signupForm.confirmPassword}
+              onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
+          </button>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => setCurrentView('login')}
+                className="text-purple-600 font-medium hover:text-purple-700"
+              >
+                Sign in here
+              </button>
+            </p>
+          </div>
+        </form>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setCurrentView('landing')}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            ← Back to home
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
 if (currentView === 'report') {
   return (
