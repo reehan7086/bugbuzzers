@@ -370,4 +370,5 @@ getTrendingCategories() {
   }
 }
 
-export default new BugBuzzersAPI();
+const apiInstance = new BugBuzzersAPI();
+export default apiInstance;
