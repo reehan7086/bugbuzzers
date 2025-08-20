@@ -222,7 +222,32 @@ const loadAllBugs = useCallback(async () => {
     initializeAuth();
   }, []);
 
-
+useEffect(() => {
+  const loadUserData = async () => {
+    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
+      try {
+        if (user.isAdmin) {
+          // Admin sees all bugs
+          await loadAllBugs();
+        } else if (currentView === 'social-feed' || currentView === 'trending') {
+          // Social feed shows all bugs for everyone
+          await loadAllBugs();
+        } else if (currentView === 'bugs') {
+          // "My Bugs" view shows only user's own bugs
+          await loadUserBugs();
+        } else {
+          // Default: show all bugs
+          await loadAllBugs();
+        }
+        await loadLeaderboard();
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setError('Failed to load data. Please refresh the page.');
+      }
+    }
+  };
+  loadUserData();
+}, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);"
 
   useEffect(() => {
     if (user && currentView === 'dashboard') {
