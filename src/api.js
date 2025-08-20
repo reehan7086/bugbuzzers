@@ -1,5 +1,4 @@
-// Enhanced API Client - Replace your existing src/api.js with this version
-
+/* eslint-disable import/no-anonymous-default-export */
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
 
 class BugBuzzersAPI {
