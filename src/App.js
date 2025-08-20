@@ -2578,50 +2578,49 @@ if (currentView === 'verify-email') {
   );
 }
 
-// Landing Page
-// Landing Page - Complete Fixed Code
+// Landing Page - Fixed JSX closing tag issue
 if (currentView === 'landing') {
   return (
     <div className="min-h-screen bg-gray-50">
       <LoadingSpinner />
       
       {/* Navigation */}
-<nav className="bg-white shadow-sm">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex justify-between items-center h-16">
-      <div className="flex items-center">
-        <span className="text-2xl">🐛</span>
-        <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
-      </div>
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={() => setCurrentView('login')}
-          className="text-gray-700 hover:text-purple-600 font-medium"
-        >
-          Sign In
-        </button>
-        <button
-          onClick={() => setCurrentView('signup')}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          Sign Up
-        </button>
-      </div>
-    </div>
-  </div>
-</nav>
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <span className="text-2xl">🐛</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCurrentView('login')}
+                className="text-gray-700 hover:text-purple-600 font-medium"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setCurrentView('signup')}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-{/* Hero Section */}
-<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-  <div className="text-center">
-    <div className="flex items-center justify-center gap-2 mb-6">
-      <span className="text-4xl">🐛</span>
-      <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-    </div>
-    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-      Turn Bug Reports Into 
-      <span className="text-purple-600"> Social Rewards</span>
-    </h1>
+      {/* Hero Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-4xl">🐛</span>
+            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Turn Bug Reports Into 
+            <span className="text-purple-600"> Social Rewards</span>
+          </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Join the community of bug hunters earning real money by reporting issues in your favorite apps and websites.
           </p>
