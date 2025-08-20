@@ -2296,6 +2296,31 @@ if (currentView === 'admin' && user?.isAdmin) {
           </div>
         </div>
 
+        {/* Quick Admin Actions - Moved to top for better visibility */}
+        <div className="mb-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+          <h3 className="text-xl font-bold mb-4">⚡ Quick Admin Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white bg-opacity-20 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">🔍 Pending Reviews</h4>
+              <p className="text-sm opacity-90">
+                {bugs.filter(b => b.status === 'Submitted').length} bugs awaiting your review
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">💰 Points Awarded</h4>
+              <p className="text-sm opacity-90">
+                {bugs.filter(b => b.status === 'Verified').reduce((sum, bug) => sum + (bug.points || getPointsForSeverity(bug.severity)), 0)} total points distributed
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg p-4">
+              <h4 className="font-semibold mb-2">📊 Success Rate</h4>
+              <p className="text-sm opacity-90">
+                {bugs.length > 0 ? Math.round((bugs.filter(b => b.status === 'Verified').length / bugs.length) * 100) : 0}% verification rate
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Bug Reports Table */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -2429,31 +2454,6 @@ if (currentView === 'admin' && user?.isAdmin) {
               </table>
             </div>
           )}
-        </div>
-
-        {/* Quick Actions Panel */}
-        <div className="mt-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
-          <h3 className="text-xl font-bold mb-4">Quick Admin Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white bg-opacity-20 rounded-lg p-4">
-              <h4 className="font-semibold mb-2">🔍 Pending Reviews</h4>
-              <p className="text-sm opacity-90">
-                {bugs.filter(b => b.status === 'Submitted').length} bugs awaiting your review
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-20 rounded-lg p-4">
-              <h4 className="font-semibold mb-2">💰 Points Awarded</h4>
-              <p className="text-sm opacity-90">
-                {bugs.filter(b => b.status === 'Verified').reduce((sum, bug) => sum + (bug.points || getPointsForSeverity(bug.severity)), 0)} total points distributed
-              </p>
-            </div>
-            <div className="bg-white bg-opacity-20 rounded-lg p-4">
-              <h4 className="font-semibold mb-2">📊 Success Rate</h4>
-              <p className="text-sm opacity-90">
-                {bugs.length > 0 ? Math.round((bugs.filter(b => b.status === 'Verified').length / bugs.length) * 100) : 0}% verification rate
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Admin Guide Section */}
