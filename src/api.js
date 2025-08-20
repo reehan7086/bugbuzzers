@@ -1,5 +1,4 @@
 /* eslint-disable import/no-anonymous-default-export */
-/* eslint-disable import/no-anonymous-default-export */
 const API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001';
 
 class BugBuzzersAPI {
@@ -30,38 +29,74 @@ class BugBuzzersAPI {
       config.headers.Authorization = `Bearer ${this.token}`;
     }
 
+    // Log request details for debugging
+    console.log('Making API request:', {
+      url,
+      method: config.method || 'GET',
+      hasAuth: !!this.token,
+      headers: Object.keys(config.headers)
+    });
+
     try {
       const response = await fetch(url, config);
       
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
+      });
+      
       if (!response.ok) {
         let errorMessage = 'Request failed';
+        let errorDetails = null;
         
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorData.message || 'Request failed';
+          errorDetails = errorData;
+          console.error('Server error details:', errorData);
         } catch (jsonError) {
           try {
-            errorMessage = await response.text() || `HTTP ${response.status}`;
+            const textError = await response.text();
+            errorMessage = textError || `HTTP ${response.status}`;
+            console.error('Server error (text):', textError);
           } catch (textError) {
             errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+            console.error('Could not parse error response');
           }
         }
         
-        throw new Error(errorMessage);
+        // Create enhanced error object
+        const error = new Error(errorMessage);
+        error.status = response.status;
+        error.statusText = response.statusText;
+        error.details = errorDetails;
+        error.url = url;
+        
+        throw error;
       }
 
       try {
-        return await response.json();
+        const data = await response.json();
+        console.log('Response data parsed successfully');
+        return data;
       } catch (jsonError) {
+        console.log('Response is not JSON, returning as text');
         return await response.text();
       }
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('API Error Details:', {
+        message: error.message,
+        status: error.status,
+        url: error.url,
+        stack: error.stack
+      });
       throw error;
     }
   }
 
-  // ===================== EXISTING AUTH METHODS =====================
+  // ===================== AUTHENTICATION METHODS =====================
   async login(email, password) {
     const data = await this.request('/auth/login', {
       method: 'POST',
@@ -114,9 +149,58 @@ class BugBuzzersAPI {
     return await this.request('/auth/me');
   }
 
-  // ===================== ENHANCED BUG METHODS WITH SOCIAL FEATURES =====================
+  // ===================== BUG MANAGEMENT METHODS =====================
   async getBugs() {
-    return await this.request('/bugs');
+    try {
+      console.log('Fetching bugs from:', `${API_BASE_URL}/api/bugs`);
+      console.log('Auth token present:', !!this.token);
+      
+      const response = await this.request('/bugs');
+      console.log('Bugs fetched successfully:', response);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch bugs:', {
+        message: error.message,
+        stack: error.stack,
+        token: !!this.token
+      });
+      
+      // Provide helpful error context
+      if (error.message.includes('500') || error.message.includes('Server error')) {
+        console.log('Server error detected. Check:');
+        console.log('1. Backend server is running');
+        console.log('2. Database connections are working');
+        console.log('3. Server logs for detailed error info');
+      }
+      
+      throw error;
+    }
+  }
+
+  async getBugsWithFallback() {
+    try {
+      return await this.getBugs();
+    } catch (error) {
+      console.warn('Using fallback bug data due to server error');
+      
+      // Return mock data as fallback
+      return {
+        bugs: [
+          {
+            id: 'fallback-1',
+            title: 'Server Connection Issue',
+            description: 'Unable to connect to server. Please try again later.',
+            severity: 'high',
+            status: 'open',
+            app_name: 'BugBuzzers',
+            created_at: new Date().toISOString(),
+            supports_count: 0,
+            is_fallback: true
+          }
+        ],
+        message: 'Showing fallback data due to server issues'
+      };
+    }
   }
 
   async createBug(bugData) {
@@ -126,7 +210,6 @@ class BugBuzzersAPI {
     });
   }
 
-  // NEW: Create social bug with enhanced features
   async createSocialBug(bugData) {
     return await this.request('/bugs/social', {
       method: 'POST',
@@ -141,9 +224,7 @@ class BugBuzzersAPI {
     });
   }
 
-  // ===================== NEW SOCIAL API METHODS =====================
-
-  // Social Feed Methods
+  // ===================== SOCIAL FEED METHODS =====================
   async getSocialFeed(filter = 'trending', category = null, limit = 20, offset = 0) {
     const params = new URLSearchParams({
       filter,
@@ -167,7 +248,7 @@ class BugBuzzersAPI {
     return await this.request(`/trending?${params}`);
   }
 
-  // Bug Support Methods (Main Social Feature!)
+  // ===================== BUG SUPPORT METHODS =====================
   async supportBug(bugId, supportData = {}) {
     return await this.request(`/bugs/${bugId}/support`, {
       method: 'POST',
@@ -189,7 +270,7 @@ class BugBuzzersAPI {
     return await this.request(`/bugs/${bugId}/supporters?limit=${limit}&offset=${offset}`);
   }
 
-  // Comment Methods
+  // ===================== COMMENT METHODS =====================
   async addComment(bugId, comment, parentId = null) {
     return await this.request(`/bugs/${bugId}/comments`, {
       method: 'POST',
@@ -201,7 +282,7 @@ class BugBuzzersAPI {
     return await this.request(`/bugs/${bugId}/comments?limit=${limit}&offset=${offset}`);
   }
 
-  // Share Methods
+  // ===================== SHARE METHODS =====================
   async shareBug(bugId, platform = 'copy_link') {
     return await this.request(`/bugs/${bugId}/share`, {
       method: 'POST',
@@ -209,7 +290,7 @@ class BugBuzzersAPI {
     });
   }
 
-  // User Social Methods
+  // ===================== USER SOCIAL METHODS =====================
   async followUser(userId) {
     return await this.request(`/users/${userId}/follow`, {
       method: 'POST',
@@ -226,7 +307,7 @@ class BugBuzzersAPI {
     return await this.request(`/users/${username}`);
   }
 
-  // Notification Methods
+  // ===================== NOTIFICATION METHODS =====================
   async getNotifications(limit = 20, offset = 0, unreadOnly = false) {
     const params = new URLSearchParams({
       limit: limit.toString(),
@@ -244,7 +325,7 @@ class BugBuzzersAPI {
     });
   }
 
-  // ===================== EXISTING METHODS =====================
+  // ===================== LEADERBOARD & HEALTH =====================
   async getLeaderboard() {
     return await this.request('/leaderboard');
   }
@@ -253,7 +334,7 @@ class BugBuzzersAPI {
     return await this.request('/health');
   }
 
-  // ===================== UTILITY METHODS FOR SOCIAL FEATURES =====================
+  // ===================== UTILITY METHODS =====================
 
   // Calculate estimated reward based on social engagement
   calculateSocialReward(supportsCount, severity, viralScore = 0) {
@@ -335,6 +416,69 @@ class BugBuzzersAPI {
       topReporter: 'Sarah Johnson',
       mostSupportedBug: 'Instagram crashes when uploading stories'
     };
+  }
+
+  // ===================== ERROR RECOVERY METHODS =====================
+
+  // Test connection to API
+  async testConnection() {
+    try {
+      const response = await this.healthCheck();
+      console.log('API connection test successful:', response);
+      return { success: true, response };
+    } catch (error) {
+      console.error('API connection test failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get API status with fallback information
+  async getAPIStatus() {
+    try {
+      const health = await this.healthCheck();
+      return {
+        status: 'healthy',
+        server: 'connected',
+        timestamp: new Date().toISOString(),
+        details: health
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        server: 'disconnected',
+        timestamp: new Date().toISOString(),
+        error: error.message,
+        suggestions: [
+          'Check if the backend server is running',
+          'Verify your internet connection',
+          'Check server logs for errors',
+          'Try refreshing the page'
+        ]
+      };
+    }
+  }
+
+  // Retry wrapper for failed requests
+  async retryRequest(requestFn, maxRetries = 3, delay = 1000) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`API request attempt ${attempt}/${maxRetries}`);
+        return await requestFn();
+      } catch (error) {
+        lastError = error;
+        console.warn(`API request attempt ${attempt} failed:`, error.message);
+        
+        if (attempt < maxRetries) {
+          console.log(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2; // Exponential backoff
+        }
+      }
+    }
+    
+    throw lastError;
   }
 }
 
