@@ -1552,7 +1552,173 @@ const SocialNavigation = () => (
     </div>
   </nav>
 );
+// Helper function to handle bug support
+const handleBugSupport = async (bugId, bugTitle) => {
+  try {
+    setLoading(true);
+    
+    // Call API to support the bug
+    await api.supportBug(bugId, {
+      supportType: 'experienced',
+      deviceInfo: navigator.userAgent.split(')')[0] + ')', // Get basic device info
+      additionalContext: 'Supported via social feed'
+    });
+    
+    // Update the local state immediately
+    setBugs(prevBugs => prevBugs.map(bug => 
+      bug.id === bugId 
+        ? { 
+            ...bug, 
+            supports_count: (bug.supports_count || 0) + 1,
+            user_supports: true // Mark that current user supports this
+          } 
+        : bug
+    ));
+    
+    // Show success message
+    alert(`✅ You supported "${bugTitle}"! Thanks for helping the community identify this issue.`);
+    
+    // Optionally refresh the feed to get fresh data
+    setTimeout(() => {
+      loadAllBugs();
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Support error:', error);
+    
+    // Check if user already supported
+    if (error.message.includes('already support')) {
+      alert('ℹ️ You have already supported this bug!');
+    } else {
+      alert('❌ Failed to support bug. Please try again.');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
+// Helper function to handle comments
+const handleBugComment = async (bugId, bugTitle) => {
+  try {
+    // Get comment from user
+    const comment = prompt(`💬 Add a comment about "${bugTitle}":`);
+    
+    if (!comment || !comment.trim()) {
+      return; // User cancelled or empty comment
+    }
+    
+    setLoading(true);
+    
+    // Call API to add comment
+    await api.addComment(bugId, comment.trim());
+    
+    // Update the local state immediately
+    setBugs(prevBugs => prevBugs.map(bug => 
+      bug.id === bugId 
+        ? { 
+            ...bug, 
+            comments_count: (bug.comments_count || 0) + 1
+          } 
+        : bug
+    ));
+    
+    // Show success message
+    alert(`✅ Comment added: "${comment.trim()}"`);
+    
+    // Refresh the feed to get fresh data
+    setTimeout(() => {
+      loadAllBugs();
+    }, 1000);
+    
+  } catch (error) {
+    console.error('Comment error:', error);
+    alert('❌ Failed to add comment. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Helper function to handle sharing
+const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
+  try {
+    // Create shareable text
+    const shareText = `🐛 Bug Report: "${bugTitle}" in ${appName}\n\n${bugDescription}\n\nFound on BugBuzzers - Join the bug hunting community!\n${window.location.origin}`;
+    
+    let shareMethod = 'copy_link'; // Default fallback
+    
+    // Try native sharing first
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Bug Report: ${bugTitle}`,
+          text: shareText,
+          url: window.location.origin
+        });
+        shareMethod = 'native_share';
+        console.log('Bug shared via native sharing');
+      } catch (shareError) {
+        if (shareError.name !== 'AbortError') {
+          // User didn't cancel, so fallback to clipboard
+          await copyToClipboard(shareText);
+        } else {
+          return; // User cancelled sharing
+        }
+      }
+    } else {
+      // Fallback to clipboard
+      await copyToClipboard(shareText);
+    }
+    
+    // Log the share action to database
+    setLoading(true);
+    await api.shareBug(bugId, shareMethod);
+    
+    // Update the local state immediately
+    setBugs(prevBugs => prevBugs.map(bug => 
+      bug.id === bugId 
+        ? { 
+            ...bug, 
+            shares_count: (bug.shares_count || 0) + 1
+          } 
+        : bug
+    ));
+    
+    // Show success message
+    if (shareMethod === 'copy_link') {
+      alert('📤 Bug report copied to clipboard! Share it with your network.');
+    } else {
+      alert('📤 Bug report shared successfully!');
+    }
+    
+    // Refresh the feed to get fresh data
+    setTimeout(() => {
+      loadAllBugs();
+    }, 500);
+    
+  } catch (error) {
+    console.error('Share error:', error);
+    alert('❌ Failed to share bug. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Helper function for clipboard operations
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  }
+};
   // VIEW 2: Social Feed
 // =================== COMPLETE SOCIAL FEED VIEW ===================
 // In src/App.js - Replace your entire social-feed view with this:
