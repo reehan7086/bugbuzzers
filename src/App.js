@@ -6,6 +6,354 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
 
+// MediaCarousel Component - Define at top level so it can be used everywhere
+const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, readOnly = false }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  if (!mediaFiles || mediaFiles.length === 0) {
+    return null;
+  }
+
+  const currentMedia = mediaFiles[currentIndex];
+  const isVideo = currentMedia.type?.startsWith('video/') || 
+                 currentMedia.file?.type?.startsWith('video/') ||
+                 currentMedia.url?.includes('.mp4') ||
+                 currentMedia.url?.includes('.webm');
+
+  const nextMedia = () => {
+    setCurrentIndex((prev) => (prev + 1) % mediaFiles.length);
+  };
+
+  const prevMedia = () => {
+    setCurrentIndex((prev) => (prev - 1 + mediaFiles.length) % mediaFiles.length);
+  };
+
+  const mediaUrl = currentMedia.url || currentMedia.preview;
+
+  return (
+    <div className="mt-4 bg-gray-50 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+          <span>📱</span>
+          Bug Reproduction Steps
+        </h4>
+        <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full">
+          {currentIndex + 1} of {mediaFiles.length}
+        </span>
+      </div>
+
+      <div className="relative bg-white rounded-lg overflow-hidden border border-gray-200">
+        {/* Media Display */}
+        <div className="relative w-full h-64 sm:h-80">
+          {isVideo ? (
+            <video 
+              src={mediaUrl}
+              className="w-full h-full object-contain bg-black"
+              controls
+              muted
+            />
+          ) : (
+            <img 
+              src={mediaUrl} 
+              alt={`Step ${currentIndex + 1}`}
+              className="w-full h-full object-contain bg-gray-100"
+            />
+          )}
+          
+          {/* Navigation Arrows */}
+          {mediaFiles.length > 1 && (
+            <>
+              <button
+                onClick={prevMedia}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-all"
+              >
+                ←
+              </button>
+              <button
+                onClick={nextMedia}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-2 transition-all"
+              >
+                →
+              </button>
+            </>
+          )}
+          
+          {/* Step Indicator */}
+          <div className="absolute top-2 left-2 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+            Step {currentIndex + 1}
+          </div>
+          
+          {/* File Type Indicator */}
+          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+            {isVideo ? '🎬 Video' : '📷 Image'}
+          </div>
+
+          {/* Remove File Button (only in edit mode) */}
+          {!readOnly && onRemoveFile && (
+            <button
+              onClick={() => onRemoveFile(currentIndex)}
+              className="absolute top-2 right-12 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 text-xs transition-colors"
+              title="Remove this file"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Step Description */}
+        <div className="p-4 border-t border-gray-200">
+          {!readOnly && onUpdateDescription ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Step {currentIndex + 1} Description:
+              </label>
+              <textarea
+                value={currentMedia.stepDescription || ''}
+                onChange={(e) => onUpdateDescription(currentIndex, e.target.value)}
+                placeholder={`Describe what happens in step ${currentIndex + 1}...`}
+                className="w-full p-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                rows="2"
+              />
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-1">
+                Step {currentIndex + 1}:
+              </p>
+              <p className="text-sm text-gray-600">
+                {currentMedia.stepDescription || 'No description provided'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Thumbnail Navigation */}
+      {mediaFiles.length > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto">
+          {mediaFiles.map((media, index) => {
+            const thumbUrl = media.url || media.preview;
+            const isThumbVideo = media.type?.startsWith('video/') || 
+                                media.file?.type?.startsWith('video/') ||
+                                thumbUrl?.includes('.mp4');
+            
+            return (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                  index === currentIndex ? 'border-purple-500 ring-2 ring-purple-200' : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {isThumbVideo ? (
+                  <div className="relative w-full h-full">
+                    <video 
+                      src={thumbUrl}
+                      className="w-full h-full object-cover"
+                      muted
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                      <span className="text-white text-xs">▶</span>
+                    </div>
+                  </div>
+                ) : (
+                  <img 
+                    src={thumbUrl} 
+                    alt={`Step ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 text-center">
+                  {index + 1}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* File Info */}
+      <div className="mt-3 text-xs text-gray-500 text-center">
+        {currentMedia.name && (
+          <span className="bg-gray-200 px-2 py-1 rounded mr-2">
+            {currentMedia.name}
+          </span>
+        )}
+        {currentMedia.size && (
+          <span className="bg-gray-200 px-2 py-1 rounded">
+            {formatFileSize(currentMedia.size)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// AdminMediaDisplay component
+const AdminMediaDisplay = ({ mediaUrls, bugId, bugTitle, bugDescription, bugSteps }) => {
+  const [showCarousel, setShowCarousel] = useState(false);
+  
+  if (!mediaUrls || mediaUrls.length === 0) {
+    return (
+      <span className="text-gray-400 text-sm">No media</span>
+    );
+  }
+
+  // Convert URLs to format expected by carousel
+  const mediaFiles = mediaUrls.map((media, index) => ({
+    url: typeof media === 'string' ? media : media.url,
+    type: typeof media === 'string' ? 
+      (media.includes('.mp4') || media.includes('.webm') ? 'video/mp4' : 'image/jpeg') : 
+      media.type,
+    stepDescription: typeof media === 'object' ? media.stepDescription : `Step ${index + 1}`,
+    stepNumber: index + 1
+  }));
+
+  if (showCarousel) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg max-w-6xl w-full max-h-full overflow-auto">
+          <div className="p-6">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1 mr-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900">Bug Media Review</h3>
+                  <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                    Admin Mode
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Bug ID:</span> {bugId}
+                  </p>
+                  <p className="text-sm text-gray-900 font-medium">{bugTitle}</p>
+                  {bugDescription && (
+                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                      <span className="font-medium">Description:</span> {bugDescription}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCarousel(false)}
+                className="flex-shrink-0 text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Media Carousel */}
+            <MediaCarousel 
+              mediaFiles={mediaFiles}
+              readOnly={true}
+            />
+
+            {/* Bug Steps */}
+            {bugSteps && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">📝 Reproduction Steps:</h4>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{bugSteps}</p>
+              </div>
+            )}
+
+            {/* Admin Actions Footer */}
+            <div className="mt-6 flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
+              <div className="text-sm text-gray-600">
+                <p className="font-medium text-gray-900 mb-1">📋 Review Checklist:</p>
+                <p>✓ Media clearly shows the bug occurring</p>
+                <p>✓ Steps match what's demonstrated in media</p>
+                <p>✓ Issue affects app functionality</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCarousel(false);
+                    // Add any verification logic here if needed
+                  }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  ✓ Looks Good to Verify
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCarousel(false);
+                    // Add any rejection logic here if needed
+                  }}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  ✗ Issues Found
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {/* Thumbnail Preview */}
+      <div className="flex gap-1 justify-center">
+        {mediaUrls.slice(0, 2).map((media, index) => {
+          const mediaUrl = typeof media === 'string' ? media : media.url;
+          const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov');
+          
+          return (
+            <div key={index} className="relative group cursor-pointer" onClick={() => setShowCarousel(true)}>
+              {isVideo ? (
+                <div className="relative">
+                  <video 
+                    src={mediaUrl}
+                    className="w-10 h-10 object-cover rounded border hover:scale-110 transition-transform shadow-sm"
+                    muted
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-black bg-opacity-50 rounded-full p-1">
+                      <span className="text-white text-xs">▶</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <img 
+                  src={mediaUrl} 
+                  alt={`Bug step ${index + 1}`}
+                  className="w-10 h-10 object-cover rounded border hover:scale-110 transition-transform shadow-sm"
+                />
+              )}
+              {/* Step indicator */}
+              <div className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {index + 1}
+              </div>
+            </div>
+          );
+        })}
+        
+        {mediaUrls.length > 2 && (
+          <div 
+            className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+            onClick={() => setShowCarousel(true)}
+          >
+            <span className="text-xs text-gray-600 font-bold">+{mediaUrls.length - 2}</span>
+          </div>
+        )}
+      </div>
+      
+      {/* View Steps Button */}
+      <button
+        onClick={() => setShowCarousel(true)}
+        className="text-xs text-purple-600 hover:text-purple-700 font-medium px-2 py-1 rounded hover:bg-purple-50 transition-colors flex items-center gap-1"
+        title={`View ${mediaUrls.length} step${mediaUrls.length > 1 ? 's' : ''} in detail`}
+      >
+        <span>📱</span>
+        <span>{mediaUrls.length} Step{mediaUrls.length > 1 ? 's' : ''}</span>
+      </button>
+    </div>
+  );
+};
+
 const BugBuzzers = () => {
   const [currentView, setCurrentView] = useState('landing');
   const [user, setUser] = useState(null);
@@ -19,20 +367,20 @@ const BugBuzzers = () => {
   // Forms state
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [signupForm, setSignupForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-const [bugForm, setBugForm] = useState({
-  title: '', 
-  description: '', 
-  steps: '', 
-  device: '', 
-  severity: 'medium', 
-  appName: '', 
-  category: 'others',
-  anonymous: false, 
-  attachment: null,
-  mediaFiles: [],
-  mediaUrls: [],
-  stepImages: []
-});
+  const [bugForm, setBugForm] = useState({
+    title: '', 
+    description: '', 
+    steps: '', 
+    device: '', 
+    severity: 'medium', 
+    appName: '', 
+    category: 'others',
+    anonymous: false, 
+    attachment: null,
+    mediaFiles: [],
+    mediaUrls: [],
+    stepImages: []
+  });
 
   // Data state
   const [bugs, setBugs] = useState([]);
@@ -86,38 +434,39 @@ const [bugForm, setBugForm] = useState({
   };
 
   // Data loading functions
-const loadUserBugs = useCallback(async () => {
-  try {
-    const bugsData = await api.getBugs();
-    setBugs(bugsData.filter(bug => bug.user_id === user?.id));
-  } catch (error) {
-    setBugs([
-      { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z' },
-      { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z' }
-    ]);
-  }
-}, [user?.id]);
+  const loadUserBugs = useCallback(async () => {
+    try {
+      const bugsData = await api.getBugs();
+      setBugs(bugsData.filter(bug => bug.user_id === user?.id));
+    } catch (error) {
+      setBugs([
+        { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z' },
+        { id: 'BUG-003', title: 'Page loading slowly', status: 'Submitted', severity: 'medium', points: 0, submitted_at: '2025-01-13T09:15:00Z' }
+      ]);
+    }
+  }, [user?.id]);
 
-const loadAllBugs = useCallback(async () => {
-  try {
-    const bugsData = await api.getBugs();
-    
-    // Process bugs to ensure all social counts exist
-    const processedBugs = bugsData.map(bug => ({
-      ...bug,
-      supports_count: bug.supports_count || 0,
-      comments_count: bug.comments_count || 0,
-      shares_count: bug.shares_count || 0,
-      user_supports: bug.user_supports || false,
-      recent_supporters: bug.recent_supporters || []
-    }));
-    
-    setBugs(processedBugs);
-  } catch (error) {
-    console.error('Error loading bugs:', error);
-    // Your existing fallback data...
-  }
-}, []);
+  const loadAllBugs = useCallback(async () => {
+    try {
+      const bugsData = await api.getBugs();
+      
+      // Process bugs to ensure all social counts exist
+      const processedBugs = bugsData.map(bug => ({
+        ...bug,
+        supports_count: bug.supports_count || 0,
+        comments_count: bug.comments_count || 0,
+        shares_count: bug.shares_count || 0,
+        user_supports: bug.user_supports || false,
+        recent_supporters: bug.recent_supporters || []
+      }));
+      
+      setBugs(processedBugs);
+    } catch (error) {
+      console.error('Error loading bugs:', error);
+      // Your existing fallback data...
+    }
+  }, []);
+
   const loadBugs = useCallback(async () => {
     try {
       const bugsData = await api.getBugs();
@@ -222,32 +571,32 @@ const loadAllBugs = useCallback(async () => {
     initializeAuth();
   }, []);
 
-useEffect(() => {
-  const loadUserData = async () => {
-    if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
-      try {
-        if (user.isAdmin) {
-          // Admin sees all bugs
-          await loadAllBugs();
-        } else if (currentView === 'social-feed' || currentView === 'trending') {
-          // Social feed shows all bugs for everyone
-          await loadAllBugs();
-        } else if (currentView === 'bugs') {
-          // "My Bugs" view shows only user's own bugs
-          await loadUserBugs();
-        } else {
-          // Default: show all bugs
-          await loadAllBugs();
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user && currentView !== 'landing' && currentView !== 'login' && currentView !== 'signup') {
+        try {
+          if (user.isAdmin) {
+            // Admin sees all bugs
+            await loadAllBugs();
+          } else if (currentView === 'social-feed' || currentView === 'trending') {
+            // Social feed shows all bugs for everyone
+            await loadAllBugs();
+          } else if (currentView === 'bugs') {
+            // "My Bugs" view shows only user's own bugs
+            await loadUserBugs();
+          } else {
+            // Default: show all bugs
+            await loadAllBugs();
+          }
+          await loadLeaderboard();
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          setError('Failed to load data. Please refresh the page.');
         }
-        await loadLeaderboard();
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        setError('Failed to load data. Please refresh the page.');
       }
-    }
-  };
-  loadUserData();
-}, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);
+    };
+    loadUserData();
+  }, [user?.id, user?.isAdmin, currentView, loadAllBugs, loadUserBugs, loadLeaderboard]);
 
   useEffect(() => {
     if (user && currentView === 'dashboard') {
@@ -255,23 +604,23 @@ useEffect(() => {
     }
   }, [user?.id, currentView]);
 
-useEffect(() => {
-  let intervalId;
-  
-  if (user && (currentView === 'social-feed' || currentView === 'trending')) {
-    intervalId = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadAllBugs(); // Load all bugs, not just user's bugs
-      }
-    }, 30 * 1000); // 30 seconds
-  }
-
-  return () => {
-    if (intervalId) {
-      clearInterval(intervalId);
+  useEffect(() => {
+    let intervalId;
+    
+    if (user && (currentView === 'social-feed' || currentView === 'trending')) {
+      intervalId = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          loadAllBugs(); // Load all bugs, not just user's bugs
+        }
+      }, 30 * 1000); // 30 seconds
     }
-  };
-}, [user?.id, currentView, loadAllBugs]);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [user?.id, currentView, loadAllBugs]);
 
   // Helper functions
   const getEstimatedReviewTime = (severity) => {
@@ -296,7 +645,16 @@ useEffect(() => {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-// PART 2: Event Handlers and Form Functions
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const size = parseFloat((bytes / Math.pow(k, i)).toFixed(1));
+    return `${size} ${sizes[i]}`;
+  };
+
+  // PART 2: Event Handlers and Form Functions
   
   // Authentication handlers
   const handleLogin = async (e) => {
@@ -461,58 +819,60 @@ useEffect(() => {
     }
   };
 
-const handleMediaUpload = (e) => {
-  const files = Array.from(e.target.files);
-  const maxFileSize = 2 * 1024 * 1024; // 2MB per file
-  const maxTotalFiles = 10; // Increase to 10 for step images
-  
-  const validFiles = files.filter(file => {
-    if (file.size > maxFileSize) {
-      alert(`File "${file.name}" is too large. Maximum size is 2MB per file.`);
-      return false;
-    }
+  const handleMediaUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const maxFileSize = 2 * 1024 * 1024; // 2MB per file
+    const maxTotalFiles = 10; // Increase to 10 for step images
     
-    const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
-    if (!isValidType) {
-      alert(`File "${file.name}" is not a valid image or video file.`);
-      return false;
+    const validFiles = files.filter(file => {
+      if (file.size > maxFileSize) {
+        alert(`File "${file.name}" is too large. Maximum size is 2MB per file.`);
+        return false;
+      }
+      
+      const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
+      if (!isValidType) {
+        alert(`File "${file.name}" is not a valid image or video file.`);
+        return false;
+      }
+      
+      return true;
+    });
+
+    const currentFiles = bugForm.mediaFiles || [];
+    if (currentFiles.length + validFiles.length > maxTotalFiles) {
+      alert(`You can only upload up to ${maxTotalFiles} files total.`);
+      return;
     }
-    
-    return true;
-  });
 
-  const currentFiles = bugForm.mediaFiles || [];
-  if (currentFiles.length + validFiles.length > maxTotalFiles) {
-    alert(`You can only upload up to ${maxTotalFiles} files total.`);
-    return;
-  }
+    const filesWithPreviews = validFiles.map((file, index) => {
+      const preview = URL.createObjectURL(file);
+      return {
+        file,
+        preview,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        stepDescription: `Step ${currentFiles.length + index + 1}`, // Add step description
+        stepNumber: currentFiles.length + index + 1
+      };
+    });
 
-  const filesWithPreviews = validFiles.map((file, index) => {
-    const preview = URL.createObjectURL(file);
-    return {
-      file,
-      preview,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      stepDescription: `Step ${currentFiles.length + index + 1}`, // Add step description
-      stepNumber: currentFiles.length + index + 1
-    };
-  });
+    setBugForm(prev => ({
+      ...prev,
+      mediaFiles: [...currentFiles, ...filesWithPreviews]
+    }));
+  };
 
-  setBugForm(prev => ({
-    ...prev,
-    mediaFiles: [...currentFiles, ...filesWithPreviews]
-  }));
-};
-const updateStepDescription = (index, description) => {
-  setBugForm(prev => ({
-    ...prev,
-    mediaFiles: prev.mediaFiles.map((file, i) => 
-      i === index ? { ...file, stepDescription: description } : file
-    )
-  }));
-};
+  const updateStepDescription = (index, description) => {
+    setBugForm(prev => ({
+      ...prev,
+      mediaFiles: prev.mediaFiles.map((file, i) => 
+        i === index ? { ...file, stepDescription: description } : file
+      )
+    }));
+  };
+
   const removeMediaFile = (indexToRemove) => {
     setBugForm(prev => {
       const newMediaFiles = prev.mediaFiles.filter((_, index) => index !== indexToRemove);
@@ -528,117 +888,117 @@ const updateStepDescription = (index, description) => {
     });
   };
 
-const uploadMediaFiles = async (mediaFiles) => {
-  try {
-    const formData = new FormData();
-    
-    // Add each file to form data
-    mediaFiles.forEach((mediaFile, index) => {
-      formData.append('media', mediaFile.file);
-    });
+  const uploadMediaFiles = async (mediaFiles) => {
+    try {
+      const formData = new FormData();
+      
+      // Add each file to form data
+      mediaFiles.forEach((mediaFile, index) => {
+        formData.append('media', mediaFile.file);
+      });
 
-    // Add user name and bug info to form data
-    formData.append('userName', user.name);
-    if (bugForm.title) {
-      formData.append('bugTitle', bugForm.title);
-    }
-
-    console.log(`📤 Uploading ${mediaFiles.length} files for user ${user.name}...`);
-
-    const response = await fetch('/api/upload-media', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-        // Note: Don't set Content-Type header when using FormData
-      },
-      body: formData
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Upload failed');
-    }
-
-    const data = await response.json();
-    console.log(`✅ Files uploaded successfully for user ${user.name}`);
-    
-    return data.files;
-  } catch (error) {
-    console.error('Error uploading media:', error);
-    throw new Error(`Failed to upload media: ${error.message}`);
-  }
-};
-
-const handleBugSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!user?.emailVerified) {
-    setError('Please verify your email address before reporting bugs.');
-    return;
-  }
-
-  setLoading(true);
-  setError('');
-  
-  try {
-    let uploadedMediaUrls = [];
-    
-    if (bugForm.mediaFiles && bugForm.mediaFiles.length > 0) {
-      console.log('📤 Uploading media files...');
-      uploadedMediaUrls = await uploadMediaFiles(bugForm.mediaFiles);
-      console.log('✅ Media uploaded successfully');
-    }
-
-// In handleBugSubmit function, modify the bugData object:
-const bugData = {
-  title: bugForm.title,
-  description: bugForm.description,
-  steps: bugForm.steps,
-  device: bugForm.device,
-  severity: bugForm.severity,
-  appName: bugForm.appName,
-  anonymous: bugForm.anonymous,
-  category: bugForm.category,
-  mediaUrls: uploadedMediaUrls,
-  stepDescriptions: bugForm.mediaFiles.map(file => file.stepDescription || '') // Add this
-};
-
-    const newBug = await api.createBug(bugData);
-    
-    // Clear form
-    setBugForm({
-      title: '', 
-      description: '', 
-      steps: '', 
-      device: '', 
-      severity: 'medium', 
-      appName: '', 
-      anonymous: false, 
-      attachment: null,
-      mediaFiles: [],
-      mediaUrls: [],
-      category: 'others'
-    });
-    
-    // Cleanup preview URLs
-    bugForm.mediaFiles?.forEach(mediaFile => {
-      if (mediaFile.preview) {
-        URL.revokeObjectURL(mediaFile.preview);
+      // Add user name and bug info to form data
+      formData.append('userName', user.name);
+      if (bugForm.title) {
+        formData.append('bugTitle', bugForm.title);
       }
-    });
+
+      console.log(`📤 Uploading ${mediaFiles.length} files for user ${user.name}...`);
+
+      const response = await fetch('/api/upload-media', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          // Note: Don't set Content-Type header when using FormData
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      const data = await response.json();
+      console.log(`✅ Files uploaded successfully for user ${user.name}`);
+      
+      return data.files;
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      throw new Error(`Failed to upload media: ${error.message}`);
+    }
+  };
+
+  const handleBugSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!user?.emailVerified) {
+      setError('Please verify your email address before reporting bugs.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
     
-    // Add reporter name to the new bug for immediate display
-    const newBugWithReporter = {
-      ...newBug,
-      reporter_name: newBug.anonymous ? null : user.name,
-      user_id: user.id
-    };
-    
-    // IMMEDIATELY update the bugs list and go to feed
-    setBugs(prevBugs => [newBugWithReporter, ...prevBugs]);
-    
-    alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
-    setCurrentView('social-feed');
+    try {
+      let uploadedMediaUrls = [];
+      
+      if (bugForm.mediaFiles && bugForm.mediaFiles.length > 0) {
+        console.log('📤 Uploading media files...');
+        uploadedMediaUrls = await uploadMediaFiles(bugForm.mediaFiles);
+        console.log('✅ Media uploaded successfully');
+      }
+
+      // In handleBugSubmit function, modify the bugData object:
+      const bugData = {
+        title: bugForm.title,
+        description: bugForm.description,
+        steps: bugForm.steps,
+        device: bugForm.device,
+        severity: bugForm.severity,
+        appName: bugForm.appName,
+        anonymous: bugForm.anonymous,
+        category: bugForm.category,
+        mediaUrls: uploadedMediaUrls,
+        stepDescriptions: bugForm.mediaFiles.map(file => file.stepDescription || '') // Add this
+      };
+
+      const newBug = await api.createBug(bugData);
+      
+      // Clear form
+      setBugForm({
+        title: '', 
+        description: '', 
+        steps: '', 
+        device: '', 
+        severity: 'medium', 
+        appName: '', 
+        anonymous: false, 
+        attachment: null,
+        mediaFiles: [],
+        mediaUrls: [],
+        category: 'others'
+      });
+      
+      // Cleanup preview URLs
+      bugForm.mediaFiles?.forEach(mediaFile => {
+        if (mediaFile.preview) {
+          URL.revokeObjectURL(mediaFile.preview);
+        }
+      });
+      
+      // Add reporter name to the new bug for immediate display
+      const newBugWithReporter = {
+        ...newBug,
+        reporter_name: newBug.anonymous ? null : user.name,
+        user_id: user.id
+      };
+      
+      // IMMEDIATELY update the bugs list and go to feed
+      setBugs(prevBugs => [newBugWithReporter, ...prevBugs]);
+      
+      alert(`Bug submitted successfully! Your bug ID is ${newBug.id}`);
+      setCurrentView('social-feed');
     
     // Also reload to ensure fresh data from server
     setTimeout(() => {
