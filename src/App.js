@@ -1649,9 +1649,8 @@ const handleBugComment = async (bugId, bugTitle) => {
   }
 };
 
-// Helper function to handle sharing
-// Fixed handleBugShare function in App.js
-// Replace the existing handleBugShare function with this corrected version
+// ONLY replace the handleBugShare function in App.js (around line 1650-1710)
+// Do NOT add a new copyToClipboard function since it already exists
 
 const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
   try {
@@ -1669,7 +1668,7 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
           text: shareText,
           url: window.location.origin
         });
-        shareMethod = 'internal'; // Change to valid platform name
+        shareMethod = 'internal'; // Valid platform name
         shareSuccessful = true;
         console.log('Bug shared via native sharing');
       } catch (shareError) {
@@ -1686,7 +1685,7 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
     // Fallback to clipboard if native sharing failed or unavailable
     if (!shareSuccessful) {
       try {
-        await copyToClipboard(shareText);
+        await copyToClipboard(shareText); // Use existing function
         shareMethod = 'copy_link'; // Valid platform name
         shareSuccessful = true;
         console.log('Text copied to clipboard');
