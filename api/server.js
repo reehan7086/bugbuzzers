@@ -1559,23 +1559,16 @@ app.post('/api/bugs/:id/comments', authenticateToken, async (req, res) => {
     // Update comments count
     await pool.query('UPDATE bugs SET comments_count = comments_count + 1 WHERE id = $1', [bugId]);
 
-    // Create notification for bug reporter
-    const bug = await pool.query('SELECT user_id, title FROM bugs WHERE id = $1', [bugId]);
-    if (bug.rows.length > 0 && bug.rows[0].user_id !== userId) {
-      await createNotification(
-        bug.rows[0].user_id,
-        'comment_added',
-        'New Comment!',
-        `Someone commented on "${bug.rows[0].title}"`,
-        `/bugs/${bugId}`,
-        { commenterId: userId, bugId }
-      );
-    }
+    // Get user info for the response
+    const userInfo = await pool.query('SELECT name, is_admin FROM users WHERE id = $1', [userId]);
+    const newComment = {
+      ...result.rows[0],
+      commenter_name: userInfo.rows[0]?.name || 'Unknown',
+      commenter_is_admin: userInfo.rows[0]?.is_admin || false
+    };
 
-    // Log user activity
-    await logUserActivity(userId, 'comment_added', `Commented on a bug report`, bugId);
-
-    res.json({ success: true, comment: result.rows[0] });
+    console.log(`✅ Comment added to bug ${bugId} by ${req.user.name}`);
+    res.json({ success: true, comment: newComment });
   } catch (error) {
     console.error('Add comment error:', error);
     res.status(500).json({ error: 'Server error' });
