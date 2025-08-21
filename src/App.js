@@ -5,7 +5,41 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
+// Professional BugBuzzers Icon Component
+// Add this to your App.js file at the top, after the imports
 
+const BugBuzzersIcon = ({ size = 24, className = "" }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 32 32" 
+    fill="none" 
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* Bug body */}
+    <ellipse cx="16" cy="18" rx="8" ry="6" fill="currentColor" opacity="0.9"/>
+    
+    {/* Bug head */}
+    <circle cx="16" cy="10" r="4" fill="currentColor"/>
+    
+    {/* Antennae */}
+    <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    
+    {/* Wings */}
+    <ellipse cx="12" cy="14" rx="3" ry="5" fill="currentColor" opacity="0.3" transform="rotate(-20 12 14)"/>
+    <ellipse cx="20" cy="14" rx="3" ry="5" fill="currentColor" opacity="0.3" transform="rotate(20 20 14)"/>
+    
+    {/* Bug spots */}
+    <circle cx="14" cy="16" r="1" fill="white" opacity="0.8"/>
+    <circle cx="18" cy="18" r="1" fill="white" opacity="0.8"/>
+    <circle cx="16" cy="20" r="1" fill="white" opacity="0.8"/>
+    
+    {/* Eyes */}
+    <circle cx="14" cy="9" r="1" fill="white"/>
+    <circle cx="18" cy="9" r="1" fill="white"/>
+  </svg>
+);
 // MediaCarousel Component - Define at top level so it can be used everywhere
 const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, readOnly = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -195,7 +229,343 @@ const MediaCarousel = ({ mediaFiles = [], onUpdateDescription, onRemoveFile, rea
     </div>
   );
 };
+// Improved Bug Post Component
+// Replace the bug post section in your social-feed view with this cleaner design
 
+// BugPost Component - Clean and Professional
+const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = false }) => {
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [showAllImages, setShowAllImages] = useState(false);
+
+  const formatTimeAgo = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    return date.toLocaleDateString();
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    
+    try {
+      await onComment(bug.id, newComment.trim());
+      setNewComment('');
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-50">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-3">
+            {/* User Avatar */}
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+              {bug.anonymous ? 'A' : (bug.reporter_name?.charAt(0).toUpperCase() || 'U')}
+            </div>
+            
+            {/* User Info */}
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-semibold text-gray-900">
+                  {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'User')}
+                </span>
+                {bug.user_id === currentUser?.id && (
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                    You
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center text-sm text-gray-500 space-x-1">
+                <span>📍 {bug.app_name}</span>
+                <span>•</span>
+                <span>{formatTimeAgo(bug.submitted_at)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status & Severity Badges */}
+          <div className="flex items-center space-x-2">
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+              bug.severity === 'high' ? 'bg-red-100 text-red-700' :
+              bug.severity === 'medium' ? 'bg-orange-100 text-orange-700' :
+              'bg-green-100 text-green-700'
+            }`}>
+              {bug.severity === 'high' ? '🔴 High' : 
+               bug.severity === 'medium' ? '🟡 Medium' : 
+               '🟢 Low'}
+            </span>
+            
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+              bug.status === 'Verified' ? 'bg-green-100 text-green-700' :
+              bug.status === 'In Review' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-gray-100 text-gray-700'
+            }`}>
+              {bug.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        {/* Bug Title */}
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 leading-tight">
+          {bug.title}
+        </h3>
+
+        {/* Bug Description */}
+        <p className="text-gray-700 mb-3 leading-relaxed">
+          {bug.description}
+        </p>
+
+        {/* Media Gallery */}
+        {bug.media_urls && bug.media_urls.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
+                📸 Reproduction Steps ({bug.media_urls.length})
+              </span>
+              {bug.media_urls.length > 3 && (
+                <button
+                  onClick={() => setShowAllImages(!showAllImages)}
+                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                >
+                  {showAllImages ? 'Show Less' : 'View All'}
+                </button>
+              )}
+            </div>
+            
+            <div className={`grid gap-2 ${
+              bug.media_urls.length === 1 ? 'grid-cols-1' :
+              bug.media_urls.length === 2 ? 'grid-cols-2' :
+              'grid-cols-3'
+            }`}>
+              {bug.media_urls
+                .slice(0, showAllImages ? bug.media_urls.length : 3)
+                .map((media, index) => {
+                  const mediaUrl = typeof media === 'string' ? media : media.url;
+                  const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm');
+                  
+                  return (
+                    <div key={index} className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-100">
+                      {isVideo ? (
+                        <video 
+                          src={mediaUrl}
+                          className="w-full h-24 object-cover"
+                          muted
+                        />
+                      ) : (
+                        <img 
+                          src={mediaUrl} 
+                          alt={`Step ${index + 1}`}
+                          className="w-full h-24 object-cover"
+                        />
+                      )}
+                      
+                      {/* Step Number */}
+                      <div className="absolute top-1 left-1 bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded">
+                        {index + 1}
+                      </div>
+                      
+                      {/* Play Icon for Videos */}
+                      {isVideo && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-black bg-opacity-50 rounded-full p-2">
+                            <span className="text-white">▶</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200"></div>
+                    </div>
+                  );
+                })}
+              
+              {/* Show more indicator */}
+              {!showAllImages && bug.media_urls.length > 3 && (
+                <div 
+                  onClick={() => setShowAllImages(true)}
+                  className="h-24 bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                >
+                  <span className="text-gray-600 font-medium">
+                    +{bug.media_urls.length - 3} more
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Steps to reproduce - Collapsible */}
+        {bug.steps && (
+          <details className="mb-4">
+            <summary className="text-sm font-medium text-gray-600 cursor-pointer hover:text-gray-800 flex items-center gap-1">
+              🔍 View reproduction steps
+            </summary>
+            <div className="mt-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+              <pre className="whitespace-pre-wrap font-sans">{bug.steps}</pre>
+            </div>
+          </details>
+        )}
+      </div>
+
+      {/* Actions Bar */}
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          {/* Left Actions */}
+          <div className="flex items-center space-x-6">
+            {/* Support Button */}
+            <button 
+              onClick={() => onSupport(bug.id, bug.title)}
+              disabled={bug.user_supports}
+              className={`flex items-center space-x-1 transition-colors ${
+                bug.user_supports 
+                  ? 'text-purple-600' 
+                  : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              <BugBuzzersIcon size={20} />
+              <span className="text-sm font-medium">
+                {bug.user_supports ? 'Supported' : 'Support'}
+              </span>
+              {bug.supports_count > 0 && (
+                <span className="text-sm text-gray-500">
+                  ({bug.supports_count})
+                </span>
+              )}
+            </button>
+
+            {/* Comment Button */}
+            <button 
+              onClick={() => setShowComments(!showComments)}
+              className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span className="text-sm font-medium">Comment</span>
+              {bug.comments_count > 0 && (
+                <span className="text-sm text-gray-500">
+                  ({bug.comments_count})
+                </span>
+              )}
+            </button>
+
+            {/* Share Button */}
+            <button 
+              onClick={() => onShare(bug.id, bug.title, bug.description, bug.app_name)}
+              className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+              </svg>
+              <span className="text-sm font-medium">Share</span>
+            </button>
+          </div>
+
+          {/* Right Side - Points (only show when verified) */}
+          {bug.status === 'Verified' && (
+            <div className="flex items-center space-x-2">
+              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center space-x-1">
+                <span className="text-sm">💎</span>
+                <span className="font-semibold">{bug.points || 0}</span>
+                <span className="text-xs">pts</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Support Count */}
+        {bug.supports_count > 0 && (
+          <div className="mt-2 text-sm text-gray-500">
+            <span className="font-medium">{bug.supports_count}</span> people also experienced this issue
+          </div>
+        )}
+      </div>
+
+      {/* Comments Section */}
+      {showComments && (
+        <div className="border-t border-gray-100 bg-white">
+          {/* Add Comment */}
+          <div className="p-4 border-b border-gray-50">
+            <form onSubmit={handleAddComment} className="flex space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="flex-1">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="w-full p-2 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                  rows="2"
+                />
+                <div className="flex justify-end mt-2">
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim()}
+                    className="px-4 py-1.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Post
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Comments List */}
+          <div className="max-h-64 overflow-y-auto">
+            {bug.comments && bug.comments.length > 0 ? (
+              <div className="divide-y divide-gray-50">
+                {bug.comments.map((comment, index) => (
+                  <div key={comment.id || index} className="p-4 flex space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {comment.commenter_name?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-medium text-gray-900 text-sm">
+                          {comment.commenter_name || 'Anonymous'}
+                        </span>
+                        {comment.commenter_is_admin && (
+                          <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded-full font-bold">
+                            ADMIN
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-500">
+                          {formatTimeAgo(comment.created_at)}
+                        </span>
+                      </div>
+                      <p className="text-gray-800 text-sm">
+                        {comment.comment}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-gray-500">
+                <span className="text-2xl mb-2 block">💬</span>
+                <p className="text-sm">No comments yet. Be the first to comment!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 const BugBuzzers = () => {
   const [currentView, setCurrentView] = useState('landing');
   const [user, setUser] = useState(null);
@@ -1976,314 +2346,55 @@ if (currentView === 'social-feed') {
 
         {/* Bug List Section */}
         <div className="space-y-6">
-          {bugs.length === 0 ? (
-            // Empty state
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-              <div className="text-4xl mb-4">🐛</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No bugs reported yet!</h3>
-              <p className="text-gray-600 mb-4">Be the first to report a bug and start earning rewards.</p>
+{bugs.length === 0 ? (
+          // Empty state
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="text-4xl mb-4">🐛</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No bugs reported yet!</h3>
+            <p className="text-gray-600 mb-4">Be the first to report a bug and start earning rewards.</p>
+            <button
+              onClick={() => setCurrentView('report')}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
+            >
+              📸 Report First Bug
+            </button>
+          </div>
+        ) : (
+          <>
+            {bugs
+              .filter(bug => {
+                if (feedFilter === 'recent') return true;
+                if (feedFilter === 'high') return bug.severity === 'high';
+                if (feedFilter === 'verified') return bug.status === 'Verified';
+                return true; // 'all'
+              })
+              .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
+              .map((bug) => (
+                <BugPost
+                  key={bug.id}
+                  bug={bug}
+                  currentUser={user}
+                  onSupport={handleBugSupport}
+                  onComment={handleBugComment}
+                  onShare={handleBugShare}
+                  isAdmin={user?.isAdmin}
+                />
+              ))}
+
+            {/* Call to Action */}
+            <div className="text-center py-8">
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
+              <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn rewards!</p>
               <button
                 onClick={() => setCurrentView('report')}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
               >
-                📸 Report First Bug
+                📸 Report Bug with Media
               </button>
             </div>
-          ) : (
-            <>
-              {bugs
-                .filter(bug => {
-                  if (feedFilter === 'recent') return true;
-                  if (feedFilter === 'high') return bug.severity === 'high';
-                  if (feedFilter === 'verified') return bug.status === 'Verified';
-                  return true; // 'all'
-                })
-                .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
-                .map((bug) => (
-                  <div key={bug.id} className="bug-card bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300">
-                    {/* Bug Header */}
-                    <div className="flex items-center p-6 border-b border-gray-50">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                        {bug.reporter_name ? bug.reporter_name.charAt(0).toUpperCase() : 'A'}
-                      </div>
-                      <div className="ml-4 flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="font-bold text-gray-900 text-lg">
-                            {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Anonymous')}
-                          </span>
-                          <span className="text-purple-600 text-sm font-medium">
-                            @{bug.anonymous ? 'anonymous' : (bug.reporter_name?.toLowerCase().replace(' ', '') || 'user')}
-                          </span>
-                          {bug.user_id === user?.id && (
-                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500 text-white">
-                              YOUR BUG
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            📱 {bug.app_name}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            📅 {new Date(bug.submitted_at).toLocaleDateString()}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            💻 {bug.device}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(bug.status)}`}>
-                          {bug.status}
-                        </span>
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                          bug.severity === 'high' ? 'bg-red-500 text-white' :
-                          bug.severity === 'medium' ? 'bg-orange-500 text-white' :
-                          'bg-green-500 text-white'
-                        }`}>
-                          {bug.severity.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Bug Content */}
-                    <div className="px-6 py-4">
-                      <h3 className="font-bold text-xl mb-3 text-gray-900 leading-tight">{bug.title}</h3>
-                      <p className="text-gray-700 mb-3 leading-relaxed">{bug.description}</p>
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <p className="text-gray-700 text-sm">
-                          <span className="font-semibold text-gray-900">🔍 Steps to reproduce:</span> {bug.steps}
-                        </p>
-                      </div>
-                      
-                      {/* Media Display */}
-{bug.media_urls && bug.media_urls.length > 0 && (
-  <MediaDisplay mediaUrls={bug.media_urls} maxDisplay={4} />
-)}
-
-                      {/* Bug Tags */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          #{bug.category || 'general'}
-                        </span>
-                        {bug.severity === 'high' && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1">
-                            🚨 Critical
-                          </span>
-                        )}
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          ID: {bug.id}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* BEAUTIFUL BUG ACTIONS */}
-                    <div className="px-6 py-5 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-100">
-                      <div className="flex items-center justify-between">
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-3 sm:gap-6">
-                          
-                          {/* PROFESSIONAL SUPPORT BUTTON */}
-                          <button 
-                            onClick={async (e) => {
-                              try {
-                                const button = e.currentTarget;
-                                button.style.transform = 'scale(0.95)';
-                                setTimeout(() => button.style.transform = '', 150);
-                                
-                                if (bug.user_supports) {
-                                  alert('ℹ️ You have already supported this bug!');
-                                  return;
-                                }
-                                
-                                await handleBugSupport(bug.id, bug.title);
-                              } catch (error) {
-                                console.error('Support button error:', error);
-                              }
-                            }}
-                            disabled={loading || bug.user_supports}
-                            className={`flex items-center gap-2 transition-all duration-200 ${
-                              bug.user_supports 
-                                ? 'text-purple-600' 
-                                : 'text-gray-600 hover:text-purple-600'
-                            } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full border transition-all duration-200 ${
-                              bug.user_supports 
-                                ? 'bg-purple-50 border-purple-200 text-purple-700' 
-                                : 'bg-gray-50 border-gray-200 hover:bg-purple-50 hover:border-purple-200'
-                            }`}>
-                              <span className={`text-lg transition-transform duration-200 ${
-                                bug.user_supports ? 'scale-110' : ''
-                              }`}>
-                                {bug.user_supports ? '✅' : '👍'}
-                              </span>
-                              <span className="text-sm font-medium">
-                                {bug.user_supports ? 'Supported' : 'Support'}
-                              </span>
-                              {(bug.supports_count || 0) > 0 && (
-                                <span className={`text-sm font-semibold ${
-                                  bug.user_supports ? 'text-purple-700' : 'text-gray-700'
-                                }`}>
-                                  • {bug.supports_count}
-                                </span>
-                              )}
-                            </div>
-                          </button>
-
-                          {/* PROFESSIONAL COMMENT BUTTON */}
-                          <button 
-                            onClick={async (e) => {
-                              try {
-                                const button = e.currentTarget;
-                                button.style.transform = 'scale(0.95)';
-                                setTimeout(() => button.style.transform = '', 150);
-                                
-                                // Toggle comment visibility instead of showing prompt
-                                const bugElement = button.closest('.bug-card');
-                                const commentsSection = bugElement?.querySelector('.comments-section');
-                                if (commentsSection) {
-                                  commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
-                                }
-                              } catch (error) {
-                                console.error('Comment button error:', error);
-                              }
-                            }}
-                            disabled={loading}
-                            className={`flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-all duration-200 cursor-pointer ${
-                              loading ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full border bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-200 transition-all duration-200">
-                              <span className="text-lg">💬</span>
-                              <span className="text-sm font-medium">Comment</span>
-                              {(bug.comments_count || 0) > 0 && (
-                                <span className="text-sm font-semibold text-gray-700">
-                                  • {bug.comments_count}
-                                </span>
-                              )}
-                            </div>
-                          </button>
-
-                          {/* Share Button */}
-                          <button 
-                            onClick={async (e) => {
-                              try {
-                                const button = e.currentTarget;
-                                button.style.transform = 'scale(0.95)';
-                                setTimeout(() => button.style.transform = '', 150);
-                                
-                                await handleBugShare(bug.id, bug.title, bug.description, bug.app_name);
-                              } catch (error) {
-                                console.error('Share button error:', error);
-                              }
-                            }}
-                            disabled={loading}
-                            className={`group flex items-center gap-2 sm:gap-3 text-gray-600 hover:text-emerald-600 transition-all duration-300 transform hover:scale-105 ${
-                              loading ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                          >
-                            <div className="relative">
-                              <div className="w-12 h-12 sm:w-11 sm:h-11 bg-white rounded-full border-2 border-gray-200 group-hover:border-emerald-300 group-hover:bg-emerald-50 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
-                                <div className="text-xl sm:text-lg group-hover:scale-110 transition-transform duration-200">
-                                  📤
-                                </div>
-                              </div>
-                              {(bug.shares_count || 0) > 0 && (
-                                <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1.5 shadow-lg">
-                                  {bug.shares_count || 0}
-                                </div>
-                              )}
-                            </div>
-                            <div className="hidden sm:flex flex-col items-start">
-                              <span className="text-sm font-semibold group-hover:text-emerald-600 transition-colors">
-                                Share
-                              </span>
-                              <span className="text-xs text-gray-500 group-hover:text-emerald-500">
-                                Spread the word
-                              </span>
-                            </div>
-                          </button>
-                        </div>
-
-                        {/* Points Section */}
-                        <div className="flex flex-col items-end">
-                          <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white px-4 py-2 rounded-full shadow-lg">
-                            <span className="text-lg">💎</span>
-                            <div className="flex flex-col items-end">
-                              <span className="text-lg sm:text-xl font-bold leading-none">
-                                {bug.points || getPointsForSeverity(bug.severity)}
-                              </span>
-                              <span className="text-xs opacity-90 leading-none">
-                                pts
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500 font-medium">
-                            {bug.status === 'Verified' ? (
-                              <span className="text-emerald-600 flex items-center gap-1">
-                                <span className="text-emerald-500">✅</span>
-                                Earned
-                              </span>
-                            ) : (
-                              <span className="text-amber-600 flex items-center gap-1">
-                                <span className="text-amber-500">⏳</span>
-                                <span className="hidden sm:inline">Potential</span>
-                                <span className="sm:hidden">Est.</span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Social Proof Section - Only show if there are supporters */}
-                      {(bug.recent_supporters && bug.recent_supporters.length > 0) && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <div className="flex items-center gap-3">
-                            <div className="flex -space-x-2">
-                              {bug.recent_supporters.slice(0, 3).map((supporter, index) => (
-                                <div 
-                                  key={index}
-                                  className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-md"
-                                >
-                                  {supporter.name ? supporter.name.charAt(0).toUpperCase() : '?'}
-                                </div>
-                              ))}
-                              {bug.supports_count > 3 && (
-                                <div className="w-8 h-8 bg-gray-400 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-md">
-                                  +{bug.supports_count - 3}
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-sm text-gray-600">
-                              <span className="font-semibold">{bug.supports_count || 0}</span>
-                              <span className="hidden sm:inline"> people also experienced this bug</span>
-                              <span className="sm:hidden"> got this too</span>
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quick Action Hint - Only on mobile */}
-                      <div className="sm:hidden mt-3 text-center">
-                        <span className="text-xs text-gray-400">
-                          Tap to support • Long press for options
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Comment Section */}
-                    <CommentSection 
-                      bugId={bug.id}
-                      bugTitle={bug.title}
-                      comments={bug.comments || []}
-                      onAddComment={handleBugComment}
-                      currentUser={user}
-                    />
-                  </div>
-                ))}
+          </>
+        )}
 
               {/* Call to Action */}
               <div className="text-center py-8">
@@ -2345,10 +2456,15 @@ if (currentView === 'trending') {
           </div>
           <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between">
-              <div>
-                <div className="text-3xl font-bold">{bugs.filter(b => b.status === 'Verified').length * 300 || (bugs.length * 200)}</div>
-                <div className="text-green-100 text-sm font-medium">Points available</div>
+<div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+              <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-1">
+                {bugs
+                  .filter(b => b.status === 'Verified')
+                  .reduce((total, bug) => total + (bug.points || getPointsForSeverity(bug.severity)), 0)
+                }
               </div>
+              <div className="text-xs font-medium text-blue-700">Points Earned</div>
+            </div>
               <div className="text-5xl opacity-80">🏆</div>
             </div>
           </div>
@@ -2401,11 +2517,23 @@ if (currentView === 'trending') {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right ml-4 flex-shrink-0">
-                      <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)}</div>
-                      <div className="text-xs text-gray-500 font-medium">
-                        {bug.status === 'Verified' ? 'Earned' : 'Potential'} pts
-                      </div>
+					<div className="text-right ml-4 flex-shrink-0">
+                      {bug.status === 'Verified' ? (
+                        <div>
+                          <div className="text-2xl font-bold text-green-600">{bug.points || getPointsForSeverity(bug.severity)}</div>
+                          <div className="text-xs text-green-600 font-medium flex items-center justify-end gap-1">
+                            <span>✅</span>
+                            <span>Earned</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-lg font-medium text-gray-400">---</div>
+                          <div className="text-xs text-gray-400 font-medium">
+                            Pending Review
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2911,7 +3039,7 @@ if (currentView === 'bugs') {
         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Severity</th>
-        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16 text-center">Points</th>
+<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20 text-center">Reward</th>
         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Submitted</th>
       </tr>
     </thead>
@@ -2934,8 +3062,19 @@ if (currentView === 'bugs') {
               {bug.severity}
             </span>
           </td>
-          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center font-bold">{bug.points || 0}</td>
-          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+<td className="px-4 py-4 whitespace-nowrap text-sm text-center">
+  {bug.status === 'Verified' ? (
+    <div className="flex items-center justify-center">
+      <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center space-x-1">
+        <span className="text-sm">💎</span>
+        <span className="font-bold">{bug.points || 0}</span>
+        <span className="text-xs">pts</span>
+      </div>
+    </div>
+  ) : (
+    <span className="text-gray-400 text-xs">Pending</span>
+  )}
+</td>          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
             {new Date(bug.submitted_at).toLocaleDateString()}
           </td>
         </tr>
