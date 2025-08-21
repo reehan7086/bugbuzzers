@@ -34,7 +34,7 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
       text: "text-4xl", 
       gap: "gap-3", 
       textHeight: 48,
-      textSize: "36px"
+      textSize: "32px"  // Changed from 36px to 32px
     },
   };
 
@@ -83,14 +83,16 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
       {/* Gradient Text with perfect height matching */}
       {showText && (
         <div 
-          className="font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight"
+          className="font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight"
           style={{ 
             fontSize: currentSize.textSize,
             lineHeight: `${currentSize.textHeight}px`,
             height: `${currentSize.textHeight}px`,
             display: 'flex',
             alignItems: 'center',
-            fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif"
+            fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+            fontWeight: 700,
+            letterSpacing: '-0.02em'
           }}
         >
           BugBuzzers
