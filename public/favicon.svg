@@ -1,7 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-  <!-- Purple background circle -->
-  <circle cx="50" cy="50" r="50" fill="#7c3aed"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Purple background -->
+  <circle cx="16" cy="16" r="16" fill="#7c3aed"/>
   
-  <!-- Simple bug emoji centered -->
-  <text x="50" y="65" font-size="60" text-anchor="middle" font-family="Arial, sans-serif">🐛</text>
+  <!-- Simple bug shape -->
+  <ellipse cx="16" cy="18" rx="8" ry="6" fill="white"/>
+  <circle cx="16" cy="10" r="4" fill="white"/>
+  
+  <!-- Eyes -->
+  <circle cx="13" cy="9" r="1" fill="#7c3aed"/>
+  <circle cx="19" cy="9" r="1" fill="#7c3aed"/>
+  
+  <!-- Antennae -->
+  <line x1="13" y1="6" x2="11" y2="3" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="19" y1="6" x2="21" y2="3" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
