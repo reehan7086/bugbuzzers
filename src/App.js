@@ -2295,13 +2295,6 @@ if (currentView === 'social-feed') {
   ];
 
   // Define filter options to prevent initialization errors
-  const filterOptions = [
-    { key: 'all', label: '🔥 All Bugs', icon: '📈' },
-    { key: 'recent', label: '🕐 Recent', icon: '⏰' },
-    { key: 'high', label: '⚠️ High Priority', icon: '🚨' },
-    { key: 'verified', label: '✅ Verified', icon: '🏆' }
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
       <LoadingSpinner />
@@ -2362,28 +2355,58 @@ if (currentView === 'social-feed') {
           </div>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex justify-center">
-            <div className="flex space-x-2 overflow-x-auto bg-gray-50 rounded-lg p-1">
-              {filterOptions.map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setFeedFilter(filter.key)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                    feedFilter === filter.key
-                      ? 'bg-purple-600 text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:bg-white hover:text-purple-600 hover:shadow-sm'
-                  }`}
-                >
-                  <span>{filter.icon}</span>
-                  <span className="hidden sm:inline">{filter.label}</span>
-                  <span className="sm:hidden">{filter.key.charAt(0).toUpperCase() + filter.key.slice(1)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+{/* Clean Filter Tabs */}
+<div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+  <div className="border-b border-gray-100 px-6 py-4">
+    <h3 className="text-lg font-semibold text-gray-900">Bug Reports</h3>
+    <p className="text-sm text-gray-600 mt-1">Browse and support community bug reports</p>
+  </div>
+  
+  <div className="px-6 py-4">
+    <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+      <button
+        onClick={() => setFeedFilter('all')}
+        className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+          feedFilter === 'all'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+        }`}
+      >
+        All Bugs
+      </button>
+      <button
+        onClick={() => setFeedFilter('recent')}
+        className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+          feedFilter === 'recent'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+        }`}
+      >
+        Recent
+      </button>
+      <button
+        onClick={() => setFeedFilter('high')}
+        className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+          feedFilter === 'high'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+        }`}
+      >
+        High Priority
+      </button>
+      <button
+        onClick={() => setFeedFilter('verified')}
+        className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+          feedFilter === 'verified'
+            ? 'bg-white text-gray-900 shadow-sm'
+            : 'text-gray-600 hover:text-gray-900'
+        }`}
+      >
+        Verified
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* Bug List Section */}
         <div className="space-y-6">
