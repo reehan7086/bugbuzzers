@@ -2121,7 +2121,43 @@ app.get('/api/test-email', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// STEP 8: Add this route to your backend api/server.js file
 
+// FIND the section where you have other bug routes (around line 600-800) and ADD this route:
+
+// Add this route after your existing bug routes
+app.put('/api/bugs/:id/severity', authenticateToken, async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { severity } = req.body;
+
+    // Validate severity
+    const validSeverities = ['low', 'medium', 'high'];
+    if (!validSeverities.includes(severity)) {
+      return res.status(400).json({ error: 'Invalid severity level' });
+    }
+
+    // Update bug severity
+    await pool.query('UPDATE bugs SET severity = $1 WHERE id = $2', [severity, id]);
+
+    console.log(`✅ Bug ${id} severity updated to ${severity} by admin ${req.user.name}`);
+
+    res.json({ 
+      success: true, 
+      message: `Bug severity updated to ${severity}`,
+      severity 
+    });
+  } catch (error) {
+    console.error('Update bug severity error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Place this route before your static files section and after your other bug routes
 // ===================== STATIC FILES (MUST BE LAST) =====================
 
 // Serve React app for all other routes
