@@ -6,32 +6,36 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
 // Enhanced BugBuzzers Logo Component - Fixed alignment and clipping
-// Ultra-simple logo that definitely works
+// Simple, properly aligned logo
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
-  const iconSizes = {
-    small: "w-6 h-6",
-    default: "w-7 h-7", 
-    large: "w-8 h-8",
-    hero: "w-10 h-10"
+  const sizes = {
+    small: { icon: "text-xl", text: "text-lg" },
+    default: { icon: "text-2xl", text: "text-xl" },
+    large: { icon: "text-3xl", text: "text-2xl" },
+    hero: { icon: "text-4xl", text: "text-4xl" }
   };
   
-  const textSizes = {
-    small: "text-lg",
-    default: "text-xl",
-    large: "text-2xl", 
-    hero: "text-4xl"
-  };
+  const currentSize = sizes[size] || sizes.default;
   
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      {/* Simple colored circle with bug emoji */}
-      <div className={`${iconSizes[size]} bg-purple-600 rounded-full flex items-center justify-center text-white text-sm`}>
+      {/* Simple purple bug emoji with proper alignment */}
+      <span className={`${currentSize.icon}`} style={{ color: '#7c3aed' }}>
         🐛
-      </div>
+      </span>
       
-      {/* Clean text */}
+      {/* Clean text with gradient */}
       {showText && (
-        <span className={`${textSizes[size]} font-bold text-purple-600 whitespace-nowrap`}>
+        <span 
+          className={`${currentSize.text} font-bold`}
+          style={{
+            background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            lineHeight: '1'
+          }}
+        >
           BugBuzzers
         </span>
       )}
