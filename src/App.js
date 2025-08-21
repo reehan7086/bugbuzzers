@@ -2749,26 +2749,6 @@ if (currentView === 'trending') {
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </button>
-
-           <div className="mt-6 space-y-3">
-  <button
-    type="button"
-    onClick={() => quickLogin('john@example.com', 'password123', false)}
-    disabled={loading}
-    className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all duration-200 text-sm disabled:opacity-50 shadow-md"
-  >
-    🚀 Quick Login as User (John)
-  </button>
-  <button
-    type="button"
-    onClick={() => quickLogin('admin@bugbuzzers.com', 'admin123', true)}
-    disabled={loading}
-    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-200 text-sm disabled:opacity-50 shadow-md"
-  >
-    👨‍💼 Quick Login as Admin
-  </button>
-</div>
-
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Don't have an account?{' '}
