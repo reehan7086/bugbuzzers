@@ -237,6 +237,7 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [showAllImages, setShowAllImages] = useState(false);
+  const [showMediaModal, setShowMediaModal] = useState(false); 
 
   const formatTimeAgo = (dateString) => {
     const now = new Date();
@@ -328,7 +329,7 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
           {bug.description}
         </p>
 
-        {/* Media Gallery */}
+       {/* Media Gallery */}
         {bug.media_urls && bug.media_urls.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
@@ -357,7 +358,11 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
                   const isVideo = mediaUrl.includes('.mp4') || mediaUrl.includes('.webm');
                   
                   return (
-                    <div key={index} className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-100">
+                    <div 
+                      key={index} 
+                      className="relative group cursor-pointer rounded-lg overflow-hidden bg-gray-100 hover:shadow-lg transition-all"
+                      onClick={() => setShowMediaModal(true)} // ADD CLICK HANDLER
+                    >
                       {isVideo ? (
                         <video 
                           src={mediaUrl}
@@ -371,13 +376,12 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
                           className="w-full h-24 object-cover"
                         />
                       )}
-                      
-                      {/* Step Number */}
+{/* Step Number */}
                       <div className="absolute top-1 left-1 bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded">
                         {index + 1}
                       </div>
                       
-                      {/* Play Icon for Videos */}
+ {/* Play Icon for Videos */}
                       {isVideo && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="bg-black bg-opacity-50 rounded-full p-2">
@@ -386,13 +390,20 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
                         </div>
                       )}
                       
-                      {/* Hover Overlay */}
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200"></div>
+ {/* Click to View Overlay */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white bg-opacity-90 rounded-full p-2">
+                          <svg className="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
               
-              {/* Show more indicator */}
+            {/* Show more indicator */}
               {!showAllImages && bug.media_urls.length > 3 && (
                 <div 
                   onClick={() => setShowAllImages(true)}
@@ -406,7 +417,6 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
             </div>
           </div>
         )}
-
         {/* Steps to reproduce - Collapsible */}
         {bug.steps && (
           <details className="mb-4">
@@ -426,21 +436,38 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
           {/* Left Actions */}
           <div className="flex items-center space-x-6">
             {/* Support Button */}
-            <button 
-              onClick={() => onSupport(bug.id, bug.title)}
-              disabled={bug.user_supports}
-              className={`flex items-center space-x-1 transition-colors ${
+            <<button 
+              onClick={() => {
+                // Add visual feedback
+                const button = event.currentTarget;
+                button.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                  button.style.transform = 'scale(1)';
+                }, 150);
+                
+                // Call the support function
+                onSupport(bug.id, bug.title);
+              }}
+              disabled={bug.user_supports || loading}
+              className={`flex items-center space-x-1 transition-all duration-200 ${
                 bug.user_supports 
                   ? 'text-purple-600' 
                   : 'text-gray-600 hover:text-purple-600'
-              }`}
+              } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
             >
-              <BugBuzzersIcon size={20} />
+              <BugBuzzersIcon 
+                size={20} 
+                className={`transition-all duration-200 ${
+                  bug.user_supports ? 'text-purple-600' : ''
+                }`} 
+              />
               <span className="text-sm font-medium">
-                {bug.user_supports ? 'Supported' : 'Support'}
+                {bug.user_supports ? 'Supported ✓' : 'Support'}
               </span>
               {bug.supports_count > 0 && (
-                <span className="text-sm text-gray-500">
+                <span className={`text-sm font-semibold ${
+                  bug.user_supports ? 'text-purple-600' : 'text-gray-500'
+                }`}>
                   ({bug.supports_count})
                 </span>
               )}
@@ -502,6 +529,57 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
             <form onSubmit={handleAddComment} className="flex space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                 {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
+ {/* ADD THE MEDIA MODAL CODE RIGHT HERE - BEFORE THE CLOSING TAGS */}
+      {showMediaModal && bug.media_urls && bug.media_urls.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
+            <div className="p-6">
+              {/* Modal Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">{bug.title}</h3>
+                  <p className="text-sm text-gray-600 mt-1">📱 {bug.app_name}</p>
+                </div>
+                <button
+                  onClick={() => setShowMediaModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Media Carousel */}
+              <MediaCarousel 
+                mediaFiles={bug.media_urls.map((media, index) => ({
+                  url: typeof media === 'string' ? media : media.url,
+                  type: typeof media === 'string' ? 
+                    (media.includes('.mp4') || media.includes('.webm') ? 'video/mp4' : 'image/jpeg') : 
+                    media.type,
+                  stepDescription: typeof media === 'object' ? media.stepDescription : `Step ${index + 1}`,
+                  stepNumber: index + 1
+                }))}
+                readOnly={true}
+              />
+
+              {/* Bug Description in Modal */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">📝 Bug Description:</h4>
+                <p className="text-sm text-gray-700 mb-3">{bug.description}</p>
+                
+                {bug.steps && (
+                  <>
+                    <h4 className="font-medium text-gray-900 mb-2">🔍 Reproduction Steps:</h4>
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{bug.steps}</pre>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div> {/* This is the closing div for the main BugPost container */}
+  );
+}; {/* This is the closing of the BugPost component */}
               </div>
               <div className="flex-1">
                 <textarea
@@ -2027,7 +2105,7 @@ const handleBugSupport = async (bugId, bugTitle) => {
     // Call API to support the bug
     await api.supportBug(bugId, {
       supportType: 'experienced',
-      deviceInfo: navigator.userAgent.split(')')[0] + ')', // Get basic device info
+      deviceInfo: navigator.userAgent.split(')')[0] + ')',
       additionalContext: 'Supported via social feed'
     });
     
@@ -2037,27 +2115,22 @@ const handleBugSupport = async (bugId, bugTitle) => {
         ? { 
             ...bug, 
             supports_count: (bug.supports_count || 0) + 1,
-            user_supports: true // Mark that current user supports this
+            user_supports: true
           } 
         : bug
     ));
     
-    // Show success message
-    alert(`✅ You supported "${bugTitle}"! Thanks for helping the community identify this issue.`);
-    
-    // Optionally refresh the feed to get fresh data
-    setTimeout(() => {
-      loadAllBugs();
-    }, 1000);
+    // No popup - just console log for debugging
+    console.log(`✅ Successfully supported bug: ${bugTitle}`);
     
   } catch (error) {
     console.error('Support error:', error);
     
-    // Check if user already supported
+    // Only show error for debugging, no user popup
     if (error.message.includes('already support')) {
-      alert('ℹ️ You have already supported this bug!');
+      console.log('ℹ️ User already supported this bug');
     } else {
-      alert('❌ Failed to support bug. Please try again.');
+      console.error('❌ Failed to support bug:', error.message);
     }
   } finally {
     setLoading(false);
