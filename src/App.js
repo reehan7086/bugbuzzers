@@ -2352,22 +2352,7 @@ if (currentView === 'social-feed') {
                 />
               ))}
 
-            {/* Call to Action */}
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">🚀</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
-              <p className="text-gray-600 mb-4">Found a bug? Share it with screenshots/videos and earn rewards!</p>
-              <button
-                onClick={() => setCurrentView('report')}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 font-medium"
-              >
-                📸 Report Bug with Media
-              </button>
-            </div>
-          </>
-        )}
-
-              {/* Call to Action */}
+             {/* Call to Action */}
               <div className="text-center py-8">
                 <div className="text-4xl mb-4">🚀</div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Join the Bug Hunting Revolution!</h3>
