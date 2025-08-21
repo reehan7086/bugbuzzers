@@ -5,26 +5,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
-// Enhanced BugBuzzers Logo Component - Fixed alignment and clipping
-// Simple, properly aligned logo
+// Bug with Megaphone Logo Component
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
   const sizes = {
-    small: { icon: "text-xl", text: "text-lg" },
-    default: { icon: "text-2xl", text: "text-xl" },
-    large: { icon: "text-3xl", text: "text-2xl" },
-    hero: { icon: "text-4xl", text: "text-4xl" }
+    small: { icon: 20, text: "text-lg" },
+    default: { icon: 28, text: "text-xl" },
+    large: { icon: 32, text: "text-2xl" },
+    hero: { icon: 40, text: "text-4xl" }
   };
   
   const currentSize = sizes[size] || sizes.default;
   
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      {/* Simple purple bug emoji with proper alignment */}
-      <span className={`${currentSize.icon}`} style={{ color: '#7c3aed' }}>
-        🐛
-      </span>
+      {/* Bug with Megaphone Icon */}
+      <BugBuzzersIcon size={currentSize.icon} className="flex-shrink-0" />
       
-      {/* Clean text with gradient */}
+      {/* Text */}
       {showText && (
         <span 
           className={`${currentSize.text} font-bold`}
@@ -33,7 +30,7 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            lineHeight: '1'
+            lineHeight: '1.1'
           }}
         >
           BugBuzzers
@@ -42,6 +39,7 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
     </div>
   );
 };
+// Custom Bug with Megaphone Icon
 const BugBuzzersIcon = ({ size = 24, className = "" }) => (
   <svg 
     width={size} 
@@ -52,26 +50,33 @@ const BugBuzzersIcon = ({ size = 24, className = "" }) => (
     xmlns="http://www.w3.org/2000/svg"
   >
     {/* Bug body */}
-    <ellipse cx="16" cy="18" rx="8" ry="6" fill="currentColor" opacity="0.9"/>
+    <ellipse cx="18" cy="20" rx="6" ry="4" fill="#7c3aed" opacity="0.9"/>
     
     {/* Bug head */}
-    <circle cx="16" cy="10" r="4" fill="currentColor"/>
+    <circle cx="18" cy="12" r="3" fill="#7c3aed"/>
     
-    {/* Antennae */}
-    <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    {/* Bug antennae */}
+    <path d="M16 9L15 7M20 9L21 7" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round"/>
     
-    {/* Wings */}
-    <ellipse cx="12" cy="14" rx="3" ry="5" fill="currentColor" opacity="0.3" transform="rotate(-20 12 14)"/>
-    <ellipse cx="20" cy="14" rx="3" ry="5" fill="currentColor" opacity="0.3" transform="rotate(20 20 14)"/>
+    {/* Bug eyes */}
+    <circle cx="16.5" cy="11.5" r="0.7" fill="white"/>
+    <circle cx="19.5" cy="11.5" r="0.7" fill="white"/>
     
-    {/* Bug spots */}
-    <circle cx="14" cy="16" r="1" fill="white" opacity="0.8"/>
-    <circle cx="18" cy="18" r="1" fill="white" opacity="0.8"/>
-    <circle cx="16" cy="20" r="1" fill="white" opacity="0.8"/>
+    {/* Bug legs */}
+    <path d="M13 18L11 19M13 21L11 22M23 18L25 19M23 21L25 22" stroke="#7c3aed" strokeWidth="1.2" strokeLinecap="round"/>
     
-    {/* Eyes */}
-    <circle cx="14" cy="9" r="1" fill="white"/>
-    <circle cx="18" cy="9" r="1" fill="white"/>
+    {/* Megaphone/Loudspeaker */}
+    <path d="M4 12 L12 9 L12 19 L4 16 Z" fill="#ec4899"/>
+    <circle cx="3" cy="14" r="1.5" fill="#ec4899"/>
+    
+    {/* Sound waves coming from megaphone */}
+    <path d="M14 8 Q16 10 14 12" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <path d="M15 6 Q18 9 15 15" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <path d="M16 4 Q20 8 16 17" stroke="#fbbf24" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
+    
+    {/* Bug wings */}
+    <ellipse cx="15" cy="16" rx="2" ry="3" fill="#a855f7" opacity="0.4" transform="rotate(-20 15 16)"/>
+    <ellipse cx="21" cy="16" rx="2" ry="3" fill="#a855f7" opacity="0.4" transform="rotate(20 21 16)"/>
   </svg>
 );
 // MediaCarousel Component - Define at top level so it can be used everywhere
