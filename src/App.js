@@ -5,10 +5,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
-// Professional BugBuzzers Icon Component
-// Add this to your App.js file at the top, after the imports
-// Enhanced BugBuzzers Logo Component
-// Enhanced BugBuzzers Logo Component - Professional aligned version
+// Enhanced BugBuzzers Logo Component - Fixed alignment and clipping
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
   const sizes = {
     small: { icon: 24, text: "text-lg", gap: "gap-2" },
@@ -21,45 +18,57 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
   
   return (
     <div className={`flex items-center ${currentSize.gap} transition-transform duration-200 hover:scale-105 ${className}`}>
-      {/* Bug Icon - properly sized and aligned */}
-      <svg 
-        width={currentSize.icon} 
-        height={currentSize.icon} 
-        viewBox="0 0 32 32" 
-        fill="none" 
-        className="text-purple-600 flex-shrink-0"
-      >
-        {/* Bug body */}
-        <ellipse cx="16" cy="18" rx="7" ry="5" fill="currentColor" opacity="0.9"/>
-        
-        {/* Bug head */}
-        <circle cx="16" cy="10" r="4" fill="currentColor"/>
-        
-        {/* Antennae */}
-        <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        
-        {/* Wings */}
-        <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(-25 12 14)"/>
-        <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(25 20 14)"/>
-        
-        {/* Bug spots */}
-        <circle cx="14" cy="16" r="1" fill="white" opacity="0.9"/>
-        <circle cx="18" cy="18" r="1" fill="white" opacity="0.9"/>
-        <circle cx="16" cy="20" r="1" fill="white" opacity="0.9"/>
-        
-        {/* Eyes */}
-        <circle cx="14" cy="9" r="1" fill="white"/>
-        <circle cx="18" cy="9" r="1" fill="white"/>
-        
-        {/* Bug legs */}
-        <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
+      {/* Bug Icon - properly centered and baseline aligned */}
+      <div className="flex items-center justify-center flex-shrink-0">
+        <svg 
+          width={currentSize.icon} 
+          height={currentSize.icon} 
+          viewBox="0 0 32 32" 
+          fill="none" 
+          className="text-purple-600"
+          style={{ marginTop: '2px' }} // Fine-tune vertical alignment
+        >
+          {/* Bug body */}
+          <ellipse cx="16" cy="18" rx="7" ry="5" fill="currentColor" opacity="0.9"/>
+          
+          {/* Bug head */}
+          <circle cx="16" cy="10" r="4" fill="currentColor"/>
+          
+          {/* Antennae */}
+          <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          
+          {/* Wings */}
+          <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(-25 12 14)"/>
+          <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(25 20 14)"/>
+          
+          {/* Bug spots */}
+          <circle cx="14" cy="16" r="1" fill="white" opacity="0.9"/>
+          <circle cx="18" cy="18" r="1" fill="white" opacity="0.9"/>
+          <circle cx="16" cy="20" r="1" fill="white" opacity="0.9"/>
+          
+          {/* Eyes */}
+          <circle cx="14" cy="9" r="1" fill="white"/>
+          <circle cx="18" cy="9" r="1" fill="white"/>
+          
+          {/* Bug legs */}
+          <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
       
-      {/* Stylish Text - no truncation */}
+      {/* Stylish Text - with proper line height to prevent clipping */}
       {showText && (
-        <span className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap ${currentSize.text}`}>
-          BugBuzzers
-        </span>
+        <div className="flex items-center">
+          <span 
+            className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap leading-none ${currentSize.text}`}
+            style={{ 
+              lineHeight: '1.2',
+              paddingTop: '2px',
+              paddingBottom: '2px'
+            }}
+          >
+            BugBuzzers
+          </span>
+        </div>
       )}
     </div>
   );
