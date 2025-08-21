@@ -227,7 +227,13 @@ async getBugs() {
       body: JSON.stringify({ status, points }),
     });
   }
-
+  
+async updateBugSeverity(bugId, severity) {
+  return await this.request(`/bugs/${bugId}/severity`, {
+    method: 'PUT',
+    body: JSON.stringify({ severity }),
+  });
+}
   // ===================== SOCIAL FEED METHODS =====================
   async getSocialFeed(filter = 'trending', category = null, limit = 20, offset = 0) {
     const params = new URLSearchParams({
