@@ -8,10 +8,34 @@ import api from './api';
 // Bug with Megaphone Logo Component
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
   const sizes = {
-    small: { icon: 24, text: "text-lg", gap: "gap-2", textHeight: 24 },
-    default: { icon: 32, text: "text-xl", gap: "gap-2", textHeight: 32 },
-    large: { icon: 40, text: "text-2xl", gap: "gap-3", textHeight: 40 },
-    hero: { icon: 48, text: "text-4xl", gap: "gap-3", textHeight: 48 },
+    small: { 
+      icon: 24, 
+      text: "text-lg", 
+      gap: "gap-2", 
+      textHeight: 24,
+      textSize: "18px"
+    },
+    default: { 
+      icon: 32, 
+      text: "text-xl", 
+      gap: "gap-2", 
+      textHeight: 32,
+      textSize: "20px"
+    },
+    large: { 
+      icon: 40, 
+      text: "text-2xl", 
+      gap: "gap-3", 
+      textHeight: 40,
+      textSize: "24px"
+    },
+    hero: { 
+      icon: 48, 
+      text: "text-4xl", 
+      gap: "gap-3", 
+      textHeight: 48,
+      textSize: "36px"
+    },
   };
 
   const currentSize = sizes[size] || sizes.default;
@@ -56,14 +80,20 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
         <path d="M10 16L8.5 17.5M10 19L8.5 20.5M22 16L23.5 17.5M22 19L23.5 20.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
       </svg>
 
-      {/* Gradient Text with matching height */}
+      {/* Gradient Text with perfect height matching */}
       {showText && (
-        <span 
-          className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent ${currentSize.text}`}
-          style={{ lineHeight: `${currentSize.textHeight}px` }}
+        <div 
+          className="font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+          style={{ 
+            fontSize: currentSize.textSize,
+            lineHeight: `${currentSize.textHeight}px`,
+            height: `${currentSize.textHeight}px`,
+            display: 'flex',
+            alignItems: 'center'
+          }}
         >
           BugBuzzers
-        </span>
+        </div>
       )}
     </div>
   );
