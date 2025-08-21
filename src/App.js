@@ -436,7 +436,7 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
           {/* Left Actions */}
           <div className="flex items-center space-x-6">
             {/* Support Button */}
-            <<button 
+            <button 
               onClick={() => {
                 // Add visual feedback
                 const button = event.currentTarget;
@@ -448,7 +448,7 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
                 // Call the support function
                 onSupport(bug.id, bug.title);
               }}
-              disabled={bug.user_supports || loading}
+              disabled={bug.user_supports}
               className={`flex items-center space-x-1 transition-all duration-200 ${
                 bug.user_supports 
                   ? 'text-purple-600' 
@@ -527,59 +527,8 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
           {/* Add Comment */}
           <div className="p-4 border-b border-gray-50">
             <form onSubmit={handleAddComment} className="flex space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                 {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
- {/* ADD THE MEDIA MODAL CODE RIGHT HERE - BEFORE THE CLOSING TAGS */}
-      {showMediaModal && bug.media_urls && bug.media_urls.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
-            <div className="p-6">
-              {/* Modal Header */}
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{bug.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">📱 {bug.app_name}</p>
-                </div>
-                <button
-                  onClick={() => setShowMediaModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Media Carousel */}
-              <MediaCarousel 
-                mediaFiles={bug.media_urls.map((media, index) => ({
-                  url: typeof media === 'string' ? media : media.url,
-                  type: typeof media === 'string' ? 
-                    (media.includes('.mp4') || media.includes('.webm') ? 'video/mp4' : 'image/jpeg') : 
-                    media.type,
-                  stepDescription: typeof media === 'object' ? media.stepDescription : `Step ${index + 1}`,
-                  stepNumber: index + 1
-                }))}
-                readOnly={true}
-              />
-
-              {/* Bug Description in Modal */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">📝 Bug Description:</h4>
-                <p className="text-sm text-gray-700 mb-3">{bug.description}</p>
-                
-                {bug.steps && (
-                  <>
-                    <h4 className="font-medium text-gray-900 mb-2">🔍 Reproduction Steps:</h4>
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{bug.steps}</pre>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div> {/* This is the closing div for the main BugPost container */}
-  );
-}; {/* This is the closing of the BugPost component */}
               </div>
               <div className="flex-1">
                 <textarea
@@ -638,6 +587,54 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
                 <p className="text-sm">No comments yet. Be the first to comment!</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+	  {/* Media Modal */}
+      {showMediaModal && bug.media_urls && bug.media_urls.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
+            <div className="p-6">
+              {/* Modal Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">{bug.title}</h3>
+                  <p className="text-sm text-gray-600 mt-1">📱 {bug.app_name}</p>
+                </div>
+                <button
+                  onClick={() => setShowMediaModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Media Carousel */}
+              <MediaCarousel 
+                mediaFiles={bug.media_urls.map((media, index) => ({
+                  url: typeof media === 'string' ? media : media.url,
+                  type: typeof media === 'string' ? 
+                    (media.includes('.mp4') || media.includes('.webm') ? 'video/mp4' : 'image/jpeg') : 
+                    media.type,
+                  stepDescription: typeof media === 'object' ? media.stepDescription : `Step ${index + 1}`,
+                  stepNumber: index + 1
+                }))}
+                readOnly={true}
+              />
+
+              {/* Bug Description in Modal */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">📝 Bug Description:</h4>
+                <p className="text-sm text-gray-700 mb-3">{bug.description}</p>
+                
+                {bug.steps && (
+                  <>
+                    <h4 className="font-medium text-gray-900 mb-2">🔍 Reproduction Steps:</h4>
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{bug.steps}</pre>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2485,15 +2482,15 @@ if (currentView === 'trending') {
           </div>
           <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200">
             <div className="flex items-center justify-between">
-<div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-              <div className="text-2xl lg:text-3xl font-bold text-blue-600 mb-1">
-                {bugs
-                  .filter(b => b.status === 'Verified')
-                  .reduce((total, bug) => total + (bug.points || getPointsForSeverity(bug.severity)), 0)
-                }
-              </div>
-              <div className="text-xs font-medium text-blue-700">Points Earned</div>
-            </div>
+<div>
+  <div className="text-3xl font-bold">
+    {bugs
+      .filter(b => b.status === 'Verified')
+      .reduce((total, bug) => total + (bug.points || getPointsForSeverity(bug.severity)), 0)
+    }
+  </div>
+  <div className="text-green-100 text-sm font-medium">Points Earned</div>
+</div>
               <div className="text-5xl opacity-80">🏆</div>
             </div>
           </div>
