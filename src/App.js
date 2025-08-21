@@ -83,13 +83,14 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
       {/* Gradient Text with perfect height matching */}
       {showText && (
         <div 
-          className="font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+          className="font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight"
           style={{ 
             fontSize: currentSize.textSize,
             lineHeight: `${currentSize.textHeight}px`,
             height: `${currentSize.textHeight}px`,
             display: 'flex',
-            alignItems: 'center'
+            alignItems: 'center',
+            fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif"
           }}
         >
           BugBuzzers
@@ -98,7 +99,6 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
     </div>
   );
 };
-
 // Custom Bug with Megaphone Icon
 const BugBuzzersIcon = ({ size = 32, className = "" }) => (
   <svg
