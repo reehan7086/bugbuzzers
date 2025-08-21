@@ -6,62 +6,57 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
 // Bug with Megaphone Logo Component
-// Enhanced BugBuzzers Logo Component - Professional aligned version
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
   const sizes = {
     small: { icon: 24, text: "text-lg", gap: "gap-2" },
-    default: { icon: 28, text: "text-xl", gap: "gap-2" },
-    large: { icon: 32, text: "text-2xl", gap: "gap-3" },
-    hero: { icon: 40, text: "text-4xl", gap: "gap-3" }
+    default: { icon: 32, text: "text-xl", gap: "gap-2" },
+    large: { icon: 40, text: "text-2xl", gap: "gap-3" },
+    hero: { icon: 48, text: "text-4xl", gap: "gap-3" },
   };
-  
+
   const currentSize = sizes[size] || sizes.default;
-  
+
   return (
-    <div className={`flex items-center ${currentSize.gap} transition-transform duration-200 hover:scale-105 ${className}`}>
-      {/* Bug Icon - properly sized and aligned */}
-      <svg 
-        width={currentSize.icon} 
-        height={currentSize.icon} 
-        viewBox="0 0 32 32" 
-        fill="none" 
-        className="text-purple-600 flex-shrink-0"
+    <div className={`flex items-center ${currentSize.gap} ${className}`}>
+      {/* Bug Icon */}
+      <svg
+        width={currentSize.icon}
+        height={currentSize.icon}
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="flex-shrink-0"
       >
-        {/* Bug body */}
-        <ellipse cx="16" cy="18" rx="7" ry="5" fill="currentColor" opacity="0.9"/>
-        
-        {/* Bug head */}
-        <circle cx="16" cy="10" r="4" fill="currentColor"/>
-        
+        {/* Body */}
+        <ellipse cx="16" cy="18" rx="6" ry="5" fill="#7c3aed"/>
+        {/* Head */}
+        <circle cx="16" cy="11" r="3.5" fill="#7c3aed"/>
         {/* Antennae */}
-        <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        
+        <path d="M13 7L11 5M19 7L21 5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
         {/* Wings */}
-        <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(-25 12 14)"/>
-        <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(25 20 14)"/>
-        
-        {/* Bug spots */}
+        <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a78bfa" opacity="0.6" transform="rotate(-25 12 14)"/>
+        <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a78bfa" opacity="0.6" transform="rotate(25 20 14)"/>
+        {/* Spots */}
         <circle cx="14" cy="16" r="1" fill="white" opacity="0.9"/>
         <circle cx="18" cy="18" r="1" fill="white" opacity="0.9"/>
         <circle cx="16" cy="20" r="1" fill="white" opacity="0.9"/>
-        
         {/* Eyes */}
-        <circle cx="14" cy="9" r="1" fill="white"/>
-        <circle cx="18" cy="9" r="1" fill="white"/>
-        
-        {/* Bug legs */}
-        <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="14" cy="10" r="0.9" fill="white"/>
+        <circle cx="18" cy="10" r="0.9" fill="white"/>
+        {/* Legs */}
+        <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
       </svg>
-      
-      {/* Stylish Text - no truncation */}
+
+      {/* Gradient Text */}
       {showText && (
-        <span className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap ${currentSize.text}`}>
+        <span className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent ${currentSize.text}`}>
           BugBuzzers
         </span>
       )}
     </div>
   );
 };
+
 // Custom Bug with Megaphone Icon
 const BugBuzzersIcon = ({ size = 32, className = "" }) => (
   <svg
