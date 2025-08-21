@@ -566,6 +566,65 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
     </div>
   );
 };
+const SeveritySelector = ({ bugId, currentSeverity, onSeverityChange, loading }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedSeverity, setSelectedSeverity] = useState(currentSeverity);
+
+  const handleSeverityChange = async (newSeverity) => {
+    try {
+      await onSeverityChange(bugId, newSeverity);
+      setSelectedSeverity(newSeverity);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update severity:', error);
+      setSelectedSeverity(currentSeverity); // Reset on error
+    }
+  };
+
+  const getSeverityDisplay = (severity) => {
+    switch (severity) {
+      case 'high': return { emoji: '🔴', text: 'High', class: 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200' };
+      case 'medium': return { emoji: '🟡', text: 'Medium', class: 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200' };
+      case 'low': return { emoji: '🟢', text: 'Low', class: 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' };
+      default: return { emoji: '⚪', text: 'Unknown', class: 'bg-gray-100 text-gray-700 border-gray-200' };
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <select
+        value={selectedSeverity}
+        onChange={(e) => handleSeverityChange(e.target.value)}
+        onBlur={() => setIsEditing(false)}
+        disabled={loading}
+        className="text-xs font-medium rounded-lg px-2 py-1 border border-purple-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+        autoFocus
+      >
+        <option value="low">🟢 Low</option>
+        <option value="medium">🟡 Medium</option>
+        <option value="high">🔴 High</option>
+      </select>
+    );
+  }
+
+  const display = getSeverityDisplay(currentSeverity);
+
+  return (
+    <button
+      onClick={() => setIsEditing(true)}
+      disabled={loading}
+      className={`px-3 py-1 text-xs font-medium rounded-lg border transition-all duration-200 cursor-pointer disabled:opacity-50 ${display.class}`}
+      title="Click to change severity"
+    >
+      <span className="flex items-center gap-1">
+        <span>{display.emoji}</span>
+        <span>{display.text}</span>
+        <span className="text-xs opacity-60">✏️</span>
+      </span>
+    </button>
+  );
+};
+
 const BugBuzzers = () => {
   const [currentView, setCurrentView] = useState('landing');
   const [user, setUser] = useState(null);
@@ -2111,7 +2170,26 @@ const handleBugSupport = async (bugId, bugTitle) => {
     setLoading(false);
   }
 };
-
+const updateBugSeverity = async (bugId, newSeverity) => {
+  setLoading(true);
+  try {
+    await api.updateBugSeverity(bugId, newSeverity);
+    
+    // Update local state immediately
+    setBugs(prevBugs => prevBugs.map(bug => 
+      bug.id === bugId 
+        ? { ...bug, severity: newSeverity }
+        : bug
+    ));
+    
+    console.log(`✅ Bug ${bugId} severity updated to ${newSeverity}`);
+  } catch (error) {
+    console.error('Failed to update severity:', error);
+    setError('Failed to update bug severity. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 // ONLY replace the handleBugShare function in App.js (around line 1650-1710)
 // Do NOT add a new copyToClipboard function since it already exists
 
@@ -3303,16 +3381,13 @@ if (currentView === 'admin' && user?.isAdmin) {
                           {bug.anonymous ? 'Anonymous' : (bug.reporter_name || 'Unknown')}
                         </div>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-center">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                          bug.severity === 'high' ? 'bg-red-100 text-red-800' :
-                          bug.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {bug.severity === 'high' ? '🚨 HIGH' : 
-                           bug.severity === 'medium' ? '⚠️ MED' : 
-                           '✅ LOW'}
-                        </span>
+<td className="px-4 py-4 whitespace-nowrap text-center">
+                        <SeveritySelector 
+                          bugId={bug.id}
+                          currentSeverity={bug.severity}
+                          onSeverityChange={updateBugSeverity}
+                          loading={loading}
+                        />
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center">
                         <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusColor(bug.status)}`}>
