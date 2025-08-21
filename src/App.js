@@ -13,17 +13,17 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
     large: { icon: 32, text: "text-2xl" },
     hero: { icon: 40, text: "text-4xl" }
   };
-  
+
   const currentSize = sizes[size] || sizes.default;
-  
+
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      {/* Bug with Megaphone Icon */}
+      {/* Bug Icon */}
       <BugBuzzersIcon size={currentSize.icon} className="flex-shrink-0" />
-      
-      {/* Text */}
+
+      {/* Gradient Text */}
       {showText && (
-        <span 
+        <span
           className={`${currentSize.text} font-bold`}
           style={{
             background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)',
@@ -39,44 +39,44 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
     </div>
   );
 };
+
 // Custom Bug with Megaphone Icon
-const BugBuzzersIcon = ({ size = 24, className = "" }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 32 32" 
-    fill="none" 
-    className={className}
+const BugBuzzersIcon = ({ size = 32, className = "" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 32 32"
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
+    className={className}
   >
-    {/* Bug body */}
-    <ellipse cx="18" cy="20" rx="6" ry="4" fill="#7c3aed" opacity="0.9"/>
-    
-    {/* Bug head */}
-    <circle cx="18" cy="12" r="3" fill="#7c3aed"/>
-    
-    {/* Bug antennae */}
-    <path d="M16 9L15 7M20 9L21 7" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round"/>
-    
-    {/* Bug eyes */}
-    <circle cx="16.5" cy="11.5" r="0.7" fill="white"/>
-    <circle cx="19.5" cy="11.5" r="0.7" fill="white"/>
-    
-    {/* Bug legs */}
-    <path d="M13 18L11 19M13 21L11 22M23 18L25 19M23 21L25 22" stroke="#7c3aed" strokeWidth="1.2" strokeLinecap="round"/>
-    
-    {/* Megaphone/Loudspeaker */}
-    <path d="M4 12 L12 9 L12 19 L4 16 Z" fill="#ec4899"/>
-    <circle cx="3" cy="14" r="1.5" fill="#ec4899"/>
-    
-    {/* Sound waves coming from megaphone */}
-    <path d="M14 8 Q16 10 14 12" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-    <path d="M15 6 Q18 9 15 15" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-    <path d="M16 4 Q20 8 16 17" stroke="#fbbf24" strokeWidth="1.2" strokeLinecap="round" fill="none"/>
-    
-    {/* Bug wings */}
-    <ellipse cx="15" cy="16" rx="2" ry="3" fill="#a855f7" opacity="0.4" transform="rotate(-20 15 16)"/>
-    <ellipse cx="21" cy="16" rx="2" ry="3" fill="#a855f7" opacity="0.4" transform="rotate(20 21 16)"/>
+    {/* Wings */}
+    <ellipse cx="16" cy="18" rx="5.5" ry="3.5" fill="#a78bfa55"/>
+    <ellipse cx="24" cy="18" rx="5.5" ry="3.5" fill="#a78bfa55"/>
+
+    {/* Body */}
+    <ellipse cx="20" cy="20" rx="6" ry="5" fill="#7c3aed"/>
+    <line x1="20" y1="15" x2="20" y2="25" stroke="#6d28d9" strokeWidth="1"/>
+
+    {/* Head */}
+    <circle cx="20" cy="11" r="3.5" fill="#7c3aed"/>
+
+    {/* Eyes */}
+    <circle cx="18.7" cy="10.5" r="0.7" fill="white"/>
+    <circle cx="21.3" cy="10.5" r="0.7" fill="white"/>
+    <circle cx="18.7" cy="10.5" r="0.3" fill="#0f172a"/>
+    <circle cx="21.3" cy="10.5" r="0.3" fill="#0f172a"/>
+
+    {/* Mouth */}
+    <path d="M19 12.5 q1 0.8 2 0 q-0.5 1 -1 1 q-0.5 0 -1 -1Z" fill="#0f172a"/>
+
+    {/* Antennae */}
+    <path d="M18.5 8 C17 6, 16 5, 15 6" stroke="#7c3aed" strokeWidth="1.2" strokeLinecap="round"/>
+    <path d="M21.5 8 C23 6, 24 5, 25 6" stroke="#7c3aed" strokeWidth="1.2" strokeLinecap="round"/>
+
+    {/* Sound waves */}
+    <path d="M25 11 Q28 16 25 21" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
+    <path d="M27 10 Q31 16 27 22" stroke="#fbbf24" strokeWidth="1" strokeLinecap="round" fill="none"/>
   </svg>
 );
 // MediaCarousel Component - Define at top level so it can be used everywhere
