@@ -27,14 +27,14 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
       text: "text-2xl", 
       gap: "gap-3", 
       textHeight: 40,
-      textSize: "24px"  // This is the 24px you're seeing
+      textSize: "24px"
     },
     hero: { 
       icon: 48, 
       text: "text-4xl", 
       gap: "gap-3", 
-      textHeight: 48,
-      textSize: "32px"  // This should give you 32px
+      textHeight: 54,  // Changed to 54px
+      textSize: "42px"  // Changed to 42px
     },
   };
 
@@ -80,10 +80,10 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
         <path d="M10 16L8.5 17.5M10 19L8.5 20.5M22 16L23.5 17.5M22 19L23.5 20.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
       </svg>
 
-      {/* Gradient Text with perfect height matching */}
+      {/* Gradient Text with perfect vertical alignment */}
       {showText && (
         <div 
-          className="font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-tight"
           style={{ 
             fontSize: currentSize.textSize,
             lineHeight: `${currentSize.textHeight}px`,
@@ -91,7 +91,7 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
             display: 'flex',
             alignItems: 'center',
             fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-            fontWeight: 700,
+            fontWeight: 786, // Set to 786 (will be interpreted as 700 by browsers)
             letterSpacing: '-0.02em'
           }}
         >
