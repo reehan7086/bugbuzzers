@@ -2333,7 +2333,7 @@ if (currentView === 'social-feed') {
 
         {/* Category Selection */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">🔥 Report Bug by Category</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">🔍 Filter Bugs by Category</h3>
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-4 justify-items-center">
             <div className="text-center">
               <button 
