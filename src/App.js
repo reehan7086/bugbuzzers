@@ -437,23 +437,23 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
           <div className="flex items-center space-x-6">
             {/* Support Button */}
             <button 
-              onClick={() => {
-                // Add visual feedback
-                const button = event.currentTarget;
-                button.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                  button.style.transform = 'scale(1)';
-                }, 150);
-                
-                // Call the support function
-                onSupport(bug.id, bug.title);
-              }}
+onClick={(e) => {
+  // Add visual feedback
+  const button = e.currentTarget;
+  button.style.transform = 'scale(0.95)';
+  setTimeout(() => {
+    button.style.transform = 'scale(1)';
+  }, 150);
+  
+  // Call the support function
+  onSupport(bug.id, bug.title);
+}}
               disabled={bug.user_supports}
-              className={`flex items-center space-x-1 transition-all duration-200 ${
-                bug.user_supports 
-                  ? 'text-purple-600' 
-                  : 'text-gray-600 hover:text-purple-600'
-              } ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
+className={`flex items-center space-x-1 transition-all duration-200 ${
+  bug.user_supports 
+    ? 'text-purple-600' 
+    : 'text-gray-600 hover:text-purple-600'
+} cursor-pointer hover:scale-105`}
             >
               <BugBuzzersIcon 
                 size={20} 
