@@ -7,7 +7,64 @@ import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircl
 import api from './api';
 // Professional BugBuzzers Icon Component
 // Add this to your App.js file at the top, after the imports
-
+// Enhanced BugBuzzers Logo Component
+const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
+  const sizes = {
+    small: { icon: 20, text: "text-lg" },
+    default: { icon: 28, text: "text-xl" },
+    large: { icon: 36, text: "text-2xl" },
+    hero: { icon: 48, text: "text-4xl" }
+  };
+  
+  const currentSize = sizes[size] || sizes.default;
+  
+return (
+  <div className={`flex items-center gap-2 transition-transform duration-200 hover:scale-105 ${className}`}>
+      {/* Bug Icon with same styling as favicon */}
+      <div className="relative">
+        <svg 
+          width={currentSize.icon} 
+          height={currentSize.icon} 
+          viewBox="0 0 32 32" 
+          fill="none" 
+          className="text-purple-600"
+        >
+          {/* Bug body */}
+          <ellipse cx="16" cy="18" rx="7" ry="5" fill="currentColor" opacity="0.9"/>
+          
+          {/* Bug head */}
+          <circle cx="16" cy="10" r="4" fill="currentColor"/>
+          
+          {/* Antennae */}
+          <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          
+          {/* Wings */}
+          <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(-25 12 14)"/>
+          <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(25 20 14)"/>
+          
+          {/* Bug spots */}
+          <circle cx="14" cy="16" r="1" fill="white" opacity="0.9"/>
+          <circle cx="18" cy="18" r="1" fill="white" opacity="0.9"/>
+          <circle cx="16" cy="20" r="1" fill="white" opacity="0.9"/>
+          
+          {/* Eyes */}
+          <circle cx="14" cy="9" r="1" fill="white"/>
+          <circle cx="18" cy="9" r="1" fill="white"/>
+          
+          {/* Bug legs */}
+          <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </div>
+      
+      {/* Stylish Text */}
+      {showText && (
+        <span className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent ${currentSize.text}`}>
+          BugBuzzers
+        </span>
+      )}
+    </div>
+  );
+};
 const BugBuzzersIcon = ({ size = 24, className = "" }) => (
   <svg 
     width={size} 
@@ -1738,15 +1795,8 @@ const SocialNavigation = () => (
       <div className="flex justify-between items-center h-16">
         {/* Logo */}
         <div className="flex items-center flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🐛</span>
-            <span className="text-xl font-bold text-gray-900 hidden sm:block">
-              BugBuzzers
-            </span>
-            <span className="text-lg font-bold text-gray-900 sm:hidden">
-              BB
-            </span>
-          </div>
+          <BugBuzzersLogo size="default" className="hidden sm:flex" />
+<BugBuzzersLogo size="small" showText={false} className="sm:hidden" />
         </div>
 
         {/* Navigation Links - Desktop */}
@@ -2161,10 +2211,10 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
     // Create shareable text
     const shareText = `🐛 Bug Report: "${bugTitle}" in ${appName}\n\n${bugDescription}\n\nFound on BugBuzzers - Join the bug hunting community!\n${window.location.origin}`;
     
-    let shareMethod = 'copy_link'; // Default fallback - VALID platform
+    let shareMethod = 'copy_link';
     let shareSuccessful = false;
     
-    // Try native sharing first
+    // Try native sharing first (mobile devices)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -2172,12 +2222,12 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
           text: shareText,
           url: window.location.origin
         });
-        shareMethod = 'internal'; // Valid platform name
+        shareMethod = 'internal';
         shareSuccessful = true;
         console.log('Bug shared via native sharing');
       } catch (shareError) {
         if (shareError.name === 'AbortError') {
-          // User cancelled sharing
+          // User cancelled sharing - don't update counts or show messages
           console.log('User cancelled sharing');
           return;
         }
@@ -2189,21 +2239,23 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
     // Fallback to clipboard if native sharing failed or unavailable
     if (!shareSuccessful) {
       try {
-        await copyToClipboard(shareText); // Use existing function
-        shareMethod = 'copy_link'; // Valid platform name
+        await copyToClipboard(shareText);
+        shareMethod = 'copy_link';
         shareSuccessful = true;
         console.log('Text copied to clipboard');
+        
+        // Show subtle success feedback for clipboard copy
+        showShareSuccess('Copied to clipboard! 📋');
       } catch (clipboardError) {
         console.error('Clipboard fallback failed:', clipboardError);
-        alert('❌ Unable to share. Please copy the bug report manually.');
+        showShareError('Unable to share. Please copy manually.');
         return;
       }
     }
     
-    // Only log the share action if we successfully shared
+    // Only update counts and log if sharing was successful
     if (shareSuccessful) {
       try {
-        setLoading(true);
         await api.shareBug(bugId, shareMethod);
         
         // Update the local state immediately
@@ -2216,38 +2268,65 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
             : bug
         ));
         
-        // Show success message
-        if (shareMethod === 'copy_link') {
-          alert('📤 Bug report copied to clipboard! Share it with your network.');
-        } else {
-          alert('📤 Bug report shared successfully!');
+        // Only show success for native sharing (clipboard already shows its own message)
+        if (shareMethod === 'internal') {
+          showShareSuccess('Shared successfully! 🚀');
         }
-        
-        // Refresh the feed to get fresh data
-        setTimeout(() => {
-          loadAllBugs();
-        }, 500);
         
       } catch (apiError) {
         console.error('API share logging failed:', apiError);
-        // Still show success to user since the actual sharing worked
-        if (shareMethod === 'copy_link') {
-          alert('📤 Bug report copied to clipboard! Share it with your network.');
-        } else {
-          alert('📤 Bug report shared successfully!');
-        }
-      } finally {
-        setLoading(false);
+        // Don't show error to user since the actual sharing worked
       }
     }
     
   } catch (error) {
     console.error('Share error:', error);
-    alert('❌ Failed to share bug. Please try again.');
-    setLoading(false);
+    showShareError('Failed to share. Please try again.');
   }
 };
 
+// Add these toast notification functions
+const showShareSuccess = (message) => {
+  // Create or update a toast element
+  const existingToast = document.getElementById('share-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  const toast = document.createElement('div');
+  toast.id = 'share-toast';
+  toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0';
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    toast.style.transform = 'translateY(100px)';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+};
+
+const showShareError = (message) => {
+  const existingToast = document.getElementById('share-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  const toast = document.createElement('div');
+  toast.id = 'share-toast';
+  toast.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0';
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.transform = 'translateY(100px)';
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+};
 // Also ensure the copyToClipboard helper function is correct
 // Keep this version and remove the other one:
 
@@ -2326,7 +2405,13 @@ if (currentView === 'social-feed') {
 
         {/* Category Selection */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">🔍 Filter Bugs by Category</h3>
+          <div className="text-center mb-6">
+  <div className="flex items-center justify-center gap-2 mb-2">
+    <BugBuzzersLogo size="small" showText={false} />
+    <h3 className="text-xl font-bold text-gray-900">Browse Bugs by Category</h3>
+  </div>
+  <p className="text-sm text-gray-600">Select a category to explore or report bugs</p>
+</div>
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-4 justify-items-center">
             <div className="text-center">
               <button 
@@ -2619,10 +2704,9 @@ if (currentView === 'trending') {
         <LoadingSpinner />
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-  <div className="flex items-center justify-center gap-2 mb-4">
-    <span className="text-3xl">🐛</span>
-    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-  </div>
+<div className="flex justify-center mb-4">
+  <BugBuzzersLogo size="large" />
+</div>
   <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
   <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
 </div>
@@ -2734,10 +2818,9 @@ if (currentView === 'signup') {
       <LoadingSpinner />
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <span className="text-3xl">🐛</span>
-            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-          </div>
+          <div className="flex justify-center mb-4">
+  <BugBuzzersLogo size="large" />
+</div>
           <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
           <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
         </div>
@@ -3459,10 +3542,9 @@ if (currentView === 'admin' && user?.isAdmin) {
         <LoadingSpinner />
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
-  <div className="flex items-center justify-center gap-2 mb-4">
-    <span className="text-3xl">🐛</span>
-    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-  </div>
+<div className="flex justify-center mb-4">
+  <BugBuzzersLogo size="large" />
+</div>
   <h2 className="text-3xl font-bold text-gray-900">Forgot Password</h2>
   <p className="text-gray-600 mt-2">Enter your email to receive a password reset link</p>
 </div>
@@ -3525,10 +3607,9 @@ if (currentView === 'admin' && user?.isAdmin) {
         <LoadingSpinner />
         <div className="max-w-md w-full">
          <div className="text-center mb-8">
-  <div className="flex items-center justify-center gap-2 mb-4">
-    <span className="text-3xl">🐛</span>
-    <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-  </div>
+ <div className="flex justify-center mb-4">
+  <BugBuzzersLogo size="large" />
+</div>
   <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
   <p className="text-gray-600 mt-2">Enter your new password</p>
 </div>
@@ -3630,10 +3711,7 @@ if (currentView === 'landing') {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <span className="text-2xl">🐛</span>
-              <span className="ml-2 text-xl font-bold text-gray-900">BugBuzzers</span>
-            </div>
+           <BugBuzzersLogo size="default" />
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setCurrentView('login')}
@@ -3655,10 +3733,9 @@ if (currentView === 'landing') {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-4xl">🐛</span>
-            <span className="text-2xl font-bold text-gray-900">BugBuzzers</span>
-          </div>
+          <div className="flex justify-center mb-6">
+  <BugBuzzersLogo size="hero" />
+</div>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Turn Bug Reports Into 
             <span className="text-purple-600"> Social Rewards</span>
