@@ -6,54 +6,32 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
 // Enhanced BugBuzzers Logo Component - Fixed alignment and clipping
-// Fixed BugBuzzers Logo Component - Clean and Professional
+// Ultra-simple logo that definitely works
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
-  const sizes = {
-    small: { 
-      container: "h-8",
-      icon: 24, 
-      text: "text-lg font-bold" 
-    },
-    default: { 
-      container: "h-9",
-      icon: 28, 
-      text: "text-xl font-bold" 
-    },
-    large: { 
-      container: "h-10",
-      icon: 32, 
-      text: "text-2xl font-bold" 
-    },
-    hero: { 
-      container: "h-12",
-      icon: 40, 
-      text: "text-4xl font-bold" 
-    }
+  const iconSizes = {
+    small: "w-6 h-6",
+    default: "w-7 h-7", 
+    large: "w-8 h-8",
+    hero: "w-10 h-10"
   };
   
-  const currentSize = sizes[size] || sizes.default;
+  const textSizes = {
+    small: "text-lg",
+    default: "text-xl",
+    large: "text-2xl", 
+    hero: "text-4xl"
+  };
   
   return (
-    <div className={`flex items-center gap-2 ${currentSize.container} ${className}`}>
-      {/* Simple Bug Icon */}
-      <div 
-        className="flex-shrink-0 text-purple-600"
-        style={{ width: currentSize.icon, height: currentSize.icon }}
-      >
-        <svg 
-          width="100%" 
-          height="100%" 
-          viewBox="0 0 24 24" 
-          fill="currentColor"
-        >
-          {/* Simplified bug icon */}
-          <path d="M12 2C10.9 2 10 2.9 10 4C10 5.1 10.9 6 12 6C13.1 6 14 5.1 14 4C14 2.9 13.1 2 12 2M21 9V7L19 8V7.5C19 6.1 17.9 5 16.5 5S14 6.1 14 7.5V8H10V7.5C10 6.1 8.9 5 7.5 5S5 6.1 5 7.5V8L3 7V9L5 10V14L3 15V17L5 16V16.5C5 17.9 6.1 19 7.5 19S10 17.9 10 16.5V16H14V16.5C14 17.9 15.1 19 16.5 19S19 17.9 19 16.5V16L21 17V15L19 14V10L21 9M16 8.5C16 8.2 16.2 8 16.5 8S17 8.2 17 8.5V9.5C17 9.8 16.8 10 16.5 10S16 9.8 16 9.5V8.5M7 8.5C7 8.2 7.2 8 7.5 8S8 8.2 8 8.5V9.5C8 9.8 7.8 10 7.5 10S7 9.8 7 9.5V8.5M12 8C10.9 8 10 8.9 10 10V14C10 15.1 10.9 16 12 16S14 15.1 14 14V10C14 8.9 13.1 8 12 8Z"/>
-        </svg>
+    <div className={`inline-flex items-center gap-2 ${className}`}>
+      {/* Simple colored circle with bug emoji */}
+      <div className={`${iconSizes[size]} bg-purple-600 rounded-full flex items-center justify-center text-white text-sm`}>
+        🐛
       </div>
       
-      {/* Text */}
+      {/* Clean text */}
       {showText && (
-        <span className={`bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap leading-none ${currentSize.text}`}>
+        <span className={`${textSizes[size]} font-bold text-purple-600 whitespace-nowrap`}>
           BugBuzzers
         </span>
       )}
