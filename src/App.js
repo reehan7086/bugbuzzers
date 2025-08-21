@@ -8,17 +8,17 @@ import api from './api';
 // Bug with Megaphone Logo Component
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
   const sizes = {
-    small: { icon: 24, text: "text-lg", gap: "gap-2" },
-    default: { icon: 32, text: "text-xl", gap: "gap-2" },
-    large: { icon: 40, text: "text-2xl", gap: "gap-3" },
-    hero: { icon: 48, text: "text-4xl", gap: "gap-3" },
+    small: { icon: 24, text: "text-lg", gap: "gap-2", textHeight: 24 },
+    default: { icon: 32, text: "text-xl", gap: "gap-2", textHeight: 32 },
+    large: { icon: 40, text: "text-2xl", gap: "gap-3", textHeight: 40 },
+    hero: { icon: 48, text: "text-4xl", gap: "gap-3", textHeight: 48 },
   };
 
   const currentSize = sizes[size] || sizes.default;
 
   return (
     <div className={`flex items-center ${currentSize.gap} ${className}`}>
-      {/* Bug Icon */}
+      {/* Bug Icon - Using your original SVG design */}
       <svg
         width={currentSize.icon}
         height={currentSize.icon}
@@ -27,29 +27,41 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
         xmlns="http://www.w3.org/2000/svg"
         className="flex-shrink-0"
       >
-        {/* Body */}
-        <ellipse cx="16" cy="18" rx="6" ry="5" fill="#7c3aed"/>
-        {/* Head */}
-        <circle cx="16" cy="11" r="3.5" fill="#7c3aed"/>
+        {/* Background circle */}
+        <circle cx="16" cy="16" r="16" fill="#7c3aed"/>
+        
+        {/* Bug body */}
+        <ellipse cx="16" cy="18" rx="6" ry="4" fill="white" opacity="0.9"/>
+        
+        {/* Bug head */}
+        <circle cx="16" cy="10" r="3.5" fill="white"/>
+        
         {/* Antennae */}
-        <path d="M13 7L11 5M19 7L21 5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+        <path d="M13 7L11.5 5M19 7L20.5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+        
         {/* Wings */}
-        <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a78bfa" opacity="0.6" transform="rotate(-25 12 14)"/>
-        <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a78bfa" opacity="0.6" transform="rotate(25 20 14)"/>
-        {/* Spots */}
-        <circle cx="14" cy="16" r="1" fill="white" opacity="0.9"/>
-        <circle cx="18" cy="18" r="1" fill="white" opacity="0.9"/>
-        <circle cx="16" cy="20" r="1" fill="white" opacity="0.9"/>
+        <ellipse cx="12" cy="14" rx="2.5" ry="3.5" fill="white" opacity="0.4" transform="rotate(-25 12 14)"/>
+        <ellipse cx="20" cy="14" rx="2.5" ry="3.5" fill="white" opacity="0.4" transform="rotate(25 20 14)"/>
+        
+        {/* Bug spots */}
+        <circle cx="14" cy="16" r="0.8" fill="#7c3aed" opacity="0.8"/>
+        <circle cx="18" cy="18" r="0.8" fill="#7c3aed" opacity="0.8"/>
+        <circle cx="16" cy="19.5" r="0.8" fill="#7c3aed" opacity="0.8"/>
+        
         {/* Eyes */}
-        <circle cx="14" cy="10" r="0.9" fill="white"/>
-        <circle cx="18" cy="10" r="0.9" fill="white"/>
-        {/* Legs */}
-        <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+        <circle cx="14" cy="9.5" r="0.8" fill="#7c3aed"/>
+        <circle cx="18" cy="9.5" r="0.8" fill="#7c3aed"/>
+        
+        {/* Bug legs */}
+        <path d="M10 16L8.5 17.5M10 19L8.5 20.5M22 16L23.5 17.5M22 19L23.5 20.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
       </svg>
 
-      {/* Gradient Text */}
+      {/* Gradient Text with matching height */}
       {showText && (
-        <span className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent ${currentSize.text}`}>
+        <span 
+          className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent ${currentSize.text}`}
+          style={{ lineHeight: `${currentSize.textHeight}px` }}
+        >
           BugBuzzers
         </span>
       )}
@@ -67,31 +79,35 @@ const BugBuzzersIcon = ({ size = 32, className = "" }) => (
     xmlns="http://www.w3.org/2000/svg"
     className={className}
   >
-    {/* Wings */}
-    <ellipse cx="16" cy="18" rx="5.5" ry="3.5" fill="#a78bfa55"/>
-    <ellipse cx="24" cy="18" rx="5.5" ry="3.5" fill="#a78bfa55"/>
-
-    {/* Body */}
-    <ellipse cx="20" cy="20" rx="6" ry="5" fill="#7c3aed"/>
-    <line x1="20" y1="15" x2="20" y2="25" stroke="#6d28d9" strokeWidth="1"/>
-
-    {/* Head */}
-    <circle cx="20" cy="11" r="3.5" fill="#7c3aed"/>
-
-    {/* Eyes */}
-    <circle cx="18.7" cy="10.5" r="0.7" fill="white"/>
-    <circle cx="21.3" cy="10.5" r="0.7" fill="white"/>
-    <circle cx="18.7" cy="10.5" r="0.3" fill="#0f172a"/>
-    <circle cx="21.3" cy="10.5" r="0.3" fill="#0f172a"/>
-
-    {/* Mouth */}
-    <path d="M19 12.5 q1 0.8 2 0 q-0.5 1 -1 1 q-0.5 0 -1 -1Z" fill="#0f172a"/>
-
+    {/* Background circle */}
+    <circle cx="16" cy="16" r="16" fill="#7c3aed"/>
+    
+    {/* Bug body */}
+    <ellipse cx="16" cy="18" rx="6" ry="4" fill="white" opacity="0.9"/>
+    
+    {/* Bug head */}
+    <circle cx="16" cy="10" r="3.5" fill="white"/>
+    
     {/* Antennae */}
-    <path d="M18.5 8 C17 6, 16 5, 15 6" stroke="#7c3aed" strokeWidth="1.2" strokeLinecap="round"/>
-    <path d="M21.5 8 C23 6, 24 5, 25 6" stroke="#7c3aed" strokeWidth="1.2" strokeLinecap="round"/>
-
-    {/* Sound waves */}
+    <path d="M13 7L11.5 5M19 7L20.5 5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+    
+    {/* Wings */}
+    <ellipse cx="12" cy="14" rx="2.5" ry="3.5" fill="white" opacity="0.4" transform="rotate(-25 12 14)"/>
+    <ellipse cx="20" cy="14" rx="2.5" ry="3.5" fill="white" opacity="0.4" transform="rotate(25 20 14)"/>
+    
+    {/* Bug spots */}
+    <circle cx="14" cy="16" r="0.8" fill="#7c3aed" opacity="0.8"/>
+    <circle cx="18" cy="18" r="0.8" fill="#7c3aed" opacity="0.8"/>
+    <circle cx="16" cy="19.5" r="0.8" fill="#7c3aed" opacity="0.8"/>
+    
+    {/* Eyes */}
+    <circle cx="14" cy="9.5" r="0.8" fill="#7c3aed"/>
+    <circle cx="18" cy="9.5" r="0.8" fill="#7c3aed"/>
+    
+    {/* Bug legs */}
+    <path d="M10 16L8.5 17.5M10 19L8.5 20.5M22 16L23.5 17.5M22 19L23.5 20.5" stroke="white" strokeWidth="1.2" strokeLinecap="round"/>
+    
+    {/* Megaphone elements */}
     <path d="M25 11 Q28 16 25 21" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
     <path d="M27 10 Q31 16 27 22" stroke="#fbbf24" strokeWidth="1" strokeLinecap="round" fill="none"/>
   </svg>
