@@ -27,14 +27,14 @@ const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) =
       text: "text-2xl", 
       gap: "gap-3", 
       textHeight: 40,
-      textSize: "24px"
+      textSize: "24px"  // This is the 24px you're seeing
     },
     hero: { 
       icon: 48, 
       text: "text-4xl", 
       gap: "gap-3", 
       textHeight: 48,
-      textSize: "32px"  // Changed from 36px to 32px
+      textSize: "32px"  // This should give you 32px
     },
   };
 
@@ -1847,7 +1847,7 @@ const SocialNavigation = () => (
       <div className="flex justify-between items-center h-16">
         {/* Logo */}
 <div className="flex items-center flex-shrink-0 min-w-0">
-  <BugBuzzersLogo size="default" className="hidden sm:flex" />
+  <BugBuzzersLogo size="hero" className="hidden sm:flex" />
   <BugBuzzersLogo size="small" showText={false} className="sm:hidden" />
 </div>
 
@@ -2761,7 +2761,7 @@ if (currentView === 'trending') {
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
 <div className="flex justify-center mb-4">
-  <BugBuzzersLogo size="large" />
+  <BugBuzzersLogo size="hero" />
 </div>
   <h2 className="text-3xl font-bold text-gray-900">Welcome Back</h2>
   <p className="text-gray-600 mt-2">Sign in to start reporting bugs and earning rewards</p>
@@ -2855,7 +2855,7 @@ if (currentView === 'signup') {
   <div className="max-w-md w-full">
     <div className="text-center mb-6">
       <div className="flex justify-center mb-3">
-        <BugBuzzersLogo size="large" />
+        <BugBuzzersLogo size="hero" />
       </div>
       <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
       <p className="text-gray-600 mt-1">Sign in to start reporting bugs and earning rewards</p>
@@ -3579,7 +3579,7 @@ if (currentView === 'admin' && user?.isAdmin) {
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
 <div className="flex justify-center mb-4">
-  <BugBuzzersLogo size="large" />
+  <BugBuzzersLogo size="hero" />
 </div>
   <h2 className="text-3xl font-bold text-gray-900">Forgot Password</h2>
   <p className="text-gray-600 mt-2">Enter your email to receive a password reset link</p>
@@ -3644,7 +3644,7 @@ if (currentView === 'admin' && user?.isAdmin) {
         <div className="max-w-md w-full">
          <div className="text-center mb-8">
  <div className="flex justify-center mb-4">
-  <BugBuzzersLogo size="large" />
+  <BugBuzzersLogo size="hero" />
 </div>
   <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
   <p className="text-gray-600 mt-2">Enter your new password</p>
@@ -3748,7 +3748,7 @@ if (currentView === 'landing') {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <BugBuzzersLogo size="default" />
+              <BugBuzzersLogo size="hero" />
             </div>
             <div className="flex items-center space-x-4">
               <button
@@ -3772,7 +3772,7 @@ if (currentView === 'landing') {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
           <div className="flex justify-center mb-3">
-            <BugBuzzersLogo size="large" />
+            <BugBuzzersLogo size="hero" />
           </div>
           <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             Turn Bug Reports Into 
