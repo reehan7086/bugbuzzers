@@ -6,45 +6,54 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Megaphone, Trophy, Shield, Upload, Eye, EyeOff, Star, Clock, CheckCircle, XCircle, AlertCircle, Plus, FileText } from 'lucide-react';
 import api from './api';
 // Enhanced BugBuzzers Logo Component - Fixed alignment and clipping
-// Simpler alignment approach
+// Fixed BugBuzzers Logo Component - Clean and Professional
 const BugBuzzersLogo = ({ size = "default", showText = true, className = "" }) => {
   const sizes = {
-    small: { icon: 24, text: "text-lg" },
-    default: { icon: 28, text: "text-xl" },
-    large: { icon: 32, text: "text-2xl" },
-    hero: { icon: 40, text: "text-4xl" }
+    small: { 
+      container: "h-8",
+      icon: 24, 
+      text: "text-lg font-bold" 
+    },
+    default: { 
+      container: "h-9",
+      icon: 28, 
+      text: "text-xl font-bold" 
+    },
+    large: { 
+      container: "h-10",
+      icon: 32, 
+      text: "text-2xl font-bold" 
+    },
+    hero: { 
+      container: "h-12",
+      icon: 40, 
+      text: "text-4xl font-bold" 
+    }
   };
   
   const currentSize = sizes[size] || sizes.default;
   
   return (
-    <div className={`inline-flex items-baseline gap-2 transition-transform duration-200 hover:scale-105 ${className}`}>
-      {/* Bug Icon */}
-      <svg 
-        width={currentSize.icon} 
-        height={currentSize.icon} 
-        viewBox="0 0 32 32" 
-        fill="none" 
-        className="text-purple-600 flex-shrink-0"
-        style={{ verticalAlign: 'baseline' }}
+    <div className={`flex items-center gap-2 ${currentSize.container} ${className}`}>
+      {/* Simple Bug Icon */}
+      <div 
+        className="flex-shrink-0 text-purple-600"
+        style={{ width: currentSize.icon, height: currentSize.icon }}
       >
-        {/* Same SVG content as above */}
-        <ellipse cx="16" cy="18" rx="7" ry="5" fill="currentColor" opacity="0.9"/>
-        <circle cx="16" cy="10" r="4" fill="currentColor"/>
-        <path d="M13 6L11 3M19 6L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <ellipse cx="12" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(-25 12 14)"/>
-        <ellipse cx="20" cy="14" rx="3" ry="4" fill="#a855f7" opacity="0.6" transform="rotate(25 20 14)"/>
-        <circle cx="14" cy="16" r="1" fill="white" opacity="0.9"/>
-        <circle cx="18" cy="18" r="1" fill="white" opacity="0.9"/>
-        <circle cx="16" cy="20" r="1" fill="white" opacity="0.9"/>
-        <circle cx="14" cy="9" r="1" fill="white"/>
-        <circle cx="18" cy="9" r="1" fill="white"/>
-        <path d="M10 16L8 18M10 20L8 22M22 16L24 18M22 20L24 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
+        <svg 
+          width="100%" 
+          height="100%" 
+          viewBox="0 0 24 24" 
+          fill="currentColor"
+        >
+          {/* Simplified bug icon */}
+          <path d="M12 2C10.9 2 10 2.9 10 4C10 5.1 10.9 6 12 6C13.1 6 14 5.1 14 4C14 2.9 13.1 2 12 2M21 9V7L19 8V7.5C19 6.1 17.9 5 16.5 5S14 6.1 14 7.5V8H10V7.5C10 6.1 8.9 5 7.5 5S5 6.1 5 7.5V8L3 7V9L5 10V14L3 15V17L5 16V16.5C5 17.9 6.1 19 7.5 19S10 17.9 10 16.5V16H14V16.5C14 17.9 15.1 19 16.5 19S19 17.9 19 16.5V16L21 17V15L19 14V10L21 9M16 8.5C16 8.2 16.2 8 16.5 8S17 8.2 17 8.5V9.5C17 9.8 16.8 10 16.5 10S16 9.8 16 9.5V8.5M7 8.5C7 8.2 7.2 8 7.5 8S8 8.2 8 8.5V9.5C8 9.8 7.8 10 7.5 10S7 9.8 7 9.5V8.5M12 8C10.9 8 10 8.9 10 10V14C10 15.1 10.9 16 12 16S14 15.1 14 14V10C14 8.9 13.1 8 12 8Z"/>
+        </svg>
+      </div>
       
       {/* Text */}
       {showText && (
-        <span className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap ${currentSize.text}`}>
+        <span className={`bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap leading-none ${currentSize.text}`}>
           BugBuzzers
         </span>
       )}
@@ -374,7 +383,7 @@ const BugPost = ({ bug, currentUser, onSupport, onComment, onShare, isAdmin = fa
 
        {/* Media Gallery */}
         {bug.media_urls && bug.media_urls.length > 0 && (
-          <div className="mb-4">
+          <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
                 📸 Reproduction Steps ({bug.media_urls.length})
@@ -2789,21 +2798,21 @@ if (currentView === 'trending') {
 // VIEW 5: Signup Page - FIXED
 if (currentView === 'signup') {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <LoadingSpinner />
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-  <BugBuzzersLogo size="large" />
-</div>
-          <h2 className="text-3xl font-bold text-gray-900">Join BugBuzzers</h2>
-          <p className="text-gray-600 mt-2">Start earning rewards by reporting bugs</p>
-        </div>
+<div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <LoadingSpinner />
+  <div className="max-w-md w-full">
+    <div className="text-center mb-6">
+      <div className="flex justify-center mb-3">
+        <BugBuzzersLogo size="large" />
+      </div>
+      <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
+      <p className="text-gray-600 mt-1">Sign in to start reporting bugs and earning rewards</p>
+    </div>
 
-        <form onSubmit={handleSignup} className="bg-white rounded-lg shadow-sm p-8">
+    <form onSubmit={handleLogin} className="bg-white rounded-lg shadow-sm p-6">
           <ErrorMessage />
           
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
             <input
               type="text"
@@ -2815,7 +2824,7 @@ if (currentView === 'signup') {
             />
           </div>
           
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <input
               type="email"
@@ -2827,7 +2836,7 @@ if (currentView === 'signup') {
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
             <input
               type="password"
@@ -3592,7 +3601,7 @@ if (currentView === 'admin' && user?.isAdmin) {
           <form onSubmit={handleResetPassword} className="bg-white rounded-lg shadow-sm p-8">
             <ErrorMessage />
             
-            <div className="mb-4">
+            <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
               <input
                 type="password"
@@ -3686,7 +3695,9 @@ if (currentView === 'landing') {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-           <BugBuzzersLogo size="default" />
+            <div className="flex items-center">
+              <BugBuzzersLogo size="default" />
+            </div>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setCurrentView('login')}
@@ -3705,57 +3716,57 @@ if (currentView === 'landing') {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Compact Hero Section */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-  <BugBuzzersLogo size="hero" />
-</div>
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+          <div className="flex justify-center mb-3">
+            <BugBuzzersLogo size="large" />
+          </div>
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-3">
             Turn Bug Reports Into 
             <span className="text-purple-600"> Social Rewards</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
             Join the community of bug hunters earning real money by reporting issues in your favorite apps and websites.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
             <button
               onClick={() => setCurrentView('signup')}
-              className="px-8 py-4 bg-purple-600 text-white rounded-lg text-lg font-medium hover:bg-purple-700 transition-colors"
+              className="px-6 py-3 bg-purple-600 text-white rounded-lg text-lg font-medium hover:bg-purple-700 transition-colors"
             >
               Start Hunting Bugs 🐛
             </button>
             <button
               onClick={() => setCurrentView('login')}
-              className="px-8 py-4 border border-gray-300 text-gray-700 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors"
             >
               Sign In
             </button>
           </div>
         </div>
 
-        {/* Features */}
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trophy className="w-8 h-8 text-purple-600" />
+        {/* Compact Features */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Trophy className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Earn Rewards</h3>
-            <p className="text-gray-600">Get paid for every verified bug you report. Top hunters earn thousands!</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Earn Rewards</h3>
+            <p className="text-gray-600 text-sm">Get paid for every verified bug you report. Top hunters earn thousands!</p>
           </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-purple-600" />
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Shield className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Make Apps Better</h3>
-            <p className="text-gray-600">Help improve the apps and websites millions of people use every day.</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Make Apps Better</h3>
+            <p className="text-gray-600 text-sm">Help improve the apps and websites millions of people use every day.</p>
           </div>
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Star className="w-8 h-8 text-purple-600" />
+          <div className="text-center p-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Star className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Join Community</h3>
-            <p className="text-gray-600">Connect with fellow bug hunters and share your discoveries.</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Join Community</h3>
+            <p className="text-gray-600 text-sm">Connect with fellow bug hunters and share your discoveries.</p>
           </div>
         </div>
       </main>
