@@ -532,16 +532,21 @@ className={`flex items-center space-x-1 transition-all duration-200 ${
               )}
             </button>
 
-            {/* Share Button */}
-            <button 
-              onClick={() => onShare(bug.id, bug.title, bug.description, bug.app_name)}
-              className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-              </svg>
-              <span className="text-sm font-medium">Share</span>
-            </button>
+           {/* Share Button */}
+<button 
+  onClick={() => onShare(bug.id, bug.title, bug.description, bug.app_name)}
+  className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors"
+>
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+  </svg>
+  <span className="text-sm font-medium">Share</span>
+  {bug.shares_count > 0 && (
+    <span className="text-sm text-gray-500">
+      ({bug.shares_count})
+    </span>
+  )}
+</button>
           </div>
 
           {/* Right Side - Points (only show when verified) */}
@@ -2190,8 +2195,6 @@ const updateBugSeverity = async (bugId, newSeverity) => {
   }
 };
 // ONLY replace the handleBugShare function in App.js (around line 1650-1710)
-// Do NOT add a new copyToClipboard function since it already exists
-
 const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
   try {
     // Create shareable text
@@ -2239,30 +2242,36 @@ const handleBugShare = async (bugId, bugTitle, bugDescription, appName) => {
       }
     }
     
-    // Only update counts and log if sharing was successful
-    if (shareSuccessful) {
-      try {
-        await api.shareBug(bugId, shareMethod);
-        
-        // Update the local state immediately
-        setBugs(prevBugs => prevBugs.map(bug => 
-          bug.id === bugId 
-            ? { 
-                ...bug, 
-                shares_count: (bug.shares_count || 0) + 1
-              } 
-            : bug
-        ));
-        
-        // Only show success for native sharing (clipboard already shows its own message)
-        if (shareMethod === 'internal') {
-          showShareSuccess('Shared successfully! 🚀');
-        }
-        
-      } catch (apiError) {
-        console.error('API share logging failed:', apiError);
-        // Don't show error to user since the actual sharing worked
-      }
+    // Update local state immediately (optimistic update)
+    setBugs(prevBugs => prevBugs.map(bug => 
+      bug.id === bugId 
+        ? { 
+            ...bug, 
+            shares_count: (bug.shares_count || 0) + 1
+          } 
+        : bug
+    ));
+    
+    // Log to API in background
+    try {
+      await api.shareBug(bugId, shareMethod);
+      console.log('Share logged to API successfully');
+    } catch (apiError) {
+      console.error('API share logging failed:', apiError);
+      // Revert the optimistic update if API fails
+      setBugs(prevBugs => prevBugs.map(bug => 
+        bug.id === bugId 
+          ? { 
+              ...bug, 
+              shares_count: Math.max((bug.shares_count || 1) - 1, 0)
+            } 
+          : bug
+      ));
+    }
+    
+    // Show success message for native sharing
+    if (shareMethod === 'internal') {
+      showShareSuccess('Shared successfully! 🚀');
     }
     
   } catch (error) {
