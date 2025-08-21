@@ -717,26 +717,53 @@ const BugBuzzers = () => {
     }
   }, [user?.id]);
 
-  const loadAllBugs = useCallback(async () => {
-    try {
-      const bugsData = await api.getBugs();
-      
-      // Process bugs to ensure all social counts exist
-      const processedBugs = bugsData.map(bug => ({
-        ...bug,
-        supports_count: bug.supports_count || 0,
-        comments_count: bug.comments_count || 0,
-        shares_count: bug.shares_count || 0,
-        user_supports: bug.user_supports || false,
-        recent_supporters: bug.recent_supporters || []
-      }));
-      
-      setBugs(processedBugs);
-    } catch (error) {
-      console.error('Error loading bugs:', error);
-      // Your existing fallback data...
-    }
-  }, []);
+const loadAllBugs = useCallback(async () => {
+  try {
+    const bugsData = await api.getBugs();
+    
+    // Load comments for each bug
+    const bugsWithComments = await Promise.all(
+      bugsData.map(async (bug) => {
+        try {
+          // Load comments for this bug
+          const comments = await api.getBugComments(bug.id, 10, 0);
+          
+          // Process bugs to ensure all social counts exist
+          return {
+            ...bug,
+            comments: comments || [],
+            supports_count: bug.supports_count || 0,
+            comments_count: bug.comments_count || 0,
+            shares_count: bug.shares_count || 0,
+            user_supports: bug.user_supports || false,
+            recent_supporters: bug.recent_supporters || []
+          };
+        } catch (error) {
+          console.error(`Failed to load comments for bug ${bug.id}:`, error);
+          // Return bug without comments if comment loading fails
+          return {
+            ...bug,
+            comments: [],
+            supports_count: bug.supports_count || 0,
+            comments_count: bug.comments_count || 0,
+            shares_count: bug.shares_count || 0,
+            user_supports: bug.user_supports || false,
+            recent_supporters: bug.recent_supporters || []
+          };
+        }
+      })
+    );
+    
+    setBugs(bugsWithComments);
+  } catch (error) {
+    console.error('Error loading bugs:', error);
+    // Fallback to your existing mock data
+    setBugs([
+      { id: 'BUG-001', title: 'Login button not working', status: 'Verified', severity: 'high', points: 500, submitted_at: '2025-01-15T10:30:00Z', reporter_name: 'John Doe', comments: [] },
+      { id: 'BUG-002', title: 'Typo in welcome message', status: 'In Review', severity: 'low', points: 0, submitted_at: '2025-01-14T15:45:00Z', reporter_name: 'Jane Smith', comments: [] }
+    ]);
+  }
+}, []);
 
   const loadBugs = useCallback(async () => {
     try {
@@ -1501,136 +1528,6 @@ const MediaDisplay = ({
   );
 };
 
-const CommentSection = ({ bugId, bugTitle, comments = [], onAddComment, currentUser }) => {
-  const [newComment, setNewComment] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmitComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim() || isSubmitting) return;
-
-    setIsSubmitting(true);
-    try {
-      await onAddComment(bugId, newComment.trim());
-      setNewComment('');
-    } catch (error) {
-      console.error('Failed to add comment:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const formatTimeAgo = (dateString) => {
-    const now = new Date();
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  return (
-    <div className="comments-section border-t border-gray-100 pt-3 mt-3" style={{ display: 'none' }}>
-      {/* Comment Input */}
-      <div className="mb-4">
-        <form onSubmit={handleSubmitComment} className="flex gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            {currentUser?.name?.charAt(0).toUpperCase() || 'U'}
-          </div>
-          <div className="flex-1">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder={`Add a comment about "${bugTitle}"...`}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              rows="2"
-              disabled={isSubmitting}
-            />
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-xs text-gray-400">
-                {newComment.length}/500 characters
-              </span>
-              <button
-                type="submit"
-                disabled={!newComment.trim() || isSubmitting}
-                className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? 'Posting...' : 'Post'}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      {/* Comments List */}
-      <div className="space-y-3">
-        {comments.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            <div className="text-2xl mb-2">💬</div>
-            <p className="text-sm">No comments yet. Be the first to comment!</p>
-          </div>
-        ) : (
-          comments.map((comment, index) => (
-            <div key={comment.id || index} className="flex gap-3">
-              {/* Commenter Avatar */}
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                {comment.commenter_name?.charAt(0).toUpperCase() || '?'}
-              </div>
-              
-              {/* Comment Content */}
-              <div className="flex-1 min-w-0">
-                <div className="bg-gray-50 rounded-2xl px-4 py-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {comment.commenter_name || 'Anonymous'}
-                    </span>
-                    {comment.commenter_is_admin && (
-                      <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-bold">
-                        ADMIN
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-500">
-                      {formatTimeAgo(comment.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-gray-800 text-sm leading-relaxed">
-                    {comment.comment}
-                  </p>
-                </div>
-                
-                {/* Comment Actions */}
-                <div className="flex items-center gap-4 mt-1 ml-4">
-                  <button className="text-xs text-gray-500 hover:text-blue-600 font-medium">
-                    Like
-                  </button>
-                  <button className="text-xs text-gray-500 hover:text-blue-600 font-medium">
-                    Reply
-                  </button>
-                  {comment.likes_count > 0 && (
-                    <span className="text-xs text-gray-500">
-                      {comment.likes_count} {comment.likes_count === 1 ? 'like' : 'likes'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* View More Comments */}
-      {comments.length > 3 && (
-        <button className="w-full text-center py-3 text-sm text-gray-600 hover:text-gray-800 font-medium">
-          View all {comments.length} comments
-        </button>
-      )}
-    </div>
-  );
-};
-
 // UI Components
   const ErrorMessage = () => {
     if (!error) return null;
@@ -2087,41 +1984,37 @@ const SocialNavigation = () => (
 
 
 // Helper function to handle comments
-const handleBugComment = async (bugId, bugTitle) => {
+const handleBugComment = async (bugId, comment) => {
   try {
-    // Get comment from user
-    const comment = prompt(`💬 Add a comment about "${bugTitle}":`);
-    
-    if (!comment || !comment.trim()) {
-      return; // User cancelled or empty comment
-    }
-    
     setLoading(true);
     
     // Call API to add comment
-    await api.addComment(bugId, comment.trim());
+    const response = await api.addComment(bugId, comment);
     
-    // Update the local state immediately
+    // Update the local state immediately with the new comment
     setBugs(prevBugs => prevBugs.map(bug => 
       bug.id === bugId 
         ? { 
             ...bug, 
-            comments_count: (bug.comments_count || 0) + 1
+            comments_count: (bug.comments_count || 0) + 1,
+            comments: [
+              ...(bug.comments || []),
+              {
+                id: Date.now(), // Temporary ID
+                comment: comment,
+                commenter_name: user.name,
+                commenter_is_admin: user.isAdmin,
+                created_at: new Date().toISOString()
+              }
+            ]
           } 
         : bug
     ));
     
-    // Show success message
-    alert(`✅ Comment added: "${comment.trim()}"`);
-    
-    // Refresh the feed to get fresh data
-    setTimeout(() => {
-      loadAllBugs();
-    }, 1000);
-    
+    return response;
   } catch (error) {
     console.error('Comment error:', error);
-    alert('❌ Failed to add comment. Please try again.');
+    throw error;
   } finally {
     setLoading(false);
   }
