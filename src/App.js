@@ -3737,88 +3737,224 @@ if (currentView === 'verify-email') {
   );
 }
 
-// Landing Page - Fixed JSX closing tag issue
 if (currentView === 'landing') {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <LoadingSpinner />
       
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Logo - Only once */}
             <div className="flex items-center">
-              <BugBuzzersLogo size="hero" />
+              <BugBuzzersLogo size="default" />
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => setCurrentView('login')}
-                className="text-gray-700 hover:text-purple-600 font-medium"
+                className="text-gray-700 hover:text-purple-600 font-medium px-4 py-2 rounded-lg transition-colors"
               >
                 Sign In
               </button>
               <button
                 onClick={() => setCurrentView('signup')}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
               >
-                Sign Up
+                Get Started
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                  </svg>
+                )}
               </button>
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 py-4">
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    setCurrentView('login');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    setCurrentView('signup');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
-      {/* Compact Hero Section */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="text-center">
-          <div className="flex justify-center mb-3">
-            <BugBuzzersLogo size="hero" />
-          </div>
-          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-3">
-            Turn Bug Reports Into 
-            <span className="text-purple-600"> Social Rewards</span>
-          </h1>
-          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
-            Join the community of bug hunters earning real money by reporting issues in your favorite apps and websites.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <button
-              onClick={() => setCurrentView('signup')}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg text-lg font-medium hover:bg-purple-700 transition-colors"
-            >
-              Start Hunting Bugs 🐛
-            </button>
-            <button
-              onClick={() => setCurrentView('login')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg text-lg font-medium hover:bg-gray-50 transition-colors"
-            >
-              Sign In
-            </button>
+      {/* Hero Section */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-12 sm:py-20 lg:py-24">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+              Turn Bug Reports Into{' '}
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Social Rewards
+              </span>
+            </h1>
+            <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Join the community of bug hunters earning real money by reporting issues in your 
+              favorite apps and websites.
+            </p>
+            
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+              <button
+                onClick={() => setCurrentView('signup')}
+                className="w-full sm:w-auto px-8 py-4 bg-purple-600 text-white rounded-xl text-lg font-semibold hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
+              >
+                🐛 Start Hunting Bugs
+              </button>
+              <button
+                onClick={() => setCurrentView('login')}
+                className="w-full sm:w-auto px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl text-lg font-semibold hover:border-purple-600 hover:text-purple-600 transition-all"
+              >
+                Sign In
+              </button>
+            </div>
+
+            {/* Quick Demo Login Buttons */}
+            <div className="mb-16">
+              <p className="text-sm text-gray-500 mb-4">Quick Demo Access:</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => quickLogin('admin@bugbuzzers.com', 'admin123', true)}
+                  className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+                  disabled={loading}
+                >
+                  🛠️ Admin Demo
+                </button>
+                <button
+                  onClick={() => quickLogin('john@example.com', 'password123', false)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  disabled={loading}
+                >
+                  👤 User Demo
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Compact Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Trophy className="w-6 h-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Earn Rewards</h3>
-            <p className="text-gray-600 text-sm">Get paid for every verified bug you report. Top hunters earn thousands!</p>
+        {/* Features Section */}
+        <div className="py-16 border-t border-gray-100">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Why Choose BugBuzzers?
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              The most rewarding way to help improve the apps and websites you use every day
+            </p>
           </div>
-          <div className="text-center p-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Shield className="w-6 h-6 text-purple-600" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {/* Feature 1 */}
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Trophy className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Earn Real Rewards</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Get paid for every verified bug you report. Top hunters earn thousands of dollars 
+                by helping improve popular apps and websites.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Make Apps Better</h3>
-            <p className="text-gray-600 text-sm">Help improve the apps and websites millions of people use every day.</p>
+
+            {/* Feature 2 */}
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Make Apps Better</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Help improve the apps and websites millions of people use every day. Your reports 
+                directly contribute to better user experiences.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Star className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Join Community</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Connect with fellow bug hunters, share discoveries, and learn from the best. 
+                Build your reputation in the security community.
+              </p>
+            </div>
           </div>
-          <div className="text-center p-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Star className="w-6 h-6 text-purple-600" />
+        </div>
+
+        {/* Stats Section */}
+        <div className="py-16 border-t border-gray-100">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-3xl lg:text-4xl font-bold text-purple-600 mb-2">5,000+</div>
+              <div className="text-gray-600 font-medium">Bugs Reported</div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Join Community</h3>
-            <p className="text-gray-600 text-sm">Connect with fellow bug hunters and share your discoveries.</p>
+            <div>
+              <div className="text-3xl lg:text-4xl font-bold text-blue-600 mb-2">$50K+</div>
+              <div className="text-gray-600 font-medium">Rewards Paid</div>
+            </div>
+            <div>
+              <div className="text-3xl lg:text-4xl font-bold text-green-600 mb-2">1,200+</div>
+              <div className="text-gray-600 font-medium">Active Hunters</div>
+            </div>
+            <div>
+              <div className="text-3xl lg:text-4xl font-bold text-orange-600 mb-2">95%</div>
+              <div className="text-gray-600 font-medium">Accuracy Rate</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Final CTA */}
+        <div className="py-16 border-t border-gray-100">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 sm:p-12 text-center text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              Ready to Start Earning?
+            </h2>
+            <p className="text-lg sm:text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+              Join thousands of bug hunters who are already earning money by making the internet better.
+            </p>
+            <button
+              onClick={() => setCurrentView('signup')}
+              className="bg-white text-purple-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
+            >
+              Create Free Account
+            </button>
           </div>
         </div>
       </main>
